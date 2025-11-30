@@ -56,6 +56,12 @@
         -webkit-tap-highlight-color: transparent;
       }
       
+      /* Global reset for focus outlines to prevent "square" selection boxes */
+      *:focus {
+        outline: none !important;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
       .glass-panel {
         background: rgba(39, 39, 42, 0.4);
         backdrop-filter: blur(12px);
@@ -98,6 +104,14 @@
       }
       .thin-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(255,255,255,0.2);
+      }
+
+      /* Fix Recharts focus behavior */
+      .recharts-sector {
+        outline: none;
+      }
+      .recharts-surface {
+        outline: none;
       }
     </style>
   <script type="importmap">

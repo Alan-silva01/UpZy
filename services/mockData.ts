@@ -1,8 +1,16 @@
-import { Seller, Sale, Customer, StoreStats, User } from '../types';
+import { Seller, Sale, Customer, StoreStats, User, Store } from '../types';
+
+export const STORE_INFO: Store = {
+  id: 'store_01',
+  name: 'Fashion Concept',
+  plan: 'PRO',
+  status: 'ACTIVE',
+  renewalDate: '15/12/2024'
+};
 
 export const USERS: User[] = [
-  { id: 'u1', name: 'Administrador', role: 'ADMIN', avatar: 'https://picsum.photos/100/100?random=99' },
-  { id: 'u2', name: 'Ricardo Silva', role: 'SELLER', sellerId: '1', avatar: 'https://picsum.photos/100/100?random=1' },
+  { id: 'u1', name: 'Administrador', email: 'admin@upzy.com', role: 'ADMIN', avatar: 'https://picsum.photos/100/100?random=99' },
+  { id: 'u2', name: 'Ricardo Silva', email: 'ricardo@upzy.com', role: 'SELLER', sellerId: '1', avatar: 'https://picsum.photos/100/100?random=1' },
 ];
 
 export const STORE_STATS: StoreStats = {

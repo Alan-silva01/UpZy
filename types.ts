@@ -3,9 +3,18 @@ export type Role = 'ADMIN' | 'SELLER';
 export interface User {
   id: string;
   name: string;
+  email?: string;
   role: Role;
   avatar: string;
   sellerId?: string; // Links a user to a specific seller profile
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  plan: 'FREE' | 'PRO' | 'ENTERPRISE';
+  status: 'ACTIVE' | 'PAST_DUE';
+  renewalDate: string;
 }
 
 export interface Seller {
@@ -48,7 +57,8 @@ export enum Tab {
   SALES = 'SALES', // Global Sales (Admin) or My History (Seller)
   CUSTOMERS = 'CUSTOMERS',
   ADMIN_SELLERS = 'ADMIN_SELLERS', // Admin Only (Manage Sellers)
-  SELLER_HOME = 'SELLER_HOME' // Seller Only
+  SELLER_HOME = 'SELLER_HOME', // Seller Only
+  SETTINGS = 'SETTINGS' // Admin Only (SaaS Settings)
 }
 
 export type PaymentMethod = 'pix' | 'money' | 'card' | 'boleto' | 'promissory';

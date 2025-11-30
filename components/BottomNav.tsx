@@ -17,7 +17,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
         { id: Tab.DASHBOARD, icon: Home, label: 'Home' },
         { id: Tab.TEAM, icon: Users, label: 'Team' },
         { id: Tab.SALES, icon: TrendingUp, label: 'Sales' }, // Global Sales
-        { id: Tab.ADMIN_SELLERS, icon: Settings, label: 'Admin' },
+        { id: Tab.ADMIN_SELLERS, icon: UserCheck, label: 'Admin' }, // Changed Icon to UserCheck
+        { id: Tab.SETTINGS, icon: Settings, label: 'Config' }, // New Tab
       ];
     } else {
       // Seller Items
@@ -33,7 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] px-6 py-4 flex items-center gap-8 max-w-sm w-full justify-between ring-1 ring-white/5">
+      <div className="pointer-events-auto bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] px-6 py-4 flex items-center gap-6 max-w-sm w-full justify-between ring-1 ring-white/5">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
@@ -59,7 +60,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
               className="relative group flex items-center justify-center"
             >
               <div className={`transition-all duration-300 ${isActive ? 'text-white scale-110' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
               </div>
               
               {isActive && (

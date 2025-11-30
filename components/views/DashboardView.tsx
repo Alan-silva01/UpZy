@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { STORE_STATS, SELLERS } from '../../services/mockData';
 import { ProgressBar } from '../ui/ProgressBar';
 import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sector } from 'recharts';
 
 const chartData = [
   { name: 'Seg', sales: 4000 },
@@ -16,7 +16,33 @@ const chartData = [
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
+// Custom renderer for the active pie slice with organic glow and no box
+const renderActiveShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+
+  return (
+    <g style={{ outline: 'none' }}>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 8} // Smooth expansion
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        className="outline-none transition-all duration-300 ease-out"
+        style={{ 
+          filter: `drop-shadow(0 0 12px ${fill}90)`, // Colored glow
+          outline: 'none',
+          cursor: 'pointer'
+        }}
+      />
+    </g>
+  );
+};
+
 export const DashboardView: React.FC = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
   const percentage = (STORE_STATS.totalSales / STORE_STATS.monthlyTarget) * 100;
   
   // Prepare data for Pie Chart
@@ -25,6 +51,13 @@ export const DashboardView: React.FC = () => {
     value: s.currentSales,
     full_name: s.name
   })).sort((a, b) => b.value - a.value);
+
+  const activeItem = sellerData[activeIndex];
+  const activePercentage = activeItem ? (activeItem.value / STORE_STATS.totalSales) : 0;
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
 
   return (
     <div className="pb-28 space-y-4 animate-slide-up">
@@ -166,10 +199,12 @@ export const DashboardView: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
            {/* The Chart */}
-           <div className="h-48 w-full sm:w-1/2 relative">
+           <div className="h-48 w-full sm:w-1/2 relative outline-none focus:outline-none">
              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                    <Pie
+                      activeIndex={activeIndex}
+                      activeShape={renderActiveShape}
                       data={sellerData}
                       cx="50%"
                       cy="50%"
@@ -178,31 +213,48 @@ export const DashboardView: React.FC = () => {
                       paddingAngle={5}
                       dataKey="value"
                       stroke="none"
+                      onMouseEnter={onPieEnter}
+                      onClick={onPieEnter} // Support click for mobile/touch
+                      className="outline-none focus:outline-none cursor-pointer"
                    >
                       {sellerData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={PIE_COLORS[index % PIE_COLORS.length]} 
+                          stroke="none"
+                          className="outline-none focus:outline-none"
+                        />
                       ))}
                    </Pie>
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '6px 10px' }}
-                     itemStyle={{ color: '#e4e4e7', fontSize: '11px', fontWeight: 600 }}
-                     formatter={(value: number) => [`${new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(value)}`, '']}
-                   />
+                   {/* Tooltip removed to prevent overlap with center text */}
                 </PieChart>
              </ResponsiveContainer>
-             {/* Center Text */}
-             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Total</span>
-                <span className="text-lg font-bold text-white">100%</span>
+             
+             {/* Center Text - Dynamic Info based on Selection */}
+             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-300">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 font-medium">{activeItem.name}</span>
+                <span className="text-3xl font-black text-white leading-none tracking-tight">
+                    {(activePercentage * 100).toFixed(0)}<span className="text-sm text-zinc-600 font-bold align-top ml-0.5">%</span>
+                </span>
+                <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm">
+                   <span className="text-[10px] text-emerald-400 font-semibold tracking-wide">
+                      {new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(activeItem.value)}
+                   </span>
+                </div>
              </div>
            </div>
 
            {/* Custom Legend */}
            <div className="w-full sm:w-1/2 grid grid-cols-2 gap-2 mt-2 sm:mt-0">
               {sellerData.map((entry, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div 
+                   key={index} 
+                   className={`flex items-center gap-2 transition-all duration-300 cursor-pointer p-1.5 rounded-lg ${index === activeIndex ? 'bg-white/5 opacity-100 scale-105 border border-white/5' : 'opacity-60 hover:opacity-80 hover:bg-white/5 border border-transparent'}`}
+                   onMouseEnter={() => setActiveIndex(index)}
+                   onClick={() => setActiveIndex(index)}
+                >
                    <div 
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px_rgba(0,0,0,0.5)]" 
+                      className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(0,0,0,0.5)]" 
                       style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
                    ></div>
                    <div className="flex flex-col min-w-0">

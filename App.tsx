@@ -6,6 +6,7 @@ import { CustomerRanking } from './components/views/CustomerRanking';
 import { AdminSellersView } from './components/views/AdminSellersView';
 import { SellerDashboardView } from './components/views/SellerDashboardView';
 import { LoginView } from './components/views/LoginView';
+import { SettingsView } from './components/views/SettingsView';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { Tab, User } from './types';
@@ -25,6 +26,11 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    setActiveTab(Tab.DASHBOARD);
+  };
+
   const handleNewSale = (data: any) => {
     console.log("New Sale Data:", data);
     // Here you would add the sale to the mockData or backend
@@ -41,6 +47,7 @@ const App: React.FC = () => {
         case Tab.SALES: return <SalesFeed />;
         case Tab.CUSTOMERS: return <CustomerRanking />;
         case Tab.ADMIN_SELLERS: return <AdminSellersView />;
+        case Tab.SETTINGS: return <SettingsView onLogout={handleLogout} />;
         default: return <DashboardView />;
       }
     } else {
