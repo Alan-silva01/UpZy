@@ -132,19 +132,19 @@ export const DashboardView: React.FC = () => {
                <DollarSign size={14} />
             </div>
             <div>
-               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(STORE_STATS.salesToday)}</div>
-               <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Vendas Hoje</div>
+               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(STORE_STATS.totalSales)}</div>
+               <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Vendido</div>
             </div>
          </button>
 
          <button className="flex-1 min-w-[130px] h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex flex-col justify-between hover:border-zinc-700 transition-colors relative overflow-hidden group">
              <div className="absolute right-0 top-0 w-12 h-12 bg-purple-500/10 rounded-full blur-xl -mr-3 -mt-3 group-hover:bg-purple-500/20 transition-all"></div>
              <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
-               <TrendingUp size={14} />
+               <Target size={14} />
             </div>
             <div>
-               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(STORE_STATS.dailyTarget)}</div>
-               <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Meta Diária</div>
+               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(Math.max(0, STORE_STATS.monthlyTarget - STORE_STATS.totalSales))}</div>
+               <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Falta Vender</div>
             </div>
          </button>
       </div>
@@ -249,25 +249,4 @@ export const DashboardView: React.FC = () => {
               {sellerData.map((entry, index) => (
                 <div 
                    key={index} 
-                   className={`flex items-center gap-2 transition-all duration-300 cursor-pointer p-1.5 rounded-lg ${index === activeIndex ? 'bg-white/5 opacity-100 scale-105 border border-white/5' : 'opacity-60 hover:opacity-80 hover:bg-white/5 border border-transparent'}`}
-                   onMouseEnter={() => setActiveIndex(index)}
-                   onClick={() => setActiveIndex(index)}
-                >
-                   <div 
-                      className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(0,0,0,0.5)]" 
-                      style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                   ></div>
-                   <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] text-zinc-300 font-medium truncate leading-none mb-0.5">{entry.name}</span>
-                      <span className="text-[9px] text-zinc-500 leading-none">
-                         {new Intl.NumberFormat('pt-BR', { style: 'percent' }).format(entry.value / STORE_STATS.totalSales)}
-                      </span>
-                   </div>
-                </div>
-              ))}
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+                   className={`flex items-center gap-2 transition-all duration-300 cursor-pointer p-1.5 rounded-lg ${index === activeIndex ? 'bg-white/5 opacity-100 scale-
