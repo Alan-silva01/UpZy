@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardView } from './components/views/DashboardView';
 import { TeamRanking } from './components/views/TeamRanking';
 import { SalesFeed } from './components/views/SalesFeed';
@@ -10,14 +10,44 @@ import { SettingsView } from './components/views/SettingsView';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { Tab, User } from './types';
+import { verificarSessao, fazerLogout, buscarLojaIdUsuario } from './services/auth';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [lojaId, setLojaId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+  const [loadingSessao, setLoadingSessao] = useState(true);
 
-  const handleLogin = (loggedInUser: User) => {
+  // Verificar sessão ao carregar
+  useEffect(() => {
+    verificarSessaoAtual();
+  }, []);
+
+  const verificarSessaoAtual = async () => {
+    const usuarioSessao = await verificarSessao();
+    if (usuarioSessao) {
+      setUser(usuarioSessao);
+      const loja = await buscarLojaIdUsuario(usuarioSessao.id);
+      setLojaId(loja);
+
+      if (usuarioSessao.role === 'ADMIN') {
+        setActiveTab(Tab.DASHBOARD);
+      } else {
+        setActiveTab(Tab.SELLER_HOME);
+      }
+    }
+    setLoadingSessao(false);
+  };
+
+  console.log('🚀 App - User:', user, 'LojaId:', lojaId);
+
+  const handleLogin = async (loggedInUser: User) => {
     setUser(loggedInUser);
+    const loja = await buscarLojaIdUsuario(loggedInUser.id);
+    setLojaId(loja);
+
     // Set default tab based on role
     if (loggedInUser.role === 'ADMIN') {
       setActiveTab(Tab.DASHBOARD);
@@ -26,8 +56,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fazerLogout();
     setUser(null);
+    setLojaId(null);
     setActiveTab(Tab.DASHBOARD);
   };
 
@@ -38,17 +70,17 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (!user) return null;
+    if (!user || !lojaId) return null;
 
     if (user.role === 'ADMIN') {
       switch (activeTab) {
-        case Tab.DASHBOARD: return <DashboardView />;
+        case Tab.DASHBOARD: return <DashboardView lojaId={lojaId} />;
         case Tab.TEAM: return <TeamRanking />;
         case Tab.SALES: return <SalesFeed />;
         case Tab.CUSTOMERS: return <CustomerRanking />;
-        case Tab.ADMIN_SELLERS: return <AdminSellersView />;
+        case Tab.ADMIN_SELLERS: return <AdminSellersView lojaId={lojaId} />;
         case Tab.SETTINGS: return <SettingsView onLogout={handleLogout} />;
-        default: return <DashboardView />;
+        default: return <DashboardView lojaId={lojaId} />;
       }
     } else {
       // Seller Views
@@ -59,6 +91,15 @@ const App: React.FC = () => {
       }
     }
   };
+
+  // Loading da sessão
+  if (loadingSessao) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   if (!user) {
     return <LoginView onLogin={handleLogin} />;

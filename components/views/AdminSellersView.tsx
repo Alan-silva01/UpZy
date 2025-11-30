@@ -1,20 +1,75 @@
-import React, { useState } from 'react';
-import { SELLERS } from '../../services/mockData';
+import React, { useState, useEffect } from 'react';
 import { Seller } from '../../types';
-import { Plus, Edit3, Save } from 'lucide-react';
+import { Plus, Edit3, Save, Loader2 } from 'lucide-react';
 import { ProgressBar } from '../ui/ProgressBar';
+import { buscarVendedores, atualizarMetaVendedor, cadastrarVendedor } from '../../services/api';
+import { AddSellerModal } from '../modals/AddSellerModal';
 
-export const AdminSellersView: React.FC = () => {
+interface AdminSellersViewProps {
+  lojaId: string;
+}
+
+export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [localSellers, setLocalSellers] = useState<Seller[]>(SELLERS);
+  const [localSellers, setLocalSellers] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editedTargets, setEditedTargets] = useState<Record<string, number>>({});
+  const [modalAberto, setModalAberto] = useState(false);
+
+  useEffect(() => {
+    carregarVendedores();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lojaId]);
+
+  const carregarVendedores = async () => {
+    setLoading(true);
+    const vendedores = await buscarVendedores(lojaId);
+    setLocalSellers(vendedores);
+    setLoading(false);
+  };
 
   const handleUpdateTarget = (id: string, newTarget: string) => {
-    setLocalSellers(prev => prev.map(s => s.id === id ? { ...s, target: parseFloat(newTarget) } : s));
+    const valor = parseFloat(newTarget);
+    setEditedTargets(prev => ({ ...prev, [id]: valor }));
+    setLocalSellers(prev => prev.map(s => s.id === id ? { ...s, target: valor } : s));
   };
 
-  const toggleEdit = (id: string) => {
-    setEditingId(editingId === id ? null : id);
+  const toggleEdit = async (id: string) => {
+    if (editingId === id) {
+      // Salvando
+      const novaMeta = editedTargets[id];
+      if (novaMeta !== undefined) {
+        const sucesso = await atualizarMetaVendedor(id, novaMeta);
+        if (sucesso) {
+          await carregarVendedores();
+        }
+      }
+      setEditingId(null);
+    } else {
+      setEditingId(id);
+    }
   };
+
+  const handleAdicionarVendedor = async (dados: { nome: string; email: string; senha: string; meta: number }) => {
+    const resultado = await cadastrarVendedor({
+      lojaId,
+      ...dados
+    });
+
+    if (resultado.sucesso) {
+      await carregarVendedores();
+    } else {
+      throw new Error(resultado.mensagem);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="pb-28 space-y-5 animate-slide-up flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28 space-y-5 animate-slide-up">
@@ -23,13 +78,21 @@ export const AdminSellersView: React.FC = () => {
            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Admin</span>
            <h1 className="text-xl font-bold text-white tracking-tight">Gerenciar Vendedores</h1>
          </div>
-         <button className="bg-white text-black p-2 rounded-full hover:bg-zinc-200 transition-colors">
+         <button
+           onClick={() => setModalAberto(true)}
+           className="bg-white text-black p-2 rounded-full hover:bg-zinc-200 transition-colors"
+         >
             <Plus size={20} />
          </button>
       </div>
 
       <div className="space-y-3 px-1">
-        {localSellers.map((seller) => (
+        {localSellers.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">
+            <p>Nenhum vendedor cadastrado ainda.</p>
+          </div>
+        ) : (
+          localSellers.map((seller) => (
           <div key={seller.id} className="glass-card rounded-[1.5rem] p-4 border border-zinc-800 relative group">
              <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
@@ -80,8 +143,14 @@ export const AdminSellersView: React.FC = () => {
                </div>
              </div>
           </div>
-        ))}
+        )))}
       </div>
+
+      <AddSellerModal
+        isOpen={modalAberto}
+        onClose={() => setModalAberto(false)}
+        onAdd={handleAdicionarVendedor}
+      />
     </div>
   );
 };
