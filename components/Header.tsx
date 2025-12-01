@@ -12,8 +12,15 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ user, onLogout, title, subtitle }) => {
   return (
     <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
-      {/* Safe area para iOS - espaço adicional no topo */}
-      <div className="pt-24 bg-zinc-950"></div>
+
+      {/* Safe area real para iOS (notch) */}
+      <div 
+        className="bg-zinc-950"
+        style={{ height: 'env(safe-area-inset-top)' }}
+      ></div>
+
+      {/* Espaço adicional para não cortar o header */}
+      <div className="pt-8 bg-zinc-950"></div>
 
       {/* Conteúdo do header */}
       <div className="px-4 py-4 flex justify-between items-center bg-zinc-950/95 backdrop-blur-xl">
@@ -23,16 +30,23 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, title, subtitle 
             {title ? (
               <>
                 <h1 className="text-lg font-bold text-white tracking-tight">{title}</h1>
-                {subtitle && <p className="text-[10px] text-zinc-500 font-semibold tracking-widest uppercase">{subtitle}</p>}
+                {subtitle && (
+                  <p className="text-[10px] text-zinc-500 font-semibold tracking-widest uppercase">
+                    {subtitle}
+                  </p>
+                )}
               </>
             ) : (
               <>
-                <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">Bem-vindo</span>
+                <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">
+                  Bem-vindo
+                </span>
                 <h1 className="text-lg font-bold text-white tracking-tight">{user.name}</h1>
               </>
             )}
           </div>
         </div>
+
         <div className="flex items-center gap-3">
           {onLogout && (
             <button
@@ -43,7 +57,12 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, title, subtitle 
               <LogOut size={18} />
             </button>
           )}
-          <img src={user.avatar} alt="Profile" className="w-10 h-10 rounded-full border-2 border-zinc-800" />
+
+          <img
+            src={user.avatar}
+            alt="Profile"
+            className="w-10 h-10 rounded-full border-2 border-zinc-800"
+          />
         </div>
       </div>
     </div>
