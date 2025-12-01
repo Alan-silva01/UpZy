@@ -1,12 +1,38 @@
-import React, { useState } from 'react';
-import { SELLERS, RECENT_SALES } from '../../services/mockData';
+import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { Crown, ChevronDown, ShoppingBag } from 'lucide-react';
+import { Crown, ChevronDown, ShoppingBag, Loader2 } from 'lucide-react';
+import { Seller, Sale } from '../../types';
+import { buscarVendedores, buscarVendas } from '../../services/api';
+import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
 
 export const TeamRanking: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sortedSellers = [...SELLERS].sort((a, b) => b.currentSales - a.currentSales);
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    const user = await verificarSessao();
+    if (user) {
+      const lojaId = await buscarLojaIdUsuario(user.id);
+      if (lojaId) {
+        const [vendedores, vendas] = await Promise.all([
+          buscarVendedores(lojaId),
+          buscarVendas(lojaId)
+        ]);
+        setSellers(vendedores);
+        setSales(vendas);
+      }
+    }
+    setLoading(false);
+  };
+
+  const sortedSellers = [...sellers].sort((a, b) => b.currentSales - a.currentSales);
   const top1 = sortedSellers[0];
   const rest = sortedSellers.slice(1);
 
@@ -15,8 +41,30 @@ export const TeamRanking: React.FC = () => {
   };
 
   const getRecentSales = (sellerId: string) => {
-    return RECENT_SALES.filter(sale => sale.sellerId === sellerId).slice(0, 5);
+    return sales.filter(sale => sale.sellerId === sellerId).slice(0, 5);
   };
+
+  if (loading) {
+    return (
+      <div className="pb-28 space-y-5 flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (sellers.length === 0) {
+    return (
+      <div className="pb-28 space-y-5">
+        <div className="px-1 pt-1">
+          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Ranking</span>
+          <h1 className="text-xl font-bold text-white tracking-tight">Equipe de Vendas</h1>
+        </div>
+        <div className="text-center py-12 text-zinc-500">
+          <p>Nenhum vendedor cadastrado ainda.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28 space-y-5">

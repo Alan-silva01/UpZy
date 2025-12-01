@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, User, Mail, Lock, Target, Loader2, AlertCircle } from 'lucide-react';
 
 interface AddSellerModalProps {
   isOpen: boolean;
@@ -59,106 +59,127 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Adicionar Vendedor</h2>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+      <div className="w-full max-w-md relative animate-slide-up my-auto">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-[2rem] blur-2xl"></div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="glass-card rounded-[2rem] p-6 border border-white/10 shadow-2xl relative">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-white">Novo Vendedor</h2>
+              <p className="text-zinc-500 text-xs mt-0.5">Adicione um membro à equipe</p>
+            </div>
+            <button
+              onClick={handleClose}
+              disabled={loading}
+              className="text-zinc-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Error Message */}
           {erro && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {erro}
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 animate-slide-up">
+              <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+              <p className="text-red-200 text-xs">{erro}</p>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome Completo *
-            </label>
-            <input
-              type="text"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              disabled={loading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
-              placeholder="Ex: João Silva"
-            />
-          </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Nome */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                <User size={18} />
+              </div>
+              <input
+                type="text"
+                placeholder="Nome Completo"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                disabled={loading}
+                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={loading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
-              placeholder="vendedor@exemplo.com"
-            />
-          </div>
+            {/* Email */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                <Mail size={18} />
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={loading}
+                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Senha *
-            </label>
-            <input
-              type="password"
-              value={formData.senha}
-              onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-              disabled={loading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
-              placeholder="Mínimo 6 caracteres"
-            />
-            <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres</p>
-          </div>
+            {/* Senha */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                <Lock size={18} />
+              </div>
+              <input
+                type="password"
+                placeholder="Senha (mín. 6 caracteres)"
+                value={formData.senha}
+                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                disabled={loading}
+                minLength={6}
+                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Meta Mensal (R$) *
-            </label>
-            <input
-              type="number"
-              value={formData.meta}
-              onChange={(e) => setFormData({ ...formData, meta: Number(e.target.value) })}
-              disabled={loading}
-              min="0"
-              step="100"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
-              placeholder="50000"
-            />
-          </div>
+            {/* Meta */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                <Target size={18} />
+              </div>
+              <input
+                type="number"
+                placeholder="Meta Mensal (R$)"
+                value={formData.meta}
+                onChange={(e) => setFormData({ ...formData, meta: Number(e.target.value) })}
+                disabled={loading}
+                min="0"
+                step="1000"
+                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+              />
+            </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Cadastrando...' : 'Adicionar'}
-            </button>
-          </div>
-        </form>
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={loading}
+                className="flex-1 px-4 py-3.5 border border-white/10 text-zinc-300 rounded-xl hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-3.5 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Cadastrando...
+                  </>
+                ) : (
+                  'Adicionar'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

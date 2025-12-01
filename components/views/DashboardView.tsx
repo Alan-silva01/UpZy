@@ -2,18 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
 import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon, Loader2 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sector } from 'recharts';
-import { buscarVendedores, calcularEstatisticasLoja } from '../../services/api';
+import { buscarVendedores, calcularEstatisticasLoja, buscarDadosPerformance } from '../../services/api';
 import { Seller, StoreStats } from '../../types';
-
-const chartData = [
-  { name: 'Seg', sales: 4000 },
-  { name: 'Ter', sales: 3000 },
-  { name: 'Qua', sales: 5000 },
-  { name: 'Qui', sales: 2780 },
-  { name: 'Sex', sales: 1890 },
-  { name: 'Sab', sales: 9240 },
-  { name: 'Dom', sales: 3490 },
-];
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
@@ -50,11 +40,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [vendedores, setVendedores] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<{ name: string; sales: number }[]>([]);
+  const [periodoGrafico, setPeriodoGrafico] = useState<'semana' | 'mes'>('semana');
 
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId]);
+
+  useEffect(() => {
+    carregarDadosGrafico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lojaId, periodoGrafico]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -65,6 +62,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
     setStats(estatisticas);
     setVendedores(listaVendedores);
     setLoading(false);
+  };
+
+  const carregarDadosGrafico = async () => {
+    const dados = await buscarDadosPerformance(lojaId, periodoGrafico);
+    setChartData(dados);
   };
 
   if (loading || !stats) {
@@ -184,9 +186,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
       <div className="glass-card rounded-[1.5rem] p-5 relative overflow-hidden">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-semibold text-white">Performance</h3>
-          <select className="bg-zinc-800 text-[10px] text-zinc-400 border border-zinc-700 rounded-full px-2 py-0.5 outline-none">
-            <option>Esta Semana</option>
-            <option>Mês Passado</option>
+          <select
+            value={periodoGrafico}
+            onChange={(e) => setPeriodoGrafico(e.target.value as 'semana' | 'mes')}
+            className="bg-zinc-800 text-[10px] text-zinc-400 border border-zinc-700 rounded-full px-2 py-0.5 outline-none cursor-pointer"
+          >
+            <option value="semana">Esta Semana</option>
+            <option value="mes">Últimos 30 Dias</option>
           </select>
         </div>
 

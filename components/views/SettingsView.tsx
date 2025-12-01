@@ -1,14 +1,63 @@
-import React, { useState } from 'react';
-import { STORE_INFO, USERS } from '../../services/mockData';
-import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2 } from 'lucide-react';
+import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
+import { supabase } from '../../lib/supabase';
 
 interface SettingsViewProps {
   onLogout: () => void;
 }
 
+interface StoreData {
+  id: string;
+  nome: string;
+  plano: string;
+  status: string;
+}
+
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
-  const [storeName, setStoreName] = useState(STORE_INFO.name);
-  const user = USERS[0]; // Assuming Admin logic
+  const [storeName, setStoreName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [storeData, setStoreData] = useState<StoreData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      const user = await verificarSessao();
+      if (user) {
+        setUserEmail(user.email);
+        const lojaId = await buscarLojaIdUsuario(user.id);
+        if (lojaId) {
+          const { data: loja } = await supabase
+            .from('lojas')
+            .select('*')
+            .eq('id', lojaId)
+            .single();
+
+          if (loja) {
+            setStoreData(loja);
+            setStoreName(loja.nome);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="pb-28 space-y-6 flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28 space-y-6 animate-slide-up">
@@ -39,10 +88,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
             <div>
                <div className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1">Plano Atual</div>
                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tighter">
-                 {STORE_INFO.plan}
+                 {storeData?.plano || 'FREE'}
                </div>
                <div className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1">
-                  Renova em {STORE_INFO.renewalDate}
+                  {storeData?.plano === 'PRO' ? 'Renova em 30 dias' : 'Upgrade disponível'}
                </div>
             </div>
 
@@ -91,7 +140,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
             </div>
             <div>
                <h3 className="text-white font-bold text-sm">Minha Conta</h3>
-               <p className="text-[10px] text-zinc-500">{user.email}</p>
+               <p className="text-[10px] text-zinc-500">{userEmail}</p>
             </div>
          </div>
 

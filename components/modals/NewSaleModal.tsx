@@ -12,6 +12,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
   const [formData, setFormData] = useState({
     orderId: '',
     amount: '',
+    itemsCount: '1',
     customerName: '',
     paymentMethod: 'pix' as PaymentMethod,
     paymentType: 'spot' as PaymentType,
@@ -52,28 +53,30 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto thin-scrollbar pb-10">
-          {/* Amount & Order */}
+          {/* Order Number */}
+          <div className="space-y-2">
+            <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Nº Pedido</label>
+            <input
+              required
+              type="text"
+              value={formData.orderId}
+              onChange={e => setFormData({...formData, orderId: e.target.value})}
+              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+              placeholder="#0000"
+            />
+          </div>
+
+          {/* Amount & Items */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Nº Pedido</label>
-              <input 
-                required
-                type="text" 
-                value={formData.orderId}
-                onChange={e => setFormData({...formData, orderId: e.target.value})}
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="#0000"
-              />
-            </div>
             <div className="space-y-2">
               <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Valor (R$)</label>
               <div className="relative">
                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">
                     <DollarSign size={16} />
                  </div>
-                 <input 
+                 <input
                   required
-                  type="number" 
+                  type="number"
                   step="0.01"
                   value={formData.amount}
                   onChange={e => setFormData({...formData, amount: e.target.value})}
@@ -81,6 +84,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
                   placeholder="0.00"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Qtd Itens</label>
+              <input
+                required
+                type="number"
+                min="1"
+                value={formData.itemsCount}
+                onChange={e => setFormData({...formData, itemsCount: e.target.value})}
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                placeholder="1"
+              />
             </div>
           </div>
 

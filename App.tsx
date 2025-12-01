@@ -26,19 +26,30 @@ const App: React.FC = () => {
   }, []);
 
   const verificarSessaoAtual = async () => {
-    const usuarioSessao = await verificarSessao();
-    if (usuarioSessao) {
-      setUser(usuarioSessao);
-      const loja = await buscarLojaIdUsuario(usuarioSessao.id);
-      setLojaId(loja);
+    try {
+      const usuarioSessao = await verificarSessao();
+      if (usuarioSessao) {
+        setUser(usuarioSessao);
+        const loja = await buscarLojaIdUsuario(usuarioSessao.id);
+        setLojaId(loja);
 
-      if (usuarioSessao.role === 'ADMIN') {
-        setActiveTab(Tab.DASHBOARD);
+        if (usuarioSessao.role === 'ADMIN') {
+          setActiveTab(Tab.DASHBOARD);
+        } else {
+          setActiveTab(Tab.SELLER_HOME);
+        }
       } else {
-        setActiveTab(Tab.SELLER_HOME);
+        // Garantir que user é null se não houver sessão
+        setUser(null);
+        setLojaId(null);
       }
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+      setUser(null);
+      setLojaId(null);
+    } finally {
+      setLoadingSessao(false);
     }
-    setLoadingSessao(false);
   };
 
   console.log('🚀 App - User:', user, 'LojaId:', lojaId);
@@ -63,10 +74,58 @@ const App: React.FC = () => {
     setActiveTab(Tab.DASHBOARD);
   };
 
-  const handleNewSale = (data: any) => {
-    console.log("New Sale Data:", data);
-    // Here you would add the sale to the mockData or backend
-    alert(`Venda de R$ ${data.amount} registrada com sucesso!`);
+  const handleNewSale = async (data: any) => {
+    if (!lojaId || !user) return;
+
+    console.log('💳 Registrando venda - User:', user);
+    console.log('💳 User.sellerId:', user.sellerId);
+    console.log('💳 User.role:', user.role);
+
+    const { criarVenda } = await import('./services/api');
+
+    // Para admin, precisamos de um sellerId válido
+    // Por enquanto, vamos usar o primeiro vendedor da loja se for admin
+    let vendedorId = user.sellerId;
+
+    if (!vendedorId && user.role === 'ADMIN') {
+      // Se admin não tem sellerId, buscar primeiro vendedor
+      const { buscarVendedores } = await import('./services/api');
+      const vendedores = await buscarVendedores(lojaId);
+      console.log('💳 Admin - Vendedores encontrados:', vendedores);
+      if (vendedores.length > 0) {
+        vendedorId = vendedores[0].id;
+        console.log('💳 Admin - Usando vendedor:', vendedorId);
+      } else {
+        alert('Cadastre um vendedor antes de registrar vendas.');
+        return;
+      }
+    }
+
+    if (!vendedorId) {
+      console.error('❌ VendedorId não encontrado!');
+      alert('Vendedor não identificado.');
+      return;
+    }
+
+    console.log('💳 VendedorId final:', vendedorId);
+
+    const sucesso = await criarVenda({
+      lojaId,
+      vendedorId,
+      numeroPedido: data.orderId,
+      valor: parseFloat(data.amount),
+      quantidadeItens: parseInt(data.itemsCount) || 1,
+      nomeCliente: data.customerName,
+      metodoPagamento: data.paymentMethod === 'money' ? 'dinheiro' : data.paymentMethod,
+      tipoPagamento: data.paymentType === 'spot' ? 'avista' : 'parcelado',
+      parcelas: data.installments
+    });
+
+    if (sucesso) {
+      alert(`Venda de R$ ${data.amount} registrada com sucesso!`);
+    } else {
+      alert('Erro ao registrar venda. Tente novamente.');
+    }
   };
 
   const renderContent = () => {
@@ -85,9 +144,9 @@ const App: React.FC = () => {
     } else {
       // Seller Views
       switch (activeTab) {
-        case Tab.SELLER_HOME: return <SellerDashboardView user={user} />;
+        case Tab.SELLER_HOME: return <SellerDashboardView user={user} onLogout={handleLogout} />;
         case Tab.SALES: return <SalesFeed />; // Seller sees sales history (filtered in real app)
-        default: return <SellerDashboardView user={user} />;
+        default: return <SellerDashboardView user={user} onLogout={handleLogout} />;
       }
     }
   };

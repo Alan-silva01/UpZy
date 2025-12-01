@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
+import { formatarNomeProprio } from '../utils/formatters';
 
 // ============================================
 // AUTENTICAÇÃO
@@ -20,13 +21,17 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
   try {
     console.log('📝 Iniciando registro de admin:', { email: dados.email, nomeLoja: dados.nomeLoja });
 
+    // Formatar nome
+    const nomeFormatado = formatarNomeProprio(dados.nome);
+    const lojaFormatada = formatarNomeProprio(dados.nomeLoja);
+
     // 1. Criar usuário na autenticação do Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: dados.email,
       password: dados.senha,
       options: {
         data: {
-          nome: dados.nome,
+          nome: nomeFormatado,
           papel: 'ADMIN'
         }
       }
@@ -49,7 +54,7 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
     const { data: loja, error: lojaError } = await supabase
       .from('lojas')
       .insert({
-        nome: dados.nomeLoja,
+        nome: lojaFormatada,
         plano: 'FREE',
         status: 'ACTIVE',
         data_renovacao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
@@ -72,9 +77,9 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
         id: authData.user.id,
         loja_id: loja.id,
         email: dados.email,
-        nome: dados.nome,
+        nome: nomeFormatado,
         papel: 'ADMIN',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${dados.nome}`,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`,
         senha_hash: 'handled_by_supabase_auth'
       });
 
@@ -87,10 +92,10 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     const user: User = {
       id: authData.user.id,
-      name: dados.nome,
+      name: nomeFormatado,
       email: dados.email,
       role: 'ADMIN',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${dados.nome}`
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`
     };
 
     console.log('🎉 Registro completo! User:', user);

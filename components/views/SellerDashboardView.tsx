@@ -1,24 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Seller } from '../../types';
-import { SELLERS } from '../../services/mockData';
 import { ProgressBar } from '../ui/ProgressBar';
-import { Target, TrendingUp, AlertCircle } from 'lucide-react';
+import { Target, TrendingUp, AlertCircle, LogOut, Loader2 } from 'lucide-react';
+import { fazerLogout, buscarLojaIdUsuario } from '../../services/auth';
+import { buscarVendedores } from '../../services/api';
 
 interface SellerDashboardProps {
   user: User;
+  onLogout?: () => void;
 }
 
-export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user }) => {
-  // Find the seller profile associated with this user
-  const sellerProfile = SELLERS.find(s => s.id === user.sellerId) || {
-    name: user.name,
-    currentSales: 0,
-    target: 10000,
-    avatar: user.avatar,
-    id: '0'
-  } as Seller;
+export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLogout }) => {
+  const [sellerProfile, setSellerProfile] = useState<Seller | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const percentage = (sellerProfile.currentSales / sellerProfile.target) * 100;
+  useEffect(() => {
+    carregarDadosVendedor();
+  }, [user.sellerId]);
+
+  const carregarDadosVendedor = async () => {
+    setLoading(true);
+    const lojaId = await buscarLojaIdUsuario(user.id);
+    if (lojaId) {
+      const vendedores = await buscarVendedores(lojaId);
+      const vendedor = vendedores.find(v => v.id === user.sellerId);
+      if (vendedor) {
+        setSellerProfile(vendedor);
+      } else {
+        // Fallback se não encontrar
+        setSellerProfile({
+          id: user.sellerId || '0',
+          name: user.name,
+          currentSales: 0,
+          target: 10000,
+          avatar: user.avatar
+        } as Seller);
+      }
+    }
+    setLoading(false);
+  };
+
+  const percentage = sellerProfile ? (sellerProfile.currentSales / sellerProfile.target) * 100 : 0;
+
+  const handleLogout = async () => {
+    await fazerLogout();
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
+  if (loading || !sellerProfile) {
+    return (
+      <div className="pb-28 space-y-6 flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28 space-y-6 animate-slide-up">
@@ -28,7 +65,16 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user }) =>
           <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Bem-vindo</span>
           <h1 className="text-xl font-bold text-white tracking-tight">{user.name}</h1>
         </div>
-        <img src={user.avatar} alt="Profile" className="w-10 h-10 rounded-full border-2 border-zinc-800" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-zinc-400 hover:text-white"
+            title="Sair"
+          >
+            <LogOut size={18} />
+          </button>
+          <img src={user.avatar} alt="Profile" className="w-10 h-10 rounded-full border-2 border-zinc-800" />
+        </div>
       </div>
 
       {/* Main Goal Card */}
