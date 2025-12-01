@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#09090b"/>
+
+  <!-- Gradient Background -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background gradient circle -->
+  <circle cx="256" cy="256" r="200" fill="url(#grad1)"/>
+
+  <!-- Up Arrow with Zig-zag (representing growth) -->
+  <g transform="translate(256, 256)">
+    <!-- Arrow path -->
+    <path d="M -80 80 L -40 40 L -40 0 L 0 40 L 40 0 L 40 -40 L 80 -80"
+          stroke="url(#grad2)"
+          stroke-width="32"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- Arrow head -->
+    <path d="M 50 -80 L 80 -80 L 80 -50"
+          stroke="url(#grad2)"
+          stroke-width="32"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+  </g>
+
+  <!-- Letter "U" (subtle) -->
+  <text x="256" y="420"
+        font-family="Inter, sans-serif"
+        font-size="120"
+        font-weight="800"
+        fill="#10b981"
+        text-anchor="middle"
+        opacity="0.3">U</text>
+</svg>
