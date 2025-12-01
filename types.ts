@@ -58,7 +58,8 @@ export enum Tab {
   CUSTOMERS = 'CUSTOMERS',
   ADMIN_SELLERS = 'ADMIN_SELLERS', // Admin Only (Manage Sellers)
   SELLER_HOME = 'SELLER_HOME', // Seller Only
-  SETTINGS = 'SETTINGS' // Admin Only (SaaS Settings)
+  SETTINGS = 'SETTINGS', // Admin Only (SaaS Settings)
+  GOALS = 'GOALS' // Admin Only (Goals Management)
 }
 
 export type PaymentMethod = 'pix' | 'money' | 'card' | 'boleto' | 'promissory';

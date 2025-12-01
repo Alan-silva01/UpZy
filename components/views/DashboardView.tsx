@@ -6,6 +6,7 @@ import { buscarVendedores, calcularEstatisticasLoja, buscarDadosPerformance } fr
 import { Seller, StoreStats } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { GoalsModal } from '../modals/GoalsModal';
+import { ManageGoalsModal } from '../modals/ManageGoalsModal';
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
@@ -48,6 +49,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
   const [nomeLoja, setNomeLoja] = useState<string>('');
   const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+  const [isManageGoalsModalOpen, setIsManageGoalsModalOpen] = useState(false);
+  const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
+  const [avatarLoja, setAvatarLoja] = useState<string>('');
 
   useEffect(() => {
     if (lojaId) {
@@ -66,6 +70,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
   const carregarDados = async () => {
     setLoading(true);
     try {
+      // Buscar meta ativa primeiro
+      const { data: metaAtivaData } = await supabase
+        .from('metas')
+        .select('*')
+        .eq('loja_id', lojaId)
+        .eq('status', 'ACTIVE')
+        .maybeSingle();
+
+      if (metaAtivaData) {
+        setMetaAtiva({
+          id: metaAtivaData.id,
+          valor: metaAtivaData.valor_total,
+          dataInicio: metaAtivaData.data_inicio,
+          dataFim: metaAtivaData.data_fim
+        });
+      } else {
+        setMetaAtiva(null);
+      }
+
       const [estatisticas, listaVendedores] = await Promise.all([
         calcularEstatisticasLoja(lojaId),
         buscarVendedores(lojaId)
@@ -73,10 +96,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
       setStats(estatisticas);
       setVendedores(listaVendedores);
 
-      // Buscar nome da loja
+      // Buscar nome e avatar da loja
       const { data: loja, error: lojaError } = await supabase
         .from('lojas')
-        .select('nome')
+        .select('nome, avatar_url')
         .eq('id', lojaId)
         .single();
 
@@ -84,6 +107,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         console.error('Erro ao buscar nome da loja:', lojaError);
       } else if (loja) {
         setNomeLoja(loja.nome);
+        setAvatarLoja(loja.avatar_url || '');
       }
 
       // Calcular variação vs mês anterior
@@ -106,12 +130,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         } else {
           const totalMesAnterior = vendasMesAnterior?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
 
+          // Se houver meta ativa, calcular vendas do período da meta
+          let totalAtualParaComparacao = estatisticas.totalSales;
+          if (metaAtivaData) {
+            const { data: vendasMeta } = await supabase
+              .from('vendas')
+              .select('valor')
+              .eq('loja_id', lojaId)
+              .gte('data', metaAtivaData.data_inicio)
+              .lte('data', metaAtivaData.data_fim);
+
+            totalAtualParaComparacao = vendasMeta?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
+          }
+
           // Calcular variação percentual
           if (totalMesAnterior > 0) {
-            const variacao = ((estatisticas.totalSales - totalMesAnterior) / totalMesAnterior) * 100;
+            const variacao = ((totalAtualParaComparacao - totalMesAnterior) / totalMesAnterior) * 100;
             setVariacaoMesAnterior(variacao);
           } else {
-            setVariacaoMesAnterior(estatisticas.totalSales > 0 ? 100 : 0);
+            setVariacaoMesAnterior(totalAtualParaComparacao > 0 ? 100 : 0);
           }
         }
       } catch (error) {
@@ -157,14 +194,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
     <div className="pb-28 space-y-4 animate-slide-up">
       {/* Top Header */}
       <div className="flex justify-between items-center px-1 pt-3 pb-2">
-        {/* Logo e Nome UpZy */}
+        {/* Avatar da Loja */}
         <div className="flex items-center gap-2">
-          <img
-            src="/icons/icon.svg"
-            alt="UpZy"
-            className="w-8 h-8"
-          />
-          <span className="text-white text-xs font-bold tracking-tight">UpZy</span>
+          {avatarLoja ? (
+            <img
+              src={avatarLoja}
+              alt={nomeLoja}
+              className="w-8 h-8 rounded-lg object-cover border border-zinc-700"
+            />
+          ) : (
+            <img
+              src="/icons/icon.svg"
+              alt="UpZy"
+              className="w-8 h-8"
+            />
+          )}
         </div>
 
         {/* Nome da Loja Centralizado */}
@@ -377,7 +421,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         </div>
       )}
 
-      {/* Modal de Metas */}
+      {/* UpZy Branding */}
+      <div className="flex items-center justify-center gap-2 py-6">
+        <img
+          src="/icons/icon.svg"
+          alt="UpZy"
+          className="w-6 h-6 opacity-70"
+        />
+        <span className="text-zinc-500 text-xs font-bold tracking-tight">UpZy</span>
+      </div>
+
+      {/* Modal de Metas - Criar Nova */}
       <GoalsModal
         isOpen={isGoalsModalOpen}
         onClose={() => {
@@ -386,6 +440,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         }}
         lojaId={lojaId}
         userId={userId || ''}
+      />
+
+      {/* Modal de Gerenciar Metas - Ativar/Desativar */}
+      <ManageGoalsModal
+        isOpen={isManageGoalsModalOpen}
+        onClose={() => {
+          setIsManageGoalsModalOpen(false);
+          carregarDados(); // Recarregar dados após mudar meta ativa
+        }}
+        lojaId={lojaId}
+        onMetaSelected={(metaId) => {
+          // Callback quando uma meta é ativada/desativada
+          console.log('Meta selecionada:', metaId);
+          carregarDados();
+        }}
       />
     </div>
   );

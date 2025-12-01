@@ -7,6 +7,7 @@ import { AdminSellersView } from './components/views/AdminSellersView';
 import { SellerDashboardView } from './components/views/SellerDashboardView';
 import { LoginView } from './components/views/LoginView';
 import { SettingsView } from './components/views/SettingsView';
+import { GoalsManagementView } from './components/views/GoalsManagementView';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { Tab, User } from './types';
@@ -153,6 +154,7 @@ const App: React.FC = () => {
         case Tab.CUSTOMERS: return <CustomerRanking />;
         case Tab.ADMIN_SELLERS: return <AdminSellersView lojaId={lojaId} />;
         case Tab.SETTINGS: return <SettingsView onLogout={handleLogout} />;
+        case Tab.GOALS: return <GoalsManagementView lojaId={lojaId} userId={user.id} onBack={() => setActiveTab(Tab.DASHBOARD)} />;
         default: return <DashboardView lojaId={lojaId} userId={user.id} />;
       }
     } else {
@@ -194,16 +196,16 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <BottomNav 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           userRole={user.role}
           onNewSale={() => setIsSaleModalOpen(true)}
         />
 
-        <NewSaleModal 
-          isOpen={isSaleModalOpen} 
-          onClose={() => setIsSaleModalOpen(false)} 
+        <NewSaleModal
+          isOpen={isSaleModalOpen}
+          onClose={() => setIsSaleModalOpen(false)}
           onSubmit={handleNewSale}
         />
       </main>

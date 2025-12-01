@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2 } from 'lucide-react';
 import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
+import { ImageCropUpload } from '../ui/ImageCropUpload';
 
 interface SettingsViewProps {
   onLogout: () => void;
@@ -12,6 +13,7 @@ interface StoreData {
   nome: string;
   plano: string;
   status: string;
+  avatar_url?: string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
@@ -19,6 +21,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [storeAvatar, setStoreAvatar] = useState<string>('');
 
   useEffect(() => {
     carregarDados();
@@ -41,6 +44,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
           if (loja) {
             setStoreData(loja);
             setStoreName(loja.nome);
+            setStoreAvatar(loja.avatar_url || '');
           }
         }
       }
@@ -48,6 +52,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (file: File, croppedDataUrl: string) => {
+    if (!storeData?.id) return;
+
+    try {
+      // Upload para o storage do Supabase
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${storeData.id}-${Date.now()}.${fileExt}`;
+      const filePath = `lojas/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update database
+      const { error: updateError } = await supabase
+        .from('lojas')
+        .update({ avatar_url: publicUrl })
+        .eq('id', storeData.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setStoreAvatar(publicUrl);
+      alert('Avatar atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      throw error;
     }
   };
 
@@ -105,7 +152,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
       </div>
 
       {/* Store Settings */}
-      <div className="glass-card rounded-[2rem] p-6 space-y-4">
+      <div className="glass-card rounded-[2rem] p-6 space-y-6">
          <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                <StoreIcon size={20} />
@@ -115,12 +162,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
                <p className="text-[10px] text-zinc-500">Informações visíveis para a equipe</p>
             </div>
          </div>
-         
+
+         {/* Avatar da Loja */}
+         <ImageCropUpload
+           currentImage={storeAvatar}
+           onUpload={handleAvatarUpload}
+           label="Avatar da Loja"
+         />
+
          <div className="space-y-2">
             <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Nome da Loja</label>
             <div className="relative">
-               <input 
-                  type="text" 
+               <input
+                  type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors text-sm"
