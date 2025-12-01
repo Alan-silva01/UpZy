@@ -80,7 +80,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
        </div>
 
       <div className="w-full max-w-sm relative z-10 animate-slide-up">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-24 h-24 mb-4 object-contain" />
           <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tighter mb-2">UpZy</h1>
           <p className="text-zinc-500 text-sm tracking-widest uppercase">
             {isRegistering ? 'Crie sua Loja' : 'Sales Intelligence'}

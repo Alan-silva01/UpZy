@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Edit3, Trash2, Save, X, Loader2, Filter } from 'luci
 import { buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
+import { Header } from '../Header';
 
 interface SellerSalesHistoryViewProps {
   user: User;
@@ -197,37 +198,49 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
   if (loading) {
     return (
-      <div className="pb-28 space-y-6 flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
+      <>
+        <Header user={user} title="Minhas Vendas" subtitle="Histórico" />
+        <div className="pt-32 pb-28 space-y-6 flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="pb-28 space-y-6 animate-slide-up">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-1">
-        <button
-          onClick={onBack}
-          className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-        >
-          <ArrowLeft size={18} className="text-white" />
-        </button>
-        <div className="flex-1">
-          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">Histórico</span>
-          <h1 className="text-xl font-bold text-white tracking-tight">Minhas Vendas</h1>
+    <>
+      {/* Header Fixo com botão de voltar customizado */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
+        {/* Safe area para iOS */}
+        <div className="h-[env(safe-area-inset-top)] bg-zinc-950"></div>
+
+        {/* Conteúdo do header */}
+        <div className="px-4 py-4 flex items-center gap-3 bg-zinc-950/95 backdrop-blur-xl">
+          <button
+            onClick={onBack}
+            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+          >
+            <ArrowLeft size={18} className="text-white" />
+          </button>
+          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-10 h-10 object-contain" />
+          <div className="flex-1">
+            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">Histórico</span>
+            <h1 className="text-lg font-bold text-white tracking-tight">Minhas Vendas</h1>
+          </div>
+          <button
+            onClick={() => setMostrarFiltros(!mostrarFiltros)}
+            className={`p-2 rounded-full border transition-all ${
+              mostrarFiltros
+                ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
+                : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+            }`}
+          >
+            <Filter size={18} />
+          </button>
         </div>
-        <button
-          onClick={() => setMostrarFiltros(!mostrarFiltros)}
-          className={`p-2 rounded-full border transition-all ${
-            mostrarFiltros
-              ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
-              : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
-          }`}
-        >
-          <Filter size={18} />
-        </button>
       </div>
+
+      <div className="pt-32 pb-28 space-y-6 animate-slide-up">
 
       {/* Filtros */}
       {mostrarFiltros && (
@@ -577,5 +590,6 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         cancelText="Cancelar"
       />
     </div>
+    </>
   );
 };

@@ -207,20 +207,21 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30 flex justify-center">
-      <main className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl overflow-hidden">
+      <main className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
          {/* Premium Ambient Background */}
          <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
             <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
             <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
          </div>
 
-        <div className="relative z-10 px-4 pt-5 min-h-screen flex flex-col">
+        {/* Container scrollável com padding-top para o header */}
+        <div className="relative z-10 px-4 min-h-screen flex flex-col overflow-y-auto">
           {/* Page Transition Wrapper */}
           <div key={activeTab} className="animate-page-enter">
             {renderContent()}
           </div>
         </div>
-        
+
         <BottomNav
           activeTab={activeTab}
           onTabChange={setActiveTab}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, Seller, Sale } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
-import { Target, TrendingUp, AlertCircle, LogOut, Loader2, Receipt, ArrowRight } from 'lucide-react';
-import { fazerLogout, buscarLojaIdUsuario } from '../../services/auth';
+import { Target, TrendingUp, AlertCircle, Loader2, Receipt, ArrowRight } from 'lucide-react';
+import { buscarLojaIdUsuario } from '../../services/auth';
 import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
+import { Header } from '../Header';
 
 interface SellerDashboardProps {
   user: User;
@@ -94,40 +95,21 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
 
   const percentage = sellerProfile ? (sellerProfile.currentSales / sellerProfile.target) * 100 : 0;
 
-  const handleLogout = async () => {
-    await fazerLogout();
-    if (onLogout) {
-      onLogout();
-    }
-  };
-
   if (loading || !sellerProfile) {
     return (
-      <div className="pb-28 space-y-6 flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
+      <>
+        <Header user={user} onLogout={onLogout} />
+        <div className="pt-32 pb-28 space-y-6 flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="pb-28 space-y-6 animate-slide-up">
-      {/* Header */}
-      <div className="flex justify-between items-center px-1">
-        <div>
-          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Bem-vindo</span>
-          <h1 className="text-xl font-bold text-white tracking-tight">{user.name}</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-zinc-400 hover:text-white"
-            title="Sair"
-          >
-            <LogOut size={18} />
-          </button>
-          <img src={user.avatar} alt="Profile" className="w-10 h-10 rounded-full border-2 border-zinc-800" />
-        </div>
-      </div>
+    <>
+      <Header user={user} onLogout={onLogout} />
+      <div className="pt-32 pb-28 space-y-6 animate-slide-up">
 
       {/* Main Goal Card */}
       <div className="relative w-full rounded-[2.5rem] overflow-hidden shadow-2xl group">
@@ -292,5 +274,6 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
         )}
       </div>
     </div>
+    </>
   );
 };
