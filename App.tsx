@@ -23,14 +23,26 @@ const App: React.FC = () => {
   // Verificar sessão ao carregar
   useEffect(() => {
     verificarSessaoAtual();
+
+    // Timeout de segurança: se após 10 segundos ainda estiver carregando, força o fim do loading
+    const timeout = setTimeout(() => {
+      console.log('⏰ Timeout de segurança atingido');
+      setLoadingSessao(false);
+    }, 10000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const verificarSessaoAtual = async () => {
+    console.log('🔍 Verificando sessão...');
     try {
       const usuarioSessao = await verificarSessao();
+      console.log('👤 Usuário da sessão:', usuarioSessao);
+
       if (usuarioSessao) {
         setUser(usuarioSessao);
         const loja = await buscarLojaIdUsuario(usuarioSessao.id);
+        console.log('🏪 Loja ID:', loja);
         setLojaId(loja);
 
         if (usuarioSessao.role === 'ADMIN') {
@@ -39,15 +51,17 @@ const App: React.FC = () => {
           setActiveTab(Tab.SELLER_HOME);
         }
       } else {
+        console.log('⚠️ Nenhuma sessão ativa');
         // Garantir que user é null se não houver sessão
         setUser(null);
         setLojaId(null);
       }
     } catch (error) {
-      console.error('Erro ao verificar sessão:', error);
+      console.error('❌ Erro ao verificar sessão:', error);
       setUser(null);
       setLojaId(null);
     } finally {
+      console.log('✅ Verificação de sessão concluída');
       setLoadingSessao(false);
     }
   };
@@ -133,13 +147,13 @@ const App: React.FC = () => {
 
     if (user.role === 'ADMIN') {
       switch (activeTab) {
-        case Tab.DASHBOARD: return <DashboardView lojaId={lojaId} />;
+        case Tab.DASHBOARD: return <DashboardView lojaId={lojaId} userId={user.id} />;
         case Tab.TEAM: return <TeamRanking />;
         case Tab.SALES: return <SalesFeed />;
         case Tab.CUSTOMERS: return <CustomerRanking />;
         case Tab.ADMIN_SELLERS: return <AdminSellersView lojaId={lojaId} />;
         case Tab.SETTINGS: return <SettingsView onLogout={handleLogout} />;
-        default: return <DashboardView lojaId={lojaId} />;
+        default: return <DashboardView lojaId={lojaId} userId={user.id} />;
       }
     } else {
       // Seller Views

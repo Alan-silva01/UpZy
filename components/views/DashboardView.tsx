@@ -4,6 +4,8 @@ import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon,
 import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sector } from 'recharts';
 import { buscarVendedores, calcularEstatisticasLoja, buscarDadosPerformance } from '../../services/api';
 import { Seller, StoreStats } from '../../types';
+import { supabase } from '../../lib/supabase';
+import { GoalsModal } from '../modals/GoalsModal';
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
@@ -33,35 +35,94 @@ const renderActiveShape = (props: any) => {
 
 interface DashboardViewProps {
   lojaId: string;
+  userId?: string;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [vendedores, setVendedores] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<{ name: string; sales: number }[]>([]);
   const [periodoGrafico, setPeriodoGrafico] = useState<'semana' | 'mes'>('semana');
+  const [nomeLoja, setNomeLoja] = useState<string>('');
+  const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
 
   useEffect(() => {
-    carregarDados();
+    if (lojaId) {
+      carregarDados();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId]);
 
   useEffect(() => {
-    carregarDadosGrafico();
+    if (lojaId) {
+      carregarDadosGrafico();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, periodoGrafico]);
 
   const carregarDados = async () => {
     setLoading(true);
-    const [estatisticas, listaVendedores] = await Promise.all([
-      calcularEstatisticasLoja(lojaId),
-      buscarVendedores(lojaId)
-    ]);
-    setStats(estatisticas);
-    setVendedores(listaVendedores);
-    setLoading(false);
+    try {
+      const [estatisticas, listaVendedores] = await Promise.all([
+        calcularEstatisticasLoja(lojaId),
+        buscarVendedores(lojaId)
+      ]);
+      setStats(estatisticas);
+      setVendedores(listaVendedores);
+
+      // Buscar nome da loja
+      const { data: loja, error: lojaError } = await supabase
+        .from('lojas')
+        .select('nome')
+        .eq('id', lojaId)
+        .single();
+
+      if (lojaError) {
+        console.error('Erro ao buscar nome da loja:', lojaError);
+      } else if (loja) {
+        setNomeLoja(loja.nome);
+      }
+
+      // Calcular variação vs mês anterior
+      try {
+        const now = new Date();
+        const mesAnteriorInicio = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const mesAnteriorFim = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+        // Vendas do mês anterior
+        const { data: vendasMesAnterior, error: vendasError } = await supabase
+          .from('vendas')
+          .select('valor')
+          .eq('loja_id', lojaId)
+          .gte('data', mesAnteriorInicio.toISOString())
+          .lte('data', mesAnteriorFim.toISOString());
+
+        if (vendasError) {
+          console.error('Erro ao buscar vendas do mês anterior:', vendasError);
+          setVariacaoMesAnterior(0);
+        } else {
+          const totalMesAnterior = vendasMesAnterior?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
+
+          // Calcular variação percentual
+          if (totalMesAnterior > 0) {
+            const variacao = ((estatisticas.totalSales - totalMesAnterior) / totalMesAnterior) * 100;
+            setVariacaoMesAnterior(variacao);
+          } else {
+            setVariacaoMesAnterior(estatisticas.totalSales > 0 ? 100 : 0);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao calcular variação:', error);
+        setVariacaoMesAnterior(0);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const carregarDadosGrafico = async () => {
@@ -93,13 +154,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
   };
 
   return (
-    <div className="pb-28 space-y-3 animate-slide-up">
+    <div className="pb-28 space-y-4 animate-slide-up">
       {/* Top Header */}
-      <div className="flex justify-between items-center px-1 pt-1">
-        <div className="flex flex-col">
-          <span className="text-zinc-500 text-[9px] font-semibold tracking-widest uppercase">UpZy Store</span>
-          <h1 className="text-lg font-bold text-white tracking-tight">Visão Geral</h1>
+      <div className="flex justify-between items-center px-1 pt-3 pb-2">
+        {/* Logo e Nome UpZy */}
+        <div className="flex items-center gap-2">
+          <img
+            src="/icons/icon.svg"
+            alt="UpZy"
+            className="w-8 h-8"
+          />
+          <span className="text-white text-xs font-bold tracking-tight">UpZy</span>
         </div>
+
+        {/* Nome da Loja Centralizado */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <h1 className="text-sm font-semibold text-zinc-400 tracking-tight">
+            {nomeLoja || 'Carregando...'}
+          </h1>
+        </div>
+
+        {/* Perfil */}
         <div className="relative group cursor-pointer">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur opacity-50 group-hover:opacity-100 transition duration-300"></div>
           <img
@@ -114,7 +189,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
       <div className="relative w-full aspect-[16/10] rounded-[2rem] overflow-hidden shadow-2xl group transition-transform duration-500 hover:scale-[1.02]">
         {/* Background Image/Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
 
         {/* Abstract shapes */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -127,7 +201,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
               <Target size={12} className="text-emerald-400" />
               <span className="text-[10px] text-emerald-100 font-medium">Meta Mensal</span>
             </div>
-            <button className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+            <button
+              onClick={() => setIsGoalsModalOpen(true)}
+              className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
               <ArrowUpRight size={14} />
             </button>
           </div>
@@ -145,7 +222,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
           <div className="space-y-2">
             <div className="flex justify-between items-end">
               <span className="text-2xl font-light text-white">{percentage.toFixed(0)}<span className="text-sm text-emerald-400">%</span></span>
-              <span className="text-[10px] text-emerald-400 font-medium">+15% vs mês anterior</span>
+              <span className={`text-[10px] font-medium ${variacaoMesAnterior >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {variacaoMesAnterior >= 0 ? '+' : ''}{variacaoMesAnterior.toFixed(1)}% vs mês anterior
+              </span>
             </div>
             <ProgressBar
               current={stats.totalSales}
@@ -297,6 +376,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
           </div>
         </div>
       )}
+
+      {/* Modal de Metas */}
+      <GoalsModal
+        isOpen={isGoalsModalOpen}
+        onClose={() => {
+          setIsGoalsModalOpen(false);
+          carregarDados(); // Recarregar dados após fechar modal (caso meta tenha sido alterada)
+        }}
+        lojaId={lojaId}
+        userId={userId || ''}
+      />
     </div>
   );
 };
