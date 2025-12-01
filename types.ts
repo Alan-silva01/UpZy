@@ -58,6 +58,7 @@ export enum Tab {
   CUSTOMERS = 'CUSTOMERS',
   ADMIN_SELLERS = 'ADMIN_SELLERS', // Admin Only (Manage Sellers)
   SELLER_HOME = 'SELLER_HOME', // Seller Only
+  SELLER_SALES_HISTORY = 'SELLER_SALES_HISTORY', // Seller Only (Full Sales History with Edit/Delete)
   SETTINGS = 'SETTINGS', // Admin Only (SaaS Settings)
   GOALS = 'GOALS' // Admin Only (Goals Management)
 }

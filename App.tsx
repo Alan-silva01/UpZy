@@ -5,6 +5,7 @@ import { SalesFeed } from './components/views/SalesFeed';
 import { CustomerRanking } from './components/views/CustomerRanking';
 import { AdminSellersView } from './components/views/AdminSellersView';
 import { SellerDashboardView } from './components/views/SellerDashboardView';
+import { SellerSalesHistoryView } from './components/views/SellerSalesHistoryView';
 import { LoginView } from './components/views/LoginView';
 import { SettingsView } from './components/views/SettingsView';
 import { GoalsManagementView } from './components/views/GoalsManagementView';
@@ -124,6 +125,15 @@ const App: React.FC = () => {
 
     console.log('💳 VendedorId final:', vendedorId);
 
+    // Mapear método de pagamento para valores aceitos pelo banco
+    const metodoPagamentoMap: Record<string, string> = {
+      'money': 'dinheiro',
+      'pix': 'pix',
+      'card': 'cartao',
+      'boleto': 'boleto',
+      'promissory': 'promissoria'
+    };
+
     const sucesso = await criarVenda({
       lojaId,
       vendedorId,
@@ -131,7 +141,7 @@ const App: React.FC = () => {
       valor: parseFloat(data.amount),
       quantidadeItens: parseInt(data.itemsCount) || 1,
       nomeCliente: data.customerName,
-      metodoPagamento: data.paymentMethod === 'money' ? 'dinheiro' : data.paymentMethod,
+      metodoPagamento: metodoPagamentoMap[data.paymentMethod] || data.paymentMethod,
       tipoPagamento: data.paymentType === 'spot' ? 'avista' : 'parcelado',
       parcelas: data.installments
     });
@@ -160,9 +170,24 @@ const App: React.FC = () => {
     } else {
       // Seller Views
       switch (activeTab) {
-        case Tab.SELLER_HOME: return <SellerDashboardView user={user} onLogout={handleLogout} />;
+        case Tab.SELLER_HOME:
+          return <SellerDashboardView
+            user={user}
+            onLogout={handleLogout}
+            onViewAllSales={() => setActiveTab(Tab.SELLER_SALES_HISTORY)}
+          />;
+        case Tab.SELLER_SALES_HISTORY:
+          return <SellerSalesHistoryView
+            user={user}
+            onBack={() => setActiveTab(Tab.SELLER_HOME)}
+          />;
         case Tab.SALES: return <SalesFeed />; // Seller sees sales history (filtered in real app)
-        default: return <SellerDashboardView user={user} onLogout={handleLogout} />;
+        default:
+          return <SellerDashboardView
+            user={user}
+            onLogout={handleLogout}
+            onViewAllSales={() => setActiveTab(Tab.SELLER_SALES_HISTORY)}
+          />;
       }
     }
   };
