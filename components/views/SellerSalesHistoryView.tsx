@@ -211,8 +211,14 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     <>
       {/* Header Fixo com botão de voltar customizado */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
-        {/* Safe area para iOS */}
-        <div className="h-[env(safe-area-inset-top)] bg-zinc-950"></div>
+        {/* Safe area real para iOS (notch) */}
+        <div
+          className="bg-zinc-950"
+          style={{ height: 'env(safe-area-inset-top)' }}
+        ></div>
+
+        {/* Espaço adicional para não cortar o header */}
+        <div className="pt-8 bg-zinc-950"></div>
 
         {/* Conteúdo do header */}
         <div className="px-4 py-4 flex items-center gap-3 bg-zinc-950/95 backdrop-blur-xl">
@@ -240,7 +246,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         </div>
       </div>
 
-      <div className="pt-32 pb-28 space-y-6 animate-slide-up">
+      <div className="pt-40 pb-28 space-y-6 animate-slide-up">
 
       {/* Filtros */}
       {mostrarFiltros && (
