@@ -93,19 +93,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId }) => {
   };
 
   return (
-    <div className="pb-28 space-y-4 animate-slide-up">
+    <div className="pb-28 space-y-3 animate-slide-up">
       {/* Top Header */}
-      <div className="flex justify-between items-center px-1">
+      <div className="flex justify-between items-center px-1 pt-1">
         <div className="flex flex-col">
-          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">UpZy Store</span>
-          <h1 className="text-xl font-bold text-white tracking-tight">Visão Geral</h1>
+          <span className="text-zinc-500 text-[9px] font-semibold tracking-widest uppercase">UpZy Store</span>
+          <h1 className="text-lg font-bold text-white tracking-tight">Visão Geral</h1>
         </div>
         <div className="relative group cursor-pointer">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur opacity-50 group-hover:opacity-100 transition duration-300"></div>
           <img
             src="https://picsum.photos/100/100?random=99"
             alt="Profile"
-            className="relative w-9 h-9 rounded-full border-2 border-zinc-900 object-cover"
+            className="relative w-8 h-8 rounded-full border-2 border-zinc-900 object-cover"
           />
         </div>
       </div>
