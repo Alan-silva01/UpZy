@@ -231,17 +231,24 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
   const ativarMeta = async (metaId: string) => {
     try {
-      // Desativar todas as outras metas
-      await supabase
-        .from('metas')
-        .update({ status: 'CANCELLED' })
-        .eq('loja_id', lojaId)
-        .eq('status', 'ACTIVE');
+      console.log('🎯 Ativando meta:', metaId);
 
-      // Ativar a meta selecionada
+      // PRIMEIRO: Desativar TODAS as metas da loja
+      const { error: errorDesativar } = await supabase
+        .from('metas')
+        .update({ ativa: false })
+        .eq('loja_id', lojaId);
+
+      if (errorDesativar) {
+        console.error('Erro ao desativar outras metas:', errorDesativar);
+        alert('Erro ao desativar outras metas');
+        return;
+      }
+
+      // SEGUNDO: Ativar apenas a meta selecionada
       const { error } = await supabase
         .from('metas')
-        .update({ status: 'ACTIVE' })
+        .update({ ativa: true })
         .eq('id', metaId);
 
       if (error) {
@@ -250,6 +257,8 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
         return;
       }
 
+      console.log('✅ Meta ativada com sucesso!');
+      alert('Meta ativada! Todos os dados agora mostram vendas deste período.');
       carregarMetas();
     } catch (error) {
       console.error('Erro ao ativar meta:', error);
@@ -259,9 +268,11 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
   const desativarMeta = async (metaId: string) => {
     try {
+      console.log('⏸️ Desativando meta:', metaId);
+
       const { error } = await supabase
         .from('metas')
-        .update({ status: 'CANCELLED' })
+        .update({ ativa: false })
         .eq('id', metaId);
 
       if (error) {
@@ -270,6 +281,8 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
         return;
       }
 
+      console.log('✅ Meta desativada!');
+      alert('Meta desativada. Voltando a mostrar dados do mês atual.');
       carregarMetas();
     } catch (error) {
       console.error('Erro ao desativar meta:', error);

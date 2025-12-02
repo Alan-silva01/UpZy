@@ -36,20 +36,44 @@ export async function buscarVendedores(lojaId: string): Promise<Seller[]> {
 
   console.log('✅ Vendedores encontrados:', data.length);
 
-  // Buscar vendas do mês para cada vendedor
+  // Verificar se há meta ativa
+  const metaAtiva = await buscarMetaAtiva(lojaId);
+
+  // Calcular meta individual se houver meta ativa
+  let metaIndividual = 0;
+  let dataInicio = '';
+  let dataFim = '';
+
+  if (metaAtiva) {
+    metaIndividual = metaAtiva.valor_total / data.length;
+    dataInicio = metaAtiva.data_inicio;
+    dataFim = metaAtiva.data_fim;
+    console.log(`🎯 Meta ativa encontrada! Individual: R$ ${metaIndividual}`);
+  }
+
+  // Buscar vendas para cada vendedor
   const vendedoresComVendas = await Promise.all(
     data.map(async (vendedor: any) => {
-      const vendasMes = await calcularVendasVendedorMes(vendedor.id);
+      let vendasTotal = 0;
+
+      // Se houver meta ativa, buscar vendas do período da meta
+      // Senão, buscar vendas do mês atual
+      if (metaAtiva) {
+        vendasTotal = await calcularVendasVendedorNaMeta(vendedor.id, dataInicio, dataFim);
+      } else {
+        vendasTotal = await calcularVendasVendedorMes(vendedor.id);
+      }
+
       const ultimaVenda = await buscarUltimaVenda(vendedor.id);
 
-      console.log(`💼 Vendedor ${vendedor.usuarios.nome}: R$ ${vendasMes} vendido`);
+      console.log(`💼 Vendedor ${vendedor.usuarios.nome}: R$ ${vendasTotal} vendido`);
 
       return {
         id: vendedor.id,
         name: vendedor.usuarios.nome,
         avatar: vendedor.usuarios.avatar || `https://picsum.photos/100/100?random=${vendedor.id}`,
-        currentSales: vendasMes,
-        target: vendedor.meta,
+        currentSales: vendasTotal,
+        target: metaAtiva ? metaIndividual : vendedor.meta, // Usa meta da meta ativa ou meta individual do vendedor
         lastSaleTime: ultimaVenda?.data_venda
       };
     })
@@ -164,10 +188,23 @@ export async function cadastrarVendedor(dados: {
 // ============================================
 
 export async function buscarVendas(lojaId: string, limite: number = 50): Promise<Sale[]> {
-  const { data, error } = await supabase
+  // Verificar se há meta ativa para filtrar vendas
+  const metaAtiva = await buscarMetaAtiva(lojaId);
+
+  let query = supabase
     .from('vendas')
     .select('*')
-    .eq('loja_id', lojaId)
+    .eq('loja_id', lojaId);
+
+  // Se houver meta ativa, filtrar vendas pelo período
+  if (metaAtiva) {
+    console.log(`🎯 Filtrando vendas pelo período da meta: ${metaAtiva.data_inicio} a ${metaAtiva.data_fim}`);
+    query = query
+      .gte('data_venda', metaAtiva.data_inicio)
+      .lte('data_venda', metaAtiva.data_fim);
+  }
+
+  const { data, error } = await query
     .order('data_venda', { ascending: false })
     .limit(limite);
 
@@ -231,38 +268,62 @@ export async function criarVenda(venda: {
 export async function calcularEstatisticasLoja(lojaId: string): Promise<StoreStats> {
   console.log('📊 Calculando estatísticas para loja:', lojaId);
 
-  // Primeiro vamos buscar TODAS as vendas para debug
-  const { data: todasVendas } = await supabase
-    .from('vendas')
-    .select('*');
+  // Verificar se há meta ativa
+  const metaAtiva = await buscarMetaAtiva(lojaId);
 
-  console.log('🔍 TODAS as vendas no banco (sem filtro):', todasVendas);
+  let dataInicio: string;
+  let dataFim: string;
+  let metaTotal: number;
 
-  // Vendas do mês
-  const inicioMes = new Date();
-  inicioMes.setDate(1);
-  inicioMes.setHours(0, 0, 0, 0);
+  if (metaAtiva) {
+    // Se houver meta ativa, usar datas e valor da meta
+    dataInicio = metaAtiva.data_inicio;
+    dataFim = metaAtiva.data_fim;
+    metaTotal = metaAtiva.valor_total;
+    console.log(`🎯 Meta ativa! Período: ${dataInicio} a ${dataFim}, Meta: R$ ${metaTotal}`);
+  } else {
+    // Senão, usar mês atual e soma das metas individuais
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
 
-  console.log('📅 Buscando vendas desde:', inicioMes.toISOString());
-  console.log('🏪 Filtrando por loja_id:', lojaId);
+    const fimMes = new Date();
+    fimMes.setMonth(fimMes.getMonth() + 1);
+    fimMes.setDate(0);
+    fimMes.setHours(23, 59, 59, 999);
 
-  const { data: vendasMes, error: errorMes } = await supabase
+    dataInicio = inicioMes.toISOString();
+    dataFim = fimMes.toISOString();
+
+    // Buscar meta total (soma das metas de todos vendedores)
+    const { data: vendedores } = await supabase
+      .from('vendedores')
+      .select('meta')
+      .eq('loja_id', lojaId);
+
+    metaTotal = vendedores?.reduce((acc, v) => acc + v.meta, 0) || 50000;
+    console.log('📅 Usando mês atual. Meta total:', metaTotal);
+  }
+
+  // Vendas do período
+  const { data: vendasPeriodo, error: errorPeriodo } = await supabase
     .from('vendas')
     .select('valor, data_venda, loja_id, vendedor_id')
     .eq('loja_id', lojaId)
-    .gte('data_venda', inicioMes.toISOString());
+    .gte('data_venda', dataInicio)
+    .lte('data_venda', dataFim);
 
-  console.log('📈 Vendas do mês (filtradas):', vendasMes);
-  if (errorMes) console.error('❌ Erro ao buscar vendas do mês:', errorMes);
+  console.log('📈 Vendas do período:', vendasPeriodo);
+  if (errorPeriodo) console.error('❌ Erro ao buscar vendas do período:', errorPeriodo);
 
-  const totalVendasMes = vendasMes?.reduce((acc, v) => acc + v.valor, 0) || 0;
-  console.log('💰 Total vendas mês:', totalVendasMes);
+  const totalVendasPeriodo = vendasPeriodo?.reduce((acc, v) => acc + v.valor, 0) || 0;
+  console.log('💰 Total vendas período:', totalVendasPeriodo);
 
-  // Vendas do dia
+  // Vendas do dia (sempre usa dia atual independente da meta)
   const inicioDia = new Date();
   inicioDia.setHours(0, 0, 0, 0);
 
-  const { data: vendasDia, error: errorDia } = await supabase
+  const { data: vendasDia } = await supabase
     .from('vendas')
     .select('valor')
     .eq('loja_id', lojaId)
@@ -270,20 +331,14 @@ export async function calcularEstatisticasLoja(lojaId: string): Promise<StoreSta
 
   const totalVendasDia = vendasDia?.reduce((acc, v) => acc + v.valor, 0) || 0;
 
-  // Buscar meta total (soma das metas de todos vendedores)
-  const { data: vendedores, error: errorVendedores } = await supabase
-    .from('vendedores')
-    .select('meta')
-    .eq('loja_id', lojaId);
-
-  console.log('🎯 Vendedores e metas:', vendedores);
-
-  const metaMensal = vendedores?.reduce((acc, v) => acc + v.meta, 0) || 50000;
+  // Calcular meta diária baseada no período
+  const diasPeriodo = Math.ceil((new Date(dataFim).getTime() - new Date(dataInicio).getTime()) / (1000 * 60 * 60 * 24));
+  const metaDiaria = metaTotal / diasPeriodo;
 
   const stats = {
-    totalSales: totalVendasMes,
-    monthlyTarget: metaMensal,
-    dailyTarget: metaMensal / 30,
+    totalSales: totalVendasPeriodo,
+    monthlyTarget: metaTotal,
+    dailyTarget: metaDiaria,
     salesToday: totalVendasDia
   };
 
@@ -438,4 +493,110 @@ export async function buscarDadosPerformance(
 
     return resultado;
   }
+}
+
+// ============================================
+// METAS ATIVAS
+// ============================================
+
+/**
+ * Busca a meta ativa da loja
+ * Apenas uma meta pode estar ativa por vez
+ */
+export async function buscarMetaAtiva(lojaId: string) {
+  console.log('🎯 Buscando meta ativa para loja:', lojaId);
+
+  const { data, error } = await supabase
+    .from('metas')
+    .select('*')
+    .eq('loja_id', lojaId)
+    .eq('ativa', true)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // Nenhuma meta ativa encontrada
+      console.log('⚠️ Nenhuma meta ativa');
+      return null;
+    }
+    console.error('❌ Erro ao buscar meta ativa:', error);
+    return null;
+  }
+
+  console.log('✅ Meta ativa encontrada:', data);
+  return data;
+}
+
+/**
+ * Calcula a meta individual de cada vendedor
+ * Divide o valor total da meta pelo número de vendedores
+ */
+export async function calcularMetaIndividual(lojaId: string, valorTotalMeta: number): Promise<number> {
+  const vendedores = await buscarVendedores(lojaId);
+  const numVendedores = vendedores.length;
+
+  if (numVendedores === 0) return valorTotalMeta;
+
+  const metaIndividual = valorTotalMeta / numVendedores;
+  console.log(`📊 Meta individual: R$ ${metaIndividual} para ${numVendedores} vendedores`);
+
+  return metaIndividual;
+}
+
+/**
+ * Busca vendas dentro do período da meta ativa
+ */
+export async function buscarVendasDaMeta(lojaId: string, dataInicio: string, dataFim: string): Promise<Sale[]> {
+  console.log(`📅 Buscando vendas de ${dataInicio} a ${dataFim}`);
+
+  const { data, error } = await supabase
+    .from('vendas')
+    .select('*')
+    .eq('loja_id', lojaId)
+    .gte('data_venda', dataInicio)
+    .lte('data_venda', dataFim)
+    .order('data_venda', { ascending: false });
+
+  if (error) {
+    console.error('❌ Erro ao buscar vendas da meta:', error);
+    return [];
+  }
+
+  console.log(`✅ ${data?.length || 0} vendas encontradas no período`);
+
+  return (data || []).map((venda: VendaDB) => ({
+    id: venda.id,
+    sellerId: venda.vendedor_id,
+    customerName: venda.nome_cliente,
+    amount: venda.valor,
+    timestamp: venda.data_venda,
+    itemsCount: venda.quantidade_itens,
+    orderId: venda.numero_pedido
+  }));
+}
+
+/**
+ * Calcula total de vendas de um vendedor dentro do período da meta
+ */
+export async function calcularVendasVendedorNaMeta(
+  vendedorId: string,
+  dataInicio: string,
+  dataFim: string
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('vendas')
+    .select('valor')
+    .eq('vendedor_id', vendedorId)
+    .gte('data_venda', dataInicio)
+    .lte('data_venda', dataFim);
+
+  if (error) {
+    console.error('❌ Erro ao calcular vendas do vendedor na meta:', error);
+    return 0;
+  }
+
+  const total = data?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
+  console.log(`💰 Vendedor ${vendedorId} vendeu R$ ${total} no período da meta`);
+
+  return total;
 }
