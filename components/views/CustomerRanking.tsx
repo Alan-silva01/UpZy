@@ -13,7 +13,7 @@ export const CustomerRanking: React.FC = () => {
   };
 
   return (
-    <div className="pb-28 space-y-4 animate-slide-up" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
+    <div className="pt-20 pb-28 space-y-4 animate-slide-up">
       <div className="px-1">
          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">CRM</span>
          <h1 className="text-xl font-bold text-white tracking-tight">Top Clientes</h1>
