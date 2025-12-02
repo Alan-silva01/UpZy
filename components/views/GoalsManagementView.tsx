@@ -84,12 +84,20 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       // Para cada meta, buscar vendas e estatísticas por vendedor
       const metasComDados = await Promise.all(
         (metasData || []).map(async (meta) => {
-          const { data: vendas } = await supabase
+          console.log(`🔍 Buscando vendas para meta ${meta.id} de ${meta.data_inicio} até ${meta.data_fim}`);
+
+          const { data: vendas, error: vendasError } = await supabase
             .from('vendas')
             .select('valor, vendedor_id')
             .eq('loja_id', lojaId)
-            .gte('data', meta.data_inicio)
-            .lte('data', meta.data_fim);
+            .gte('data_venda', meta.data_inicio)
+            .lte('data_venda', meta.data_fim);
+
+          if (vendasError) {
+            console.error('❌ Erro ao buscar vendas:', vendasError);
+          }
+
+          console.log(`💰 Vendas encontradas para meta ${meta.id}:`, vendas);
 
           const vendasTotal = vendas?.reduce((acc, v) => acc + v.valor, 0) || 0;
           const percentualAtingido = meta.valor_total > 0 ? (vendasTotal / meta.valor_total) * 100 : 0;
