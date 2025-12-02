@@ -20,9 +20,12 @@ export const useRealtimeSubscription = ({
   filter
 }: UseRealtimeSubscriptionOptions) => {
   useEffect(() => {
-    if (!lojaId) return;
+    if (!lojaId) {
+      console.warn(`⚠️ [Realtime] lojaId vazio para tabela ${table}, não conectando`);
+      return;
+    }
 
-    console.log(`🔴 [Realtime] Conectando à tabela: ${table} (loja: ${lojaId})`);
+    console.log(`🔴 [Realtime] Conectando à tabela: ${table} (loja: ${lojaId}, filter: ${filter || 'nenhum'})`);
 
     // Para DELETE, o filtro precisa estar no payload.old, não no payload.new
     // Então vamos aplicar o filtro manualmente para eventos DELETE
@@ -41,49 +44,69 @@ export const useRealtimeSubscription = ({
         },
         (payload) => {
           console.log(`📡 [Realtime] Mudança detectada em ${table}:`, payload);
+          console.log(`📡 [Realtime] Event Type: ${payload.eventType}`);
+          console.log(`📡 [Realtime] Payload.new:`, payload.new);
+          console.log(`📡 [Realtime] Payload.old:`, payload.old);
 
           // Aplicar filtro manualmente
           const data = payload.eventType === 'DELETE' ? payload.old : payload.new;
 
           // Checar se o registro pertence à loja correta
           if (data && data.loja_id !== lojaId) {
-            console.log(`⏭️ [Realtime] Ignorando evento (loja diferente): ${data.loja_id}`);
+            console.log(`⏭️ [Realtime] Ignorando evento (loja diferente): ${data.loja_id} vs ${lojaId}`);
             return;
           }
 
           // Aplicar filtro adicional se houver
           if (filter && data) {
             const [key, value] = filter.split('=eq.');
+            console.log(`🔍 [Realtime] Checando filtro adicional: ${key}=${data[key]} vs ${value}`);
             if (data[key] !== value) {
               console.log(`⏭️ [Realtime] Ignorando evento (filtro adicional não passou)`);
               return;
             }
           }
 
+          console.log(`✅ [Realtime] Evento ACEITO! Disparando callback...`);
+
           switch (payload.eventType) {
             case 'INSERT':
               if (onInsert) {
                 console.log(`➕ [Realtime] INSERT em ${table}`, payload.new);
                 onInsert(payload.new);
+              } else {
+                console.log(`⚠️ [Realtime] INSERT detectado mas onInsert não definido`);
               }
               break;
             case 'UPDATE':
               if (onUpdate) {
                 console.log(`✏️ [Realtime] UPDATE em ${table}`, payload.new);
                 onUpdate(payload.new);
+              } else {
+                console.log(`⚠️ [Realtime] UPDATE detectado mas onUpdate não definido`);
               }
               break;
             case 'DELETE':
               if (onDelete) {
                 console.log(`🗑️ [Realtime] DELETE em ${table}`, payload.old);
                 onDelete(payload.old);
+              } else {
+                console.log(`⚠️ [Realtime] DELETE detectado mas onDelete não definido`);
               }
               break;
           }
         }
       )
-      .subscribe((status) => {
-        console.log(`🔌 [Realtime] Status da conexão ${table}:`, status);
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ [Realtime] CONECTADO com sucesso à tabela ${table}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error(`❌ [Realtime] ERRO na conexão ${table}:`, err);
+        } else if (status === 'TIMED_OUT') {
+          console.error(`⏱️ [Realtime] TIMEOUT na conexão ${table}`);
+        } else {
+          console.log(`🔌 [Realtime] Status da conexão ${table}:`, status);
+        }
       });
 
     // Cleanup ao desmontar componente
