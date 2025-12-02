@@ -1,13 +1,12 @@
 -- ============================================
--- CONFIGURAÇÃO COMPLETA DE RLS (ROW LEVEL SECURITY) V3
+-- CONFIGURAÇÃO FINAL DE RLS (ROW LEVEL SECURITY)
 -- Sistema de segurança para multi-tenancy (multi-lojas)
--- VERSÃO COM SEGURANÇA REAL POR LOJA
+-- VERSÃO FINAL - COM PERMISSÕES CORRETAS
 -- ============================================
 --
--- SOLUÇÃO: Verificações diretas por loja_id e papel (admin/vendedor)
--- Cada loja só acessa seus próprios dados
--- Admins: acesso total à sua loja
--- Vendedores: acesso limitado (ver metas, criar vendas)
+-- PERMISSÕES:
+-- ADMIN: Acesso total à sua loja (vendedores, vendas, clientes, metas)
+-- VENDEDOR: Acesso apenas a vendas (SUAS vendas) e clientes da sua loja
 --
 -- ============================================
 
@@ -26,7 +25,6 @@ ALTER TABLE metas DISABLE ROW LEVEL SECURITY;
 -- 2. LIMPAR TODAS AS POLÍTICAS ANTIGAS
 -- ============================================
 
--- Usar bloco PL/pgSQL para remover TODAS as políticas dinamicamente
 DO $$
 DECLARE
     pol RECORD;
@@ -89,13 +87,13 @@ ALTER TABLE metas ENABLE ROW LEVEL SECURITY;
 -- 5. POLÍTICAS PARA TABELA: lojas
 -- ============================================
 
--- Permitir INSERT durante registro (qualquer um pode criar loja durante cadastro)
+-- INSERT: Permitir criar loja durante registro
 CREATE POLICY "lojas_insert_registro"
   ON lojas
   FOR INSERT
   WITH CHECK (true);
 
--- Admins podem ver apenas sua própria loja
+-- SELECT: Usuários autenticados veem apenas sua própria loja
 CREATE POLICY "lojas_select_propria"
   ON lojas
   FOR SELECT
@@ -106,14 +104,14 @@ CREATE POLICY "lojas_select_propria"
     )
   );
 
--- Admins podem atualizar apenas sua própria loja
-CREATE POLICY "lojas_update_propria"
+-- UPDATE: Apenas ADMIN pode atualizar sua loja
+CREATE POLICY "lojas_update_admin"
   ON lojas
   FOR UPDATE
   TO authenticated
   USING (
     id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
@@ -121,30 +119,30 @@ CREATE POLICY "lojas_update_propria"
 -- 6. POLÍTICAS PARA TABELA: usuarios
 -- ============================================
 
--- IMPORTANTE: A tabela usuarios NÃO pode ter subqueries que consultam ela mesma (recursão).
--- As políticas são permissivas e a filtragem por loja_id é feita no CÓDIGO.
+-- IMPORTANTE: Não pode ter subquery que consulta ela mesma (recursão)
+-- A filtragem por loja_id é feita no CÓDIGO da aplicação
 
--- Permitir INSERT durante registro (qualquer um pode criar usuário)
+-- INSERT: Permitir criar usuário durante registro
 CREATE POLICY "usuarios_insert_registro"
   ON usuarios
   FOR INSERT
   WITH CHECK (true);
 
--- SELECT: usuários autenticados podem ver usuários
+-- SELECT: Usuários autenticados podem ver usuários
 CREATE POLICY "usuarios_select_authenticated"
   ON usuarios
   FOR SELECT
   TO authenticated
   USING (true);
 
--- SELECT público: necessário para verificações do Supabase Auth durante login
+-- SELECT: Anônimos podem ver (necessário para Supabase Auth login)
 CREATE POLICY "usuarios_select_anon"
   ON usuarios
   FOR SELECT
   TO anon
   USING (true);
 
--- UPDATE: usuários autenticados podem atualizar
+-- UPDATE: Usuários autenticados podem atualizar
 CREATE POLICY "usuarios_update_authenticated"
   ON usuarios
   FOR UPDATE
@@ -152,7 +150,7 @@ CREATE POLICY "usuarios_update_authenticated"
   USING (true)
   WITH CHECK (true);
 
--- DELETE: usuários autenticados podem deletar
+-- DELETE: Usuários autenticados podem deletar
 CREATE POLICY "usuarios_delete_authenticated"
   ON usuarios
   FOR DELETE
@@ -163,47 +161,47 @@ CREATE POLICY "usuarios_delete_authenticated"
 -- 7. POLÍTICAS PARA TABELA: vendedores
 -- ============================================
 
--- SELECT: usuários veem apenas vendedores da mesma loja
-CREATE POLICY "vendedores_select_mesma_loja"
+-- SELECT: Apenas ADMIN pode ver vendedores
+CREATE POLICY "vendedores_select_admin"
   ON vendedores
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- INSERT: apenas admin pode criar vendedores
+-- INSERT: Apenas ADMIN pode criar vendedores
 CREATE POLICY "vendedores_insert_admin"
   ON vendedores
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- UPDATE: apenas admin pode atualizar vendedores
+-- UPDATE: Apenas ADMIN pode atualizar vendedores
 CREATE POLICY "vendedores_update_admin"
   ON vendedores
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- DELETE: apenas admin pode deletar vendedores
+-- DELETE: Apenas ADMIN pode deletar vendedores
 CREATE POLICY "vendedores_delete_admin"
   ON vendedores
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
@@ -211,47 +209,93 @@ CREATE POLICY "vendedores_delete_admin"
 -- 8. POLÍTICAS PARA TABELA: vendas
 -- ============================================
 
--- SELECT: usuários veem apenas vendas da mesma loja
-CREATE POLICY "vendas_select_mesma_loja"
+-- SELECT: ADMIN vê todas as vendas da loja
+CREATE POLICY "vendas_select_admin"
   ON vendas
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- INSERT: tanto admin quanto vendedor podem criar vendas
-CREATE POLICY "vendas_insert_usuarios_loja"
+-- SELECT: VENDEDOR vê apenas vendas da sua loja
+CREATE POLICY "vendas_select_vendedor"
+  ON vendas
+  FOR SELECT
+  TO authenticated
+  USING (
+    loja_id IN (
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
+    )
+  );
+
+-- INSERT: ADMIN pode criar qualquer venda na sua loja
+CREATE POLICY "vendas_insert_admin"
   ON vendas
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- UPDATE: apenas admin pode atualizar vendas
+-- INSERT: VENDEDOR pode criar vendas na sua loja
+CREATE POLICY "vendas_insert_vendedor"
+  ON vendas
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    loja_id IN (
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
+    )
+  );
+
+-- UPDATE: ADMIN pode atualizar qualquer venda da sua loja
 CREATE POLICY "vendas_update_admin"
   ON vendas
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- DELETE: apenas admin pode deletar vendas
+-- UPDATE: VENDEDOR pode atualizar apenas SUAS vendas
+CREATE POLICY "vendas_update_vendedor"
+  ON vendas
+  FOR UPDATE
+  TO authenticated
+  USING (
+    vendedor_id IN (
+      SELECT id FROM vendedores
+      WHERE usuario_id = auth.uid()
+    )
+  );
+
+-- DELETE: ADMIN pode deletar qualquer venda da sua loja
 CREATE POLICY "vendas_delete_admin"
   ON vendas
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+    )
+  );
+
+-- DELETE: VENDEDOR pode deletar apenas SUAS vendas
+CREATE POLICY "vendas_delete_vendedor"
+  ON vendas
+  FOR DELETE
+  TO authenticated
+  USING (
+    vendedor_id IN (
+      SELECT id FROM vendedores
+      WHERE usuario_id = auth.uid()
     )
   );
 
@@ -259,47 +303,80 @@ CREATE POLICY "vendas_delete_admin"
 -- 9. POLÍTICAS PARA TABELA: clientes
 -- ============================================
 
--- SELECT: usuários veem apenas clientes da mesma loja
-CREATE POLICY "clientes_select_mesma_loja"
+-- SELECT: ADMIN vê todos os clientes da sua loja
+CREATE POLICY "clientes_select_admin"
   ON clientes
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- INSERT: tanto admin quanto vendedor podem criar clientes
-CREATE POLICY "clientes_insert_usuarios_loja"
+-- SELECT: VENDEDOR vê clientes da sua loja
+CREATE POLICY "clientes_select_vendedor"
+  ON clientes
+  FOR SELECT
+  TO authenticated
+  USING (
+    loja_id IN (
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
+    )
+  );
+
+-- INSERT: ADMIN pode criar clientes
+CREATE POLICY "clientes_insert_admin"
   ON clientes
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- UPDATE: tanto admin quanto vendedor podem atualizar clientes
-CREATE POLICY "clientes_update_usuarios_loja"
+-- INSERT: VENDEDOR pode criar clientes
+CREATE POLICY "clientes_insert_vendedor"
+  ON clientes
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    loja_id IN (
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
+    )
+  );
+
+-- UPDATE: ADMIN pode atualizar clientes
+CREATE POLICY "clientes_update_admin"
   ON clientes
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- DELETE: apenas admin pode deletar clientes
+-- UPDATE: VENDEDOR pode atualizar clientes
+CREATE POLICY "clientes_update_vendedor"
+  ON clientes
+  FOR UPDATE
+  TO authenticated
+  USING (
+    loja_id IN (
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
+    )
+  );
+
+-- DELETE: Apenas ADMIN pode deletar clientes
 CREATE POLICY "clientes_delete_admin"
   ON clientes
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
@@ -307,96 +384,81 @@ CREATE POLICY "clientes_delete_admin"
 -- 10. POLÍTICAS PARA TABELA: metas
 -- ============================================
 
--- SELECT: usuários veem apenas metas da mesma loja
-CREATE POLICY "metas_select_mesma_loja"
+-- SELECT: Apenas ADMIN pode ver metas
+CREATE POLICY "metas_select_admin"
   ON metas
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- INSERT: tanto admin quanto vendedor podem criar metas
-CREATE POLICY "metas_insert_usuarios_loja"
+-- INSERT: Apenas ADMIN pode criar metas
+CREATE POLICY "metas_insert_admin"
   ON metas
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- UPDATE: apenas admin pode atualizar metas
+-- UPDATE: Apenas ADMIN pode atualizar/ativar metas
 CREATE POLICY "metas_update_admin"
   ON metas
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
--- DELETE: apenas admin pode deletar metas
+-- DELETE: Apenas ADMIN pode deletar metas
 CREATE POLICY "metas_delete_admin"
   ON metas
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'admin'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
     )
   );
 
 -- ============================================
--- PRONTO! RLS CONFIGURADO COM SEGURANÇA REAL
+-- PRONTO! RLS CONFIGURADO CORRETAMENTE
 -- ============================================
 
--- NOTA IMPORTANTE:
--- Esta configuração implementa segurança REAL por loja_id diretamente no banco.
--- Cada loja só pode acessar seus próprios dados.
+-- ============================================
+-- RESUMO DAS PERMISSÕES:
+-- ============================================
 --
--- PERMISSÕES POR PAPEL:
+-- 🔑 ADMIN (papel = 'ADMIN'):
+--   ✅ Ver/criar/editar/deletar VENDEDORES da sua loja
+--   ✅ Ver/criar/editar/deletar VENDAS da sua loja
+--   ✅ Ver/criar/editar/deletar CLIENTES da sua loja
+--   ✅ Ver/criar/editar/deletar METAS da sua loja
+--   ✅ Ver/editar sua LOJA
 --
--- 🔑 ADMIN (papel = 'admin'):
---   ✅ Ver apenas dados da sua loja (vendedores, vendas, clientes, metas)
---   ✅ Criar/editar/deletar vendedores da sua loja
---   ✅ Criar/editar/deletar vendas da sua loja
---   ✅ Criar/editar/deletar clientes da sua loja
---   ✅ Criar/editar/deletar metas da sua loja
---   ✅ Atualizar dados da sua loja
---
--- 👤 VENDEDOR (papel = 'vendedor'):
---   ✅ Ver dados da sua loja (vendedores, vendas, clientes, metas)
---   ✅ Criar vendas e metas
---   ✅ Criar/editar clientes
---   ❌ Não pode deletar nada
---   ❌ Não pode gerenciar vendedores
---   ❌ Não pode editar/deletar metas
+-- 👔 VENDEDOR (papel = 'SELLER'):
+--   ✅ Ver VENDAS da sua loja (todas)
+--   ✅ Criar vendas na sua loja
+--   ✅ Editar/deletar APENAS SUAS vendas (vendedor_id = seu id)
+--   ✅ Ver/criar/editar CLIENTES da sua loja
+--   ❌ NÃO vê VENDEDORES
+--   ❌ NÃO vê METAS
+--   ❌ NÃO pode gerenciar vendedores ou metas
 --
 -- ⚠️  TABELA USUARIOS:
---   • Não tem RLS com verificação de loja_id (causa recursão infinita)
+--   • Não tem RLS com verificação de loja_id (causa recursão)
 --   • A filtragem por loja_id DEVE ser feita no código da aplicação
---   • Todas as queries devem incluir WHERE loja_id = $loja_id
 --
 -- SEGURANÇA:
--- • Isolamento total entre lojas (EXCETO tabela usuarios)
--- • Verificações diretas sem recursão nas tabelas: lojas, vendedores, vendas, clientes, metas
--- • Políticas separadas por papel (admin/vendedor)
--- • Tabela usuarios: segurança via código da aplicação
-
--- ============================================
--- RESUMO:
--- ============================================
---
--- ✅ RLS ativo em todas as tabelas
--- ✅ Segurança real por loja_id no banco de dados
--- ✅ Sem recursão infinita
--- ✅ Registro de usuários funciona
--- ✅ Login funciona (com política anon para auth)
--- ✅ Isolamento total entre lojas
--- ✅ Controle de permissões por papel (admin/vendedor)
+--   • Isolamento total entre lojas
+--   • Controle de acesso por papel (ADMIN/SELLER)
+--   • Vendedor só edita/deleta suas próprias vendas
+--   • Vendedor não tem acesso a vendedores e metas
 -- ============================================
