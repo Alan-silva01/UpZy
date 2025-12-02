@@ -100,15 +100,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
 
   if (loading) {
     return (
-      <div className="pt-20 pb-28 space-y-6 flex items-center justify-center h-96">
+      <div className="pt-32 pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="pt-20 pb-28 space-y-6 animate-slide-up">
-      <div className="px-1 pt-1">
+    <div className="pt-32 pb-28 space-y-6 animate-slide-up">
+      <div className="px-1">
          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">SaaS</span>
          <h1 className="text-xl font-bold text-white tracking-tight">Configurações</h1>
       </div>

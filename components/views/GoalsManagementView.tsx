@@ -303,9 +303,9 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   return (
-    <div className="pb-28 space-y-4 animate-slide-up">
+    <div className="pt-32 pb-28 space-y-4 animate-slide-up">
       {/* Header */}
-      <div className="flex items-center justify-between px-1 pt-3 pb-2">
+      <div className="flex items-center justify-between px-1 pb-2">
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
