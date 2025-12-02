@@ -68,23 +68,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, periodoGrafico]);
 
-  // Real-time subscriptions
+  // Real-time subscriptions (atualizações silenciosas - sem loader)
   useRealtimeSubscription({
     table: 'vendas',
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova venda detectada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
       carregarDadosGrafico();
     },
     onUpdate: () => {
       console.log('🔴 Venda atualizada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
       carregarDadosGrafico();
     },
     onDelete: () => {
       console.log('🔴 Venda deletada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
       carregarDadosGrafico();
     }
   });
@@ -94,15 +94,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
     lojaId,
     onInsert: () => {
       console.log('🔴 Novo vendedor detectado! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Vendedor atualizado! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Vendedor deletado! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     }
   });
 
@@ -111,20 +111,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova meta detectada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Meta atualizada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Meta deletada! Recarregando dados...');
-      carregarDados();
+      carregarDados(true); // silencioso
     }
   });
 
-  const carregarDados = async () => {
-    setLoading(true);
+  const carregarDados = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+    }
     try {
       // Buscar meta ativa primeiro
       const { data: metaAtivaData } = await supabase

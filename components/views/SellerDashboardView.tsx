@@ -32,24 +32,24 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     inicializar();
   }, [user.sellerId]);
 
-  // Real-time subscriptions - atualiza automaticamente quando houver mudanças
+  // Real-time subscriptions (atualizações silenciosas - sem loader)
   useRealtimeSubscription({
     table: 'vendas',
     lojaId,
     filter: `vendedor_id=eq.${user.sellerId}`,
     onInsert: () => {
       console.log('🔴 Nova venda do vendedor detectada! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     },
     onUpdate: () => {
       console.log('🔴 Venda do vendedor atualizada! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     },
     onDelete: () => {
       console.log('🔴 Venda do vendedor deletada! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     }
   });
@@ -60,7 +60,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     filter: `id=eq.${user.sellerId}`,
     onUpdate: () => {
       console.log('🔴 Perfil do vendedor atualizado! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
     }
   });
 
@@ -69,16 +69,18 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova meta detectada! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Meta atualizada! Recarregando dados...');
-      carregarDadosVendedor();
+      carregarDadosVendedor(true); // silencioso
     }
   });
 
-  const carregarDadosVendedor = async () => {
-    setLoading(true);
+  const carregarDadosVendedor = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+    }
     const lojaId = await buscarLojaIdUsuario(user.id);
     if (lojaId) {
       const vendedores = await buscarVendedores(lojaId);
@@ -114,7 +116,9 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
         } as any);
       }
     }
-    setLoading(false);
+    if (!silencioso) {
+      setLoading(false);
+    }
   };
 
   const carregarUltimasVendas = async () => {

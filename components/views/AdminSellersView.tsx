@@ -26,21 +26,21 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId]);
 
-  // Real-time subscriptions
+  // Real-time subscriptions (atualizações silenciosas - sem loader)
   useRealtimeSubscription({
     table: 'vendedores',
     lojaId,
     onInsert: () => {
       console.log('🔴 Novo vendedor detectado! Recarregando lista...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Vendedor atualizado! Recarregando lista...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Vendedor deletado! Recarregando lista...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     }
   });
 
@@ -49,23 +49,27 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova venda detectada! Atualizando vendedores...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Venda atualizada! Atualizando vendedores...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Venda deletada! Atualizando vendedores...');
-      carregarVendedores();
+      carregarVendedores(true); // silencioso
     }
   });
 
-  const carregarVendedores = async () => {
-    setLoading(true);
+  const carregarVendedores = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+    }
     const vendedores = await buscarVendedores(lojaId);
     setLocalSellers(vendedores);
-    setLoading(false);
+    if (!silencioso) {
+      setLoading(false);
+    }
   };
 
   const handleAdicionarVendedor = async (dados: { nome: string; email: string; senha: string; meta: number }) => {

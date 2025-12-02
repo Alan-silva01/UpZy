@@ -55,21 +55,21 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     carregarMetas();
   }, [lojaId]);
 
-  // Real-time subscriptions
+  // Real-time subscriptions (atualizações silenciosas - sem loader)
   useRealtimeSubscription({
     table: 'metas',
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova meta detectada! Recarregando lista...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Meta atualizada! Recarregando lista...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Meta deletada! Recarregando lista...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     }
   });
 
@@ -78,15 +78,15 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     lojaId,
     onInsert: () => {
       console.log('🔴 Nova venda detectada! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Venda atualizada! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Venda deletada! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     }
   });
 
@@ -95,20 +95,22 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     lojaId,
     onInsert: () => {
       console.log('🔴 Novo vendedor detectado! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onUpdate: () => {
       console.log('🔴 Vendedor atualizado! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     },
     onDelete: () => {
       console.log('🔴 Vendedor deletado! Atualizando metas...');
-      carregarMetas();
+      carregarMetas(true); // silencioso
     }
   });
 
-  const carregarMetas = async () => {
-    setLoading(true);
+  const carregarMetas = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+    }
     try {
       // Buscar metas
       const { data: metasData, error: metasError } = await supabase
@@ -198,7 +200,9 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     } catch (error) {
       console.error('Erro ao carregar metas:', error);
     } finally {
-      setLoading(false);
+      if (!silencioso) {
+        setLoading(false);
+      }
     }
   };
 

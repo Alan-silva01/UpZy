@@ -17,6 +17,8 @@ Criamos um hook React customizado que gerencia as subscriptions do Supabase Real
 - Desconecta automaticamente quando o componente é desmontado (cleanup)
 - Filtra por `loja_id` para garantir isolamento multi-tenancy
 - Suporta filtros adicionais (ex: `vendedor_id=eq.123`)
+- **Filtro manual para DELETE** - eventos DELETE usam `payload.old` ao invés de `payload.new`, então o filtro é aplicado manualmente
+- **Atualização silenciosa** - não mostra loader durante atualizações em tempo real
 - Logs detalhados para debug
 
 **Exemplo de uso:**
@@ -49,20 +51,22 @@ Escuta mudanças em:
 - ✅ **vendedores** - atualiza share de vendas
 - ✅ **metas** - atualiza progresso da meta
 
+**Atualização silenciosa:** Passa `true` como parâmetro para `carregarDados()` para evitar mostrar o loader.
+
 ```typescript
 useRealtimeSubscription({
   table: 'vendas',
   lojaId,
   onInsert: () => {
-    carregarDados();
+    carregarDados(true); // silencioso - sem loader
     carregarDadosGrafico();
   },
   onUpdate: () => {
-    carregarDados();
+    carregarDados(true); // silencioso - sem loader
     carregarDadosGrafico();
   },
   onDelete: () => {
-    carregarDados();
+    carregarDados(true); // silencioso - sem loader
     carregarDadosGrafico();
   }
 });
@@ -216,8 +220,14 @@ Para desabilitar logs em produção, remova os `console.log` do hook.
 3. **Verifique o console do navegador**
    - Procure por logs `🔴 [Realtime]`
    - Verifique erros de conexão
+   - Se aparecer `⏭️ [Realtime] Ignorando evento`, significa que o filtro está funcionando corretamente
 
-4. **Teste a conexão manualmente**
+4. **DELETE não está funcionando?**
+   - O hook aplica filtro manualmente para eventos DELETE
+   - DELETE usa `payload.old` ao invés de `payload.new`
+   - Verifique se `loja_id` existe no registro deletado
+
+5. **Teste a conexão manualmente**
    ```typescript
    const channel = supabase
      .channel('test')
