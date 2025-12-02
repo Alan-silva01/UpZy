@@ -51,18 +51,29 @@ export const useRealtimeSubscription = ({
           // Aplicar filtro manualmente
           const data = payload.eventType === 'DELETE' ? payload.old : payload.new;
 
+          // Se não há dados, algo deu errado - possivelmente RLS bloqueou
+          if (!data) {
+            console.warn(`⚠️ [Realtime] Sem dados no payload para ${payload.eventType}. RLS pode ter bloqueado.`);
+            return;
+          }
+
           // Checar se o registro pertence à loja correta
-          if (data && data.loja_id !== lojaId) {
+          if (data.loja_id && data.loja_id !== lojaId) {
             console.log(`⏭️ [Realtime] Ignorando evento (loja diferente): ${data.loja_id} vs ${lojaId}`);
             return;
+          }
+
+          // Se loja_id não existe no payload mas esperamos que exista, avisar
+          if (!data.loja_id && lojaId) {
+            console.warn(`⚠️ [Realtime] loja_id não encontrado no payload de ${table}`);
           }
 
           // Aplicar filtro adicional se houver
           if (filter && data) {
             const [key, value] = filter.split('=eq.');
             console.log(`🔍 [Realtime] Checando filtro adicional: ${key}=${data[key]} vs ${value}`);
-            if (data[key] !== value) {
-              console.log(`⏭️ [Realtime] Ignorando evento (filtro adicional não passou)`);
+            if (String(data[key]) !== String(value)) {
+              console.log(`⏭️ [Realtime] Ignorando evento (filtro adicional não passou): ${data[key]} !== ${value}`);
               return;
             }
           }
