@@ -6,6 +6,7 @@ import { buscarLojaIdUsuario } from '../../services/auth';
 import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import { Header } from '../Header';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface SellerDashboardProps {
   user: User;
@@ -17,19 +18,64 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   const [sellerProfile, setSellerProfile] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
   const [ultimasVendas, setUltimasVendas] = useState<Sale[]>([]);
+  const [lojaId, setLojaId] = useState<string>('');
 
   useEffect(() => {
-    carregarDadosVendedor();
-    carregarUltimasVendas();
-
-    // Recarregar dados a cada 30 segundos para pegar novas vendas
-    const interval = setInterval(() => {
+    const inicializar = async () => {
+      const loja = await buscarLojaIdUsuario(user.id);
+      if (loja) {
+        setLojaId(loja);
+      }
       carregarDadosVendedor();
       carregarUltimasVendas();
-    }, 30000);
-
-    return () => clearInterval(interval);
+    };
+    inicializar();
   }, [user.sellerId]);
+
+  // Real-time subscriptions - atualiza automaticamente quando houver mudanças
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    filter: `vendedor_id=eq.${user.sellerId}`,
+    onInsert: () => {
+      console.log('🔴 Nova venda do vendedor detectada! Recarregando dados...');
+      carregarDadosVendedor();
+      carregarUltimasVendas();
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda do vendedor atualizada! Recarregando dados...');
+      carregarDadosVendedor();
+      carregarUltimasVendas();
+    },
+    onDelete: () => {
+      console.log('🔴 Venda do vendedor deletada! Recarregando dados...');
+      carregarDadosVendedor();
+      carregarUltimasVendas();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'vendedores',
+    lojaId,
+    filter: `id=eq.${user.sellerId}`,
+    onUpdate: () => {
+      console.log('🔴 Perfil do vendedor atualizado! Recarregando dados...');
+      carregarDadosVendedor();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'metas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova meta detectada! Recarregando dados...');
+      carregarDadosVendedor();
+    },
+    onUpdate: () => {
+      console.log('🔴 Meta atualizada! Recarregando dados...');
+      carregarDadosVendedor();
+    }
+  });
 
   const carregarDadosVendedor = async () => {
     setLoading(true);

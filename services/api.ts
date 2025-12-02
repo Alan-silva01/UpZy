@@ -608,3 +608,108 @@ export async function calcularVendasVendedorNaMeta(
 
   return total;
 }
+
+// ============================================
+// EDITAR E DELETAR VENDEDOR
+// ============================================
+
+export async function atualizarVendedor(dados: {
+  vendedorId: string;
+  nome: string;
+  meta: number;
+}): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    console.log('✏️ Atualizando vendedor:', dados.vendedorId);
+
+    // 1. Buscar o vendedor para pegar o usuario_id
+    const { data: vendedor, error: vendedorError } = await supabase
+      .from('vendedores')
+      .select('usuario_id')
+      .eq('id', dados.vendedorId)
+      .single();
+
+    if (vendedorError || !vendedor) {
+      console.error('❌ Erro ao buscar vendedor:', vendedorError);
+      return { sucesso: false, mensagem: 'Vendedor não encontrado' };
+    }
+
+    // 2. Atualizar nome na tabela usuarios
+    const nomeFormatado = formatarNomeProprio(dados.nome);
+    const { error: usuarioError } = await supabase
+      .from('usuarios')
+      .update({ nome: nomeFormatado })
+      .eq('id', vendedor.usuario_id);
+
+    if (usuarioError) {
+      console.error('❌ Erro ao atualizar nome do usuário:', usuarioError);
+      return { sucesso: false, mensagem: 'Erro ao atualizar nome' };
+    }
+
+    // 3. Atualizar meta na tabela vendedores
+    const { error: metaError } = await supabase
+      .from('vendedores')
+      .update({ meta: dados.meta })
+      .eq('id', dados.vendedorId);
+
+    if (metaError) {
+      console.error('❌ Erro ao atualizar meta:', metaError);
+      return { sucesso: false, mensagem: 'Erro ao atualizar meta' };
+    }
+
+    console.log('✅ Vendedor atualizado com sucesso!');
+    return { sucesso: true, mensagem: 'Vendedor atualizado com sucesso!' };
+  } catch (error: any) {
+    console.error('❌ Erro ao atualizar vendedor:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}
+
+export async function deletarVendedor(vendedorId: string): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    console.log('🗑️ Deletando vendedor:', vendedorId);
+
+    // 1. Buscar o vendedor para pegar o usuario_id
+    const { data: vendedor, error: vendedorError } = await supabase
+      .from('vendedores')
+      .select('usuario_id')
+      .eq('id', vendedorId)
+      .single();
+
+    if (vendedorError || !vendedor) {
+      console.error('❌ Erro ao buscar vendedor:', vendedorError);
+      return { sucesso: false, mensagem: 'Vendedor não encontrado' };
+    }
+
+    // 2. Deletar vendedor (ON DELETE CASCADE vai cuidar das vendas)
+    const { error: deleteVendedorError } = await supabase
+      .from('vendedores')
+      .delete()
+      .eq('id', vendedorId);
+
+    if (deleteVendedorError) {
+      console.error('❌ Erro ao deletar vendedor:', deleteVendedorError);
+      return { sucesso: false, mensagem: 'Erro ao deletar vendedor' };
+    }
+
+    // 3. Deletar usuário da tabela usuarios
+    const { error: deleteUsuarioError } = await supabase
+      .from('usuarios')
+      .delete()
+      .eq('id', vendedor.usuario_id);
+
+    if (deleteUsuarioError) {
+      console.error('❌ Erro ao deletar usuário:', deleteUsuarioError);
+      return { sucesso: false, mensagem: 'Erro ao deletar usuário' };
+    }
+
+    // 4. Deletar da autenticação do Supabase (admin API - pode falhar se não tiver permissão)
+    // Nota: Isso requer admin API key, que normalmente não está disponível no client
+    // O ideal é fazer isso via função serverless/API backend
+
+    console.log('✅ Vendedor deletado com sucesso!');
+    return { sucesso: true, mensagem: 'Vendedor deletado com sucesso!' };
+  } catch (error: any) {
+    console.error('❌ Erro ao deletar vendedor:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}

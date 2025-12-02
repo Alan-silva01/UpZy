@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Calendar, DollarSign, TrendingUp, Users, Edit2, Trash2, Check, X, Plus, Loader2, Trophy, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { ConfirmModal } from '../modals/ConfirmModal';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface Meta {
   id: string;
@@ -37,6 +39,12 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const [showForm, setShowForm] = useState(false);
   const [editandoMeta, setEditandoMeta] = useState<string | null>(null);
 
+  // Modais de confirmação
+  const [modalDeletarAberto, setModalDeletarAberto] = useState(false);
+  const [modalAtivarAberto, setModalAtivarAberto] = useState(false);
+  const [modalDesativarAberto, setModalDesativarAberto] = useState(false);
+  const [metaSelecionada, setMetaSelecionada] = useState<MetaComDados | null>(null);
+
   // Form state
   const [valorTotal, setValorTotal] = useState('');
   const [dataInicio, setDataInicio] = useState('');
@@ -46,6 +54,58 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   useEffect(() => {
     carregarMetas();
   }, [lojaId]);
+
+  // Real-time subscriptions
+  useRealtimeSubscription({
+    table: 'metas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova meta detectada! Recarregando lista...');
+      carregarMetas();
+    },
+    onUpdate: () => {
+      console.log('🔴 Meta atualizada! Recarregando lista...');
+      carregarMetas();
+    },
+    onDelete: () => {
+      console.log('🔴 Meta deletada! Recarregando lista...');
+      carregarMetas();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova venda detectada! Atualizando metas...');
+      carregarMetas();
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda atualizada! Atualizando metas...');
+      carregarMetas();
+    },
+    onDelete: () => {
+      console.log('🔴 Venda deletada! Atualizando metas...');
+      carregarMetas();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'vendedores',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Novo vendedor detectado! Atualizando metas...');
+      carregarMetas();
+    },
+    onUpdate: () => {
+      console.log('🔴 Vendedor atualizado! Atualizando metas...');
+      carregarMetas();
+    },
+    onDelete: () => {
+      console.log('🔴 Vendedor deletado! Atualizando metas...');
+      carregarMetas();
+    }
+  });
 
   const carregarMetas = async () => {
     setLoading(true);
@@ -214,16 +274,19 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     }
   };
 
-  const excluirMeta = async (metaId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta meta?')) {
-      return;
-    }
+  const abrirModalDeletar = (meta: MetaComDados) => {
+    setMetaSelecionada(meta);
+    setModalDeletarAberto(true);
+  };
+
+  const excluirMeta = async () => {
+    if (!metaSelecionada) return;
 
     try {
       const { error } = await supabase
         .from('metas')
         .delete()
-        .eq('id', metaId);
+        .eq('id', metaSelecionada.id);
 
       if (error) {
         console.error('Erro ao excluir meta:', error);
@@ -237,15 +300,27 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     }
   };
 
-  const ativarMeta = async (metaId: string) => {
+  const abrirModalAtivar = (meta: MetaComDados) => {
+    setMetaSelecionada(meta);
+    setModalAtivarAberto(true);
+  };
+
+  const abrirModalDesativar = (meta: MetaComDados) => {
+    setMetaSelecionada(meta);
+    setModalDesativarAberto(true);
+  };
+
+  const ativarMeta = async () => {
+    if (!metaSelecionada) return;
+
     try {
-      console.log('🎯 Ativando meta:', metaId);
+      console.log('🎯 Ativando meta:', metaSelecionada.id);
 
       // Ativar a meta selecionada (o trigger do banco desativa as outras automaticamente)
       const { error } = await supabase
         .from('metas')
         .update({ status: 'ACTIVE' })
-        .eq('id', metaId);
+        .eq('id', metaSelecionada.id);
 
       if (error) {
         console.error('Erro ao ativar meta:', error);
@@ -254,7 +329,6 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       }
 
       console.log('✅ Meta ativada com sucesso!');
-      alert('Meta ativada! Todos os dados agora mostram vendas deste período.');
       carregarMetas();
     } catch (error) {
       console.error('Erro ao ativar meta:', error);
@@ -262,14 +336,16 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     }
   };
 
-  const desativarMeta = async (metaId: string) => {
+  const desativarMeta = async () => {
+    if (!metaSelecionada) return;
+
     try {
-      console.log('⏸️ Desativando meta:', metaId);
+      console.log('⏸️ Desativando meta:', metaSelecionada.id);
 
       const { error } = await supabase
         .from('metas')
         .update({ status: 'CANCELLED' })
-        .eq('id', metaId);
+        .eq('id', metaSelecionada.id);
 
       if (error) {
         console.error('Erro ao desativar meta:', error);
@@ -278,7 +354,6 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       }
 
       console.log('✅ Meta desativada!');
-      alert('Meta desativada. Voltando a mostrar dados do mês atual.');
       carregarMetas();
     } catch (error) {
       console.error('Erro ao desativar meta:', error);
@@ -532,26 +607,30 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
                     <button
                       onClick={() => iniciarEdicao(meta)}
                       className="px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-indigo-400 hover:border-indigo-500/50 transition-colors"
+                      title="Editar meta"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
-                      onClick={() => excluirMeta(meta.id)}
+                      onClick={() => abrirModalDeletar(meta)}
                       className="px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/50 transition-colors"
+                      title="Excluir meta"
                     >
                       <Trash2 size={14} />
                     </button>
                     {isAtiva ? (
                       <button
-                        onClick={() => desativarMeta(meta.id)}
+                        onClick={() => abrirModalDesativar(meta)}
                         className="px-3 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                        title="Desativar meta"
                       >
                         <X size={14} />
                       </button>
                     ) : (
                       <button
-                        onClick={() => ativarMeta(meta.id)}
+                        onClick={() => abrirModalAtivar(meta)}
                         className="px-3 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+                        title="Ativar meta"
                       >
                         <Check size={14} />
                       </button>
@@ -630,6 +709,51 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
           })}
         </div>
       )}
+
+      {/* Modal Confirmar Deletar Meta */}
+      <ConfirmModal
+        isOpen={modalDeletarAberto}
+        onClose={() => {
+          setModalDeletarAberto(false);
+          setMetaSelecionada(null);
+        }}
+        onConfirm={excluirMeta}
+        type="danger"
+        title="Excluir Meta"
+        message={`Tem certeza que deseja excluir esta meta de ${metaSelecionada ? formatarValor(metaSelecionada.valor_total) : ''}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+      />
+
+      {/* Modal Confirmar Ativar Meta */}
+      <ConfirmModal
+        isOpen={modalAtivarAberto}
+        onClose={() => {
+          setModalAtivarAberto(false);
+          setMetaSelecionada(null);
+        }}
+        onConfirm={ativarMeta}
+        type="success"
+        title="Ativar Meta"
+        message={`Deseja ativar esta meta de ${metaSelecionada ? formatarValor(metaSelecionada.valor_total) : ''}? Todos os dados do dashboard serão filtrados pelo período desta meta.`}
+        confirmText="Ativar"
+        cancelText="Cancelar"
+      />
+
+      {/* Modal Confirmar Desativar Meta */}
+      <ConfirmModal
+        isOpen={modalDesativarAberto}
+        onClose={() => {
+          setModalDesativarAberto(false);
+          setMetaSelecionada(null);
+        }}
+        onConfirm={desativarMeta}
+        type="warning"
+        title="Desativar Meta"
+        message="Deseja desativar esta meta? O dashboard voltará a mostrar os dados do mês atual."
+        confirmText="Desativar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 };

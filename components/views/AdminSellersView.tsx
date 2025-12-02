@@ -1,53 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { Seller } from '../../types';
-import { Plus, Edit3, Save, Loader2 } from 'lucide-react';
+import { Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { buscarVendedores, atualizarMetaVendedor, cadastrarVendedor } from '../../services/api';
+import { buscarVendedores, cadastrarVendedor, atualizarVendedor, deletarVendedor } from '../../services/api';
 import { AddSellerModal } from '../modals/AddSellerModal';
+import { EditSellerModal } from '../modals/EditSellerModal';
+import { ConfirmModal } from '../modals/ConfirmModal';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface AdminSellersViewProps {
   lojaId: string;
 }
 
 export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [localSellers, setLocalSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editedTargets, setEditedTargets] = useState<Record<string, number>>({});
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [vendedorSelecionado, setVendedorSelecionado] = useState<Seller | null>(null);
+  const [modalConfirmarAberto, setModalConfirmarAberto] = useState(false);
+  const [vendedorParaDeletar, setVendedorParaDeletar] = useState<Seller | null>(null);
 
   useEffect(() => {
     carregarVendedores();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId]);
 
+  // Real-time subscriptions
+  useRealtimeSubscription({
+    table: 'vendedores',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Novo vendedor detectado! Recarregando lista...');
+      carregarVendedores();
+    },
+    onUpdate: () => {
+      console.log('🔴 Vendedor atualizado! Recarregando lista...');
+      carregarVendedores();
+    },
+    onDelete: () => {
+      console.log('🔴 Vendedor deletado! Recarregando lista...');
+      carregarVendedores();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova venda detectada! Atualizando vendedores...');
+      carregarVendedores();
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda atualizada! Atualizando vendedores...');
+      carregarVendedores();
+    },
+    onDelete: () => {
+      console.log('🔴 Venda deletada! Atualizando vendedores...');
+      carregarVendedores();
+    }
+  });
+
   const carregarVendedores = async () => {
     setLoading(true);
     const vendedores = await buscarVendedores(lojaId);
     setLocalSellers(vendedores);
     setLoading(false);
-  };
-
-  const handleUpdateTarget = (id: string, newTarget: string) => {
-    const valor = parseFloat(newTarget);
-    setEditedTargets(prev => ({ ...prev, [id]: valor }));
-    setLocalSellers(prev => prev.map(s => s.id === id ? { ...s, target: valor } : s));
-  };
-
-  const toggleEdit = async (id: string) => {
-    if (editingId === id) {
-      // Salvando
-      const novaMeta = editedTargets[id];
-      if (novaMeta !== undefined) {
-        const sucesso = await atualizarMetaVendedor(id, novaMeta);
-        if (sucesso) {
-          await carregarVendedores();
-        }
-      }
-      setEditingId(null);
-    } else {
-      setEditingId(id);
-    }
   };
 
   const handleAdicionarVendedor = async (dados: { nome: string; email: string; senha: string; meta: number }) => {
@@ -61,6 +79,42 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
     } else {
       throw new Error(resultado.mensagem);
     }
+  };
+
+  const handleAtualizarVendedor = async (dados: { id: string; nome: string; meta: number }) => {
+    const resultado = await atualizarVendedor({
+      vendedorId: dados.id,
+      nome: dados.nome,
+      meta: dados.meta
+    });
+
+    if (resultado.sucesso) {
+      await carregarVendedores();
+    } else {
+      throw new Error(resultado.mensagem);
+    }
+  };
+
+  const handleDeletarVendedor = async () => {
+    if (!vendedorParaDeletar) return;
+
+    const resultado = await deletarVendedor(vendedorParaDeletar.id);
+
+    if (resultado.sucesso) {
+      await carregarVendedores();
+    } else {
+      alert(resultado.mensagem);
+    }
+  };
+
+  const abrirModalEditar = (seller: Seller) => {
+    setVendedorSelecionado(seller);
+    setModalEditarAberto(true);
+  };
+
+  const abrirModalDeletar = (seller: Seller) => {
+    setVendedorParaDeletar(seller);
+    setModalConfirmarAberto(true);
   };
 
   // Detectar gênero pelo nome
@@ -127,32 +181,28 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
                       <p className="text-[10px] text-zinc-500">{tipoLabel}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => toggleEdit(seller.id)}
-                    className={`p-2 rounded-full transition-colors ${editingId === seller.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
-                  >
-                    {editingId === seller.id ? <Save size={16} /> : <Edit3 size={16} />}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => abrirModalEditar(seller)}
+                      className="p-2 rounded-full bg-zinc-800 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/50 border border-transparent transition-colors"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => abrirModalDeletar(seller)}
+                      className="p-2 rounded-full bg-zinc-800 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 border border-transparent transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-end">
                     <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Meta Atual</span>
-                    {editingId === seller.id ? (
-                      <div className="flex items-center gap-1 border-b border-emerald-500 pb-0.5">
-                        <span className="text-xs text-emerald-500">R$</span>
-                        <input
-                          type="number"
-                          defaultValue={seller.target}
-                          className="bg-transparent text-right text-sm font-bold text-white w-20 focus:outline-none"
-                          onChange={(e) => handleUpdateTarget(seller.id, e.target.value)}
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-sm font-bold text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(seller.target)}
-                      </span>
-                    )}
+                    <span className="text-sm font-bold text-white">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(seller.target)}
+                    </span>
                   </div>
 
                   <ProgressBar
@@ -173,10 +223,37 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
         )}
       </div>
 
+      {/* Modal Adicionar Vendedor */}
       <AddSellerModal
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         onAdd={handleAdicionarVendedor}
+      />
+
+      {/* Modal Editar Vendedor */}
+      <EditSellerModal
+        isOpen={modalEditarAberto}
+        onClose={() => {
+          setModalEditarAberto(false);
+          setVendedorSelecionado(null);
+        }}
+        onUpdate={handleAtualizarVendedor}
+        seller={vendedorSelecionado}
+      />
+
+      {/* Modal Confirmar Deletar */}
+      <ConfirmModal
+        isOpen={modalConfirmarAberto}
+        onClose={() => {
+          setModalConfirmarAberto(false);
+          setVendedorParaDeletar(null);
+        }}
+        onConfirm={handleDeletarVendedor}
+        type="danger"
+        title="Deletar Vendedor"
+        message={`Tem certeza que deseja deletar ${vendedorParaDeletar?.name}? Esta ação não pode ser desfeita e todas as vendas deste vendedor serão perdidas.`}
+        confirmText="Deletar"
+        cancelText="Cancelar"
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { Seller, StoreStats } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { GoalsModal } from '../modals/GoalsModal';
 import { ManageGoalsModal } from '../modals/ManageGoalsModal';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
@@ -66,6 +67,61 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, periodoGrafico]);
+
+  // Real-time subscriptions
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova venda detectada! Recarregando dados...');
+      carregarDados();
+      carregarDadosGrafico();
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda atualizada! Recarregando dados...');
+      carregarDados();
+      carregarDadosGrafico();
+    },
+    onDelete: () => {
+      console.log('🔴 Venda deletada! Recarregando dados...');
+      carregarDados();
+      carregarDadosGrafico();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'vendedores',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Novo vendedor detectado! Recarregando dados...');
+      carregarDados();
+    },
+    onUpdate: () => {
+      console.log('🔴 Vendedor atualizado! Recarregando dados...');
+      carregarDados();
+    },
+    onDelete: () => {
+      console.log('🔴 Vendedor deletado! Recarregando dados...');
+      carregarDados();
+    }
+  });
+
+  useRealtimeSubscription({
+    table: 'metas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova meta detectada! Recarregando dados...');
+      carregarDados();
+    },
+    onUpdate: () => {
+      console.log('🔴 Meta atualizada! Recarregando dados...');
+      carregarDados();
+    },
+    onDelete: () => {
+      console.log('🔴 Meta deletada! Recarregando dados...');
+      carregarDados();
+    }
+  });
 
   const carregarDados = async () => {
     setLoading(true);

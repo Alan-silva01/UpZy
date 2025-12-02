@@ -104,14 +104,14 @@ CREATE POLICY "lojas_select_propria"
     )
   );
 
--- UPDATE: Apenas ADMIN pode atualizar sua loja
-CREATE POLICY "lojas_update_admin"
+-- UPDATE: Usuários autenticados podem atualizar sua loja
+CREATE POLICY "lojas_update_usuarios"
   ON lojas
   FOR UPDATE
   TO authenticated
   USING (
     id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
@@ -161,47 +161,47 @@ CREATE POLICY "usuarios_delete_authenticated"
 -- 7. POLÍTICAS PARA TABELA: vendedores
 -- ============================================
 
--- SELECT: Apenas ADMIN pode ver vendedores
-CREATE POLICY "vendedores_select_admin"
+-- SELECT: Usuários autenticados veem vendedores da sua loja
+CREATE POLICY "vendedores_select_usuarios_loja"
   ON vendedores
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- INSERT: Apenas ADMIN pode criar vendedores
-CREATE POLICY "vendedores_insert_admin"
+-- INSERT: Usuários autenticados podem criar vendedores na sua loja
+CREATE POLICY "vendedores_insert_usuarios_loja"
   ON vendedores
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- UPDATE: Apenas ADMIN pode atualizar vendedores
-CREATE POLICY "vendedores_update_admin"
+-- UPDATE: Usuários autenticados podem atualizar vendedores da sua loja
+CREATE POLICY "vendedores_update_usuarios_loja"
   ON vendedores
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- DELETE: Apenas ADMIN pode deletar vendedores
-CREATE POLICY "vendedores_delete_admin"
+-- DELETE: Usuários autenticados podem deletar vendedores da sua loja
+CREATE POLICY "vendedores_delete_usuarios_loja"
   ON vendedores
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
@@ -209,93 +209,47 @@ CREATE POLICY "vendedores_delete_admin"
 -- 8. POLÍTICAS PARA TABELA: vendas
 -- ============================================
 
--- SELECT: ADMIN vê todas as vendas da loja
-CREATE POLICY "vendas_select_admin"
+-- SELECT: Usuários autenticados veem vendas da sua loja
+CREATE POLICY "vendas_select_usuarios_loja"
   ON vendas
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- SELECT: VENDEDOR vê apenas vendas da sua loja
-CREATE POLICY "vendas_select_vendedor"
-  ON vendas
-  FOR SELECT
-  TO authenticated
-  USING (
-    loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
-    )
-  );
-
--- INSERT: ADMIN pode criar qualquer venda na sua loja
-CREATE POLICY "vendas_insert_admin"
+-- INSERT: Usuários autenticados podem criar vendas na sua loja
+CREATE POLICY "vendas_insert_usuarios_loja"
   ON vendas
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- INSERT: VENDEDOR pode criar vendas na sua loja
-CREATE POLICY "vendas_insert_vendedor"
-  ON vendas
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
-    )
-  );
-
--- UPDATE: ADMIN pode atualizar qualquer venda da sua loja
-CREATE POLICY "vendas_update_admin"
+-- UPDATE: Usuários autenticados podem atualizar vendas da sua loja
+CREATE POLICY "vendas_update_usuarios_loja"
   ON vendas
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- UPDATE: VENDEDOR pode atualizar apenas SUAS vendas
-CREATE POLICY "vendas_update_vendedor"
-  ON vendas
-  FOR UPDATE
-  TO authenticated
-  USING (
-    vendedor_id IN (
-      SELECT id FROM vendedores
-      WHERE usuario_id = auth.uid()
-    )
-  );
-
--- DELETE: ADMIN pode deletar qualquer venda da sua loja
-CREATE POLICY "vendas_delete_admin"
+-- DELETE: Usuários autenticados podem deletar vendas da sua loja
+CREATE POLICY "vendas_delete_usuarios_loja"
   ON vendas
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
-    )
-  );
-
--- DELETE: VENDEDOR pode deletar apenas SUAS vendas
-CREATE POLICY "vendas_delete_vendedor"
-  ON vendas
-  FOR DELETE
-  TO authenticated
-  USING (
-    vendedor_id IN (
-      SELECT id FROM vendedores
-      WHERE usuario_id = auth.uid()
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
@@ -303,80 +257,47 @@ CREATE POLICY "vendas_delete_vendedor"
 -- 9. POLÍTICAS PARA TABELA: clientes
 -- ============================================
 
--- SELECT: ADMIN vê todos os clientes da sua loja
-CREATE POLICY "clientes_select_admin"
+-- SELECT: Usuários autenticados veem clientes da sua loja
+CREATE POLICY "clientes_select_usuarios_loja"
   ON clientes
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- SELECT: VENDEDOR vê clientes da sua loja
-CREATE POLICY "clientes_select_vendedor"
-  ON clientes
-  FOR SELECT
-  TO authenticated
-  USING (
-    loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
-    )
-  );
-
--- INSERT: ADMIN pode criar clientes
-CREATE POLICY "clientes_insert_admin"
+-- INSERT: Usuários autenticados podem criar clientes na sua loja
+CREATE POLICY "clientes_insert_usuarios_loja"
   ON clientes
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- INSERT: VENDEDOR pode criar clientes
-CREATE POLICY "clientes_insert_vendedor"
-  ON clientes
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
-    )
-  );
-
--- UPDATE: ADMIN pode atualizar clientes
-CREATE POLICY "clientes_update_admin"
+-- UPDATE: Usuários autenticados podem atualizar clientes da sua loja
+CREATE POLICY "clientes_update_usuarios_loja"
   ON clientes
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- UPDATE: VENDEDOR pode atualizar clientes
-CREATE POLICY "clientes_update_vendedor"
-  ON clientes
-  FOR UPDATE
-  TO authenticated
-  USING (
-    loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'SELLER'
-    )
-  );
-
--- DELETE: Apenas ADMIN pode deletar clientes
-CREATE POLICY "clientes_delete_admin"
+-- DELETE: Usuários autenticados podem deletar clientes da sua loja
+CREATE POLICY "clientes_delete_usuarios_loja"
   ON clientes
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
@@ -384,47 +305,47 @@ CREATE POLICY "clientes_delete_admin"
 -- 10. POLÍTICAS PARA TABELA: metas
 -- ============================================
 
--- SELECT: Apenas ADMIN pode ver metas
-CREATE POLICY "metas_select_admin"
+-- SELECT: Usuários autenticados veem metas da sua loja
+CREATE POLICY "metas_select_usuarios_loja"
   ON metas
   FOR SELECT
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- INSERT: Apenas ADMIN pode criar metas
-CREATE POLICY "metas_insert_admin"
+-- INSERT: Usuários autenticados podem criar metas na sua loja
+CREATE POLICY "metas_insert_usuarios_loja"
   ON metas
   FOR INSERT
   TO authenticated
   WITH CHECK (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- UPDATE: Apenas ADMIN pode atualizar/ativar metas
-CREATE POLICY "metas_update_admin"
+-- UPDATE: Usuários autenticados podem atualizar metas da sua loja
+CREATE POLICY "metas_update_usuarios_loja"
   ON metas
   FOR UPDATE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
--- DELETE: Apenas ADMIN pode deletar metas
-CREATE POLICY "metas_delete_admin"
+-- DELETE: Usuários autenticados podem deletar metas da sua loja
+CREATE POLICY "metas_delete_usuarios_loja"
   ON metas
   FOR DELETE
   TO authenticated
   USING (
     loja_id IN (
-      SELECT loja_id FROM usuarios WHERE id = auth.uid() AND papel = 'ADMIN'
+      SELECT loja_id FROM usuarios WHERE id = auth.uid()
     )
   );
 
