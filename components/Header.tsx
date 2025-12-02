@@ -11,16 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ user, onLogout, title, subtitle }) => {
   return (
-    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
-
-      {/* Safe area real para iOS (notch) */}
-      <div 
-        className="bg-zinc-950"
-        style={{ height: 'env(safe-area-inset-top)' }}
-      ></div>
-
-      {/* Espaço adicional para não cortar o header */}
-      <div className="pt-8 bg-zinc-950"></div>
+    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
 
       {/* Conteúdo do header */}
       <div className="px-4 py-4 flex justify-between items-center bg-zinc-950/95 backdrop-blur-xl">

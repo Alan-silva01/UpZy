@@ -200,7 +200,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     return (
       <>
         <Header user={user} title="Minhas Vendas" subtitle="Histórico" />
-        <div className="pt-32 pb-28 space-y-6 flex items-center justify-center h-96">
+        <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         </div>
       </>
@@ -210,15 +210,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   return (
     <>
       {/* Header Fixo com botão de voltar customizado */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
-        {/* Safe area real para iOS (notch) */}
-        <div
-          className="bg-zinc-950"
-          style={{ height: 'env(safe-area-inset-top)' }}
-        ></div>
-
-        {/* Espaço adicional para não cortar o header */}
-        <div className="pt-8 bg-zinc-950"></div>
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
 
         {/* Conteúdo do header */}
         <div className="px-4 py-4 flex items-center gap-3 bg-zinc-950/95 backdrop-blur-xl">
@@ -246,7 +238,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         </div>
       </div>
 
-      <div className="pt-40 pb-28 space-y-6 animate-slide-up">
+      <div className="pt-28 pb-28 space-y-6 animate-slide-up">
 
       {/* Filtros */}
       {mostrarFiltros && (

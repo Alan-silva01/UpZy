@@ -191,45 +191,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
   };
 
   return (
-    <div className="pb-28 space-y-4 animate-slide-up">
-      {/* Top Header */}
-      <div className="flex justify-between items-center px-1 pt-3 pb-2">
-        {/* Avatar da Loja */}
-        <div className="flex items-center gap-2">
-          {avatarLoja ? (
-            <img
-              src={avatarLoja}
-              alt={nomeLoja}
-              className="w-8 h-8 rounded-lg object-cover border border-zinc-700"
-            />
-          ) : (
-            <img
-              src="/icons/icon.svg"
-              alt="UpZy"
-              className="w-8 h-8"
-            />
-          )}
-        </div>
+    <>
+      {/* Top Header Fixo */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="flex justify-between items-center px-4 py-4 bg-zinc-950/95 backdrop-blur-xl">
+          {/* Avatar da Loja */}
+          <div className="flex items-center gap-2">
+            {avatarLoja ? (
+              <img
+                src={avatarLoja}
+                alt={nomeLoja}
+                className="w-8 h-8 rounded-lg object-cover border border-zinc-700"
+              />
+            ) : (
+              <img
+                src="/favicon_pwa.png"
+                alt="UpZy"
+                className="w-8 h-8"
+              />
+            )}
+          </div>
 
-        {/* Nome da Loja Centralizado */}
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <h1 className="text-sm font-semibold text-zinc-400 tracking-tight">
-            {nomeLoja || 'Carregando...'}
-          </h1>
-        </div>
+          {/* Nome da Loja Centralizado */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <h1 className="text-sm font-semibold text-zinc-400 tracking-tight">
+              {nomeLoja || 'Carregando...'}
+            </h1>
+          </div>
 
-        {/* Perfil */}
-        <div className="relative group cursor-pointer">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur opacity-50 group-hover:opacity-100 transition duration-300"></div>
-          <img
-            src="https://picsum.photos/100/100?random=99"
-            alt="Profile"
-            className="relative w-8 h-8 rounded-full border-2 border-zinc-900 object-cover"
-          />
+          {/* Perfil */}
+          <div className="relative group cursor-pointer">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur opacity-50 group-hover:opacity-100 transition duration-300"></div>
+            <img
+              src="https://picsum.photos/100/100?random=99"
+              alt="Profile"
+              className="relative w-8 h-8 rounded-full border-2 border-zinc-900 object-cover"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Main Hero Card - Capsule Style */}
+      <div className="pt-24 pb-28 space-y-4 animate-slide-up">
+        {/* Main Hero Card - Capsule Style */}
       <div className="relative w-full aspect-[16/10] rounded-[2rem] overflow-hidden shadow-2xl group transition-transform duration-500 hover:scale-[1.02]">
         {/* Background Image/Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950"></div>
@@ -456,6 +459,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
           carregarDados();
         }}
       />
-    </div>
+      </div>
+    </>
   );
 };
