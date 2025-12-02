@@ -303,7 +303,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   return (
-    <div className="pt-24 pb-28 space-y-4 animate-slide-up">
+    <div className="pt-28 pb-28 space-y-4 animate-slide-up">
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-2">
         <button
