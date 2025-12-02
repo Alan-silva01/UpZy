@@ -518,7 +518,7 @@ export async function buscarMetaAtiva(lojaId: string) {
     .from('metas')
     .select('*')
     .eq('loja_id', lojaId)
-    .eq('ativa', true)
+    .eq('status', 'ACTIVE')
     .single();
 
   if (error) {

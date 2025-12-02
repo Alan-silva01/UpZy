@@ -233,22 +233,10 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     try {
       console.log('🎯 Ativando meta:', metaId);
 
-      // PRIMEIRO: Desativar TODAS as metas da loja
-      const { error: errorDesativar } = await supabase
-        .from('metas')
-        .update({ ativa: false })
-        .eq('loja_id', lojaId);
-
-      if (errorDesativar) {
-        console.error('Erro ao desativar outras metas:', errorDesativar);
-        alert('Erro ao desativar outras metas');
-        return;
-      }
-
-      // SEGUNDO: Ativar apenas a meta selecionada
+      // Ativar a meta selecionada (o trigger do banco desativa as outras automaticamente)
       const { error } = await supabase
         .from('metas')
-        .update({ ativa: true })
+        .update({ status: 'ACTIVE' })
         .eq('id', metaId);
 
       if (error) {
@@ -272,7 +260,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
       const { error } = await supabase
         .from('metas')
-        .update({ ativa: false })
+        .update({ status: 'CANCELLED' })
         .eq('id', metaId);
 
       if (error) {
