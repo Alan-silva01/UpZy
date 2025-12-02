@@ -130,7 +130,8 @@ const App: React.FC = () => {
     const metodoPagamentoMap: Record<string, string> = {
       'money': 'dinheiro',
       'pix': 'pix',
-      'card': 'cartao',
+      'card_debit': 'cartao_debito',
+      'card_credit': 'cartao_credito',
       'boleto': 'boleto',
       'promissory': 'promissoria'
     };
@@ -140,7 +141,6 @@ const App: React.FC = () => {
       vendedorId,
       numeroPedido: data.orderId,
       valor: parseFloat(data.amount),
-      quantidadeItens: parseInt(data.itemsCount) || 1,
       nomeCliente: data.customerName,
       metodoPagamento: metodoPagamentoMap[data.paymentMethod] || data.paymentMethod,
       tipoPagamento: data.paymentType === 'spot' ? 'avista' : 'parcelado',

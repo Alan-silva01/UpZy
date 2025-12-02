@@ -230,9 +230,8 @@ export async function criarVenda(venda: {
   vendedorId: string;
   numeroPedido?: string;
   valor: number;
-  quantidadeItens: number;
   nomeCliente?: string;
-  metodoPagamento?: 'pix' | 'dinheiro' | 'cartao' | 'boleto' | 'promissoria';
+  metodoPagamento?: 'pix' | 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'boleto' | 'promissoria';
   tipoPagamento?: 'avista' | 'parcelado';
   parcelas?: number;
 }): Promise<boolean> {
@@ -246,7 +245,6 @@ export async function criarVenda(venda: {
       vendedor_id: venda.vendedorId,
       numero_pedido: venda.numeroPedido,
       valor: venda.valor,
-      quantidade_itens: venda.quantidadeItens,
       nome_cliente: nomeClienteFormatado,
       metodo_pagamento: venda.metodoPagamento,
       tipo_pagamento: venda.tipoPagamento,

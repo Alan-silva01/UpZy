@@ -63,7 +63,7 @@ export enum Tab {
   GOALS = 'GOALS' // Admin Only (Goals Management)
 }
 
-export type PaymentMethod = 'pix' | 'money' | 'card' | 'boleto' | 'promissory';
+export type PaymentMethod = 'pix' | 'money' | 'card_debit' | 'card_credit' | 'boleto' | 'promissory';
 export type PaymentType = 'spot' | 'installments';
 
 export interface SaleFormData {

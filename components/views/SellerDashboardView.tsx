@@ -7,6 +7,7 @@ import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import { Header } from '../Header';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { EditSaleModal } from '../modals/EditSaleModal';
 
 interface SellerDashboardProps {
   user: User;
@@ -19,6 +20,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   const [loading, setLoading] = useState(true);
   const [ultimasVendas, setUltimasVendas] = useState<Sale[]>([]);
   const [lojaId, setLojaId] = useState<string>('');
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -171,6 +173,26 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     setUltimasVendas((vendas as Sale[]) || []);
   };
 
+  const handleSaveSale = async (vendaId: string, dadosAtualizados: Partial<Sale>) => {
+    console.log('💾 Salvando venda:', vendaId, dadosAtualizados);
+
+    const { error } = await supabase
+      .from('vendas')
+      .update(dadosAtualizados)
+      .eq('id', vendaId);
+
+    if (error) {
+      console.error('❌ Erro ao atualizar venda:', error);
+      alert('Erro ao atualizar venda');
+      return;
+    }
+
+    console.log('✅ Venda atualizada com sucesso!');
+    // Recarregar dados
+    carregarDadosVendedor(true);
+    carregarUltimasVendas();
+  };
+
   const percentage = sellerProfile ? (sellerProfile.currentSales / sellerProfile.target) * 100 : 0;
 
   if (loading || !sellerProfile) {
@@ -312,7 +334,8 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
               const metodoPagamento = {
                 'pix': 'PIX',
                 'dinheiro': 'Dinheiro',
-                'cartao': 'Cartão',
+                'cartao_debito': 'Débito',
+                'cartao_credito': 'Crédito',
                 'boleto': 'Boleto',
                 'promissoria': 'Promissória'
               }[venda.metodo_pagamento] || venda.metodo_pagamento;
@@ -320,7 +343,11 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
               const tipoPagamento = venda.tipo_pagamento === 'avista' ? 'À vista' : `${venda.parcelas}x`;
 
               return (
-                <div key={venda.id} className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800 hover:border-zinc-700 transition-colors">
+                <div
+                  key={venda.id}
+                  onClick={() => setEditingSale(venda)}
+                  className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900 transition-all cursor-pointer active:scale-[0.98]"
+                >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <p className="text-white font-bold text-sm">{venda.nome_cliente || 'Cliente'}</p>
@@ -332,7 +359,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
                       <p className="text-white font-bold text-sm">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valor)}
                       </p>
-                      <p className="text-[10px] text-zinc-500">{venda.quantidade_itens} {venda.quantidade_itens === 1 ? 'item' : 'itens'}</p>
+                      <p className="text-[10px] text-zinc-500">#{venda.numero_pedido}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -351,6 +378,16 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
           </div>
         )}
       </div>
+
+      {/* Modal de Edição */}
+      {editingSale && (
+        <EditSaleModal
+          isOpen={true}
+          onClose={() => setEditingSale(null)}
+          onSave={handleSaveSale}
+          sale={editingSale}
+        />
+      )}
     </div>
     </>
   );

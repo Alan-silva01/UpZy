@@ -42,6 +42,11 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
       carregarVendas();
     };
     init();
+
+    // Limpar filtros ao desmontar o componente
+    return () => {
+      limparFiltros();
+    };
   }, [user.sellerId]);
 
   // Real-time subscriptions para histórico de vendas
@@ -116,16 +121,20 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
     // Filtro por data início
     if (filtroDataInicio) {
-      resultado = resultado.filter(v =>
-        new Date(v.data_venda) >= new Date(filtroDataInicio)
-      );
+      resultado = resultado.filter(v => {
+        const dataVenda = new Date(v.data_venda);
+        const dataVendaStr = dataVenda.toISOString().split('T')[0];
+        return dataVendaStr >= filtroDataInicio;
+      });
     }
 
     // Filtro por data fim
     if (filtroDataFim) {
-      resultado = resultado.filter(v =>
-        new Date(v.data_venda) <= new Date(filtroDataFim)
-      );
+      resultado = resultado.filter(v => {
+        const dataVenda = new Date(v.data_venda);
+        const dataVendaStr = dataVenda.toISOString().split('T')[0];
+        return dataVendaStr <= filtroDataFim;
+      });
     }
 
     // Filtro por valor mínimo
@@ -152,6 +161,54 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     setFiltroDataFim('');
     setFiltroValorMin('');
     setFiltroValorMax('');
+  };
+
+  const aplicarFiltroHoje = () => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataFormatada = hoje.toISOString().split('T')[0];
+    setFiltroDataInicio(dataFormatada);
+    setFiltroDataFim(dataFormatada);
+  };
+
+  const aplicarFiltroOntem = () => {
+    const ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    ontem.setHours(0, 0, 0, 0);
+    const dataFormatada = ontem.toISOString().split('T')[0];
+    setFiltroDataInicio(dataFormatada);
+    setFiltroDataFim(dataFormatada);
+  };
+
+  const aplicarFiltroEstaSemana = () => {
+    const hoje = new Date();
+    const diaSemana = hoje.getDay(); // 0 = Domingo, 1 = Segunda, etc
+
+    // Segunda-feira desta semana
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1));
+    inicioSemana.setHours(0, 0, 0, 0);
+
+    // Domingo desta semana
+    const fimSemana = new Date(inicioSemana);
+    fimSemana.setDate(inicioSemana.getDate() + 6);
+    fimSemana.setHours(23, 59, 59, 999);
+
+    setFiltroDataInicio(inicioSemana.toISOString().split('T')[0]);
+    setFiltroDataFim(fimSemana.toISOString().split('T')[0]);
+  };
+
+  const aplicarFiltroEsteMes = () => {
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+
+    setFiltroDataInicio(inicioMes.toISOString().split('T')[0]);
+    setFiltroDataFim(fimMes.toISOString().split('T')[0]);
+  };
+
+  const aplicarFiltrosEFechar = () => {
+    setMostrarFiltros(false);
   };
 
   const handleEdit = (venda: Sale) => {
@@ -220,7 +277,8 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     const map: Record<string, string> = {
       'pix': 'PIX',
       'dinheiro': 'Dinheiro',
-      'cartao': 'Cartão',
+      'cartao_debito': 'Débito',
+      'cartao_credito': 'Crédito',
       'boleto': 'Boleto',
       'promissoria': 'Promissória'
     };
@@ -281,6 +339,39 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
             >
               Limpar tudo
             </button>
+          </div>
+
+          {/* Filtros Rápidos */}
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">
+              Filtros Rápidos
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={aplicarFiltroHoje}
+                className="px-3 py-2 bg-zinc-800/50 hover:bg-indigo-500/20 border border-zinc-700/50 hover:border-indigo-500/50 rounded-xl text-xs font-bold text-zinc-300 hover:text-indigo-400 transition-all"
+              >
+                Hoje
+              </button>
+              <button
+                onClick={aplicarFiltroOntem}
+                className="px-3 py-2 bg-zinc-800/50 hover:bg-indigo-500/20 border border-zinc-700/50 hover:border-indigo-500/50 rounded-xl text-xs font-bold text-zinc-300 hover:text-indigo-400 transition-all"
+              >
+                Ontem
+              </button>
+              <button
+                onClick={aplicarFiltroEstaSemana}
+                className="px-3 py-2 bg-zinc-800/50 hover:bg-indigo-500/20 border border-zinc-700/50 hover:border-indigo-500/50 rounded-xl text-xs font-bold text-zinc-300 hover:text-indigo-400 transition-all"
+              >
+                Esta Semana
+              </button>
+              <button
+                onClick={aplicarFiltroEsteMes}
+                className="px-3 py-2 bg-zinc-800/50 hover:bg-indigo-500/20 border border-zinc-700/50 hover:border-indigo-500/50 rounded-xl text-xs font-bold text-zinc-300 hover:text-indigo-400 transition-all"
+              >
+                Este Mês
+              </button>
+            </div>
           </div>
 
           {/* Nome do Cliente */}
@@ -367,6 +458,14 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
               />
             </div>
           </div>
+
+          {/* Botão Aplicar Filtro */}
+          <button
+            onClick={aplicarFiltrosEFechar}
+            className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98]"
+          >
+            Aplicar Filtro
+          </button>
         </div>
       )}
 
