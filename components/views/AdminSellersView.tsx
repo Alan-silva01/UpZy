@@ -86,14 +86,14 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
 
   if (loading) {
     return (
-      <div className="pt-28 pb-28 space-y-5 animate-slide-up flex items-center justify-center h-96">
+      <div className="pt-32 pb-28 space-y-5 animate-slide-up flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="pt-28 pb-28 space-y-5 animate-slide-up">
+    <div className="pt-32 pb-28 space-y-5 animate-slide-up">
       <div className="px-1 flex justify-between items-end">
          <div>
            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Admin</span>

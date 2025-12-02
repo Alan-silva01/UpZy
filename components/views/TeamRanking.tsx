@@ -46,7 +46,7 @@ export const TeamRanking: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="pt-28 pb-28 space-y-5 flex items-center justify-center h-96">
+      <div className="pt-32 pb-28 space-y-5 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
@@ -54,7 +54,7 @@ export const TeamRanking: React.FC = () => {
 
   if (sellers.length === 0) {
     return (
-      <div className="pt-28 pb-28 space-y-5">
+      <div className="pt-32 pb-28 space-y-5">
         <div className="px-1">
           <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Ranking</span>
           <h1 className="text-xl font-bold text-white tracking-tight">Equipe de Vendas</h1>
@@ -67,7 +67,7 @@ export const TeamRanking: React.FC = () => {
   }
 
   return (
-    <div className="pt-28 pb-28 space-y-5">
+    <div className="pt-32 pb-28 space-y-5">
       <div className="px-1">
          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Ranking</span>
          <h1 className="text-xl font-bold text-white tracking-tight">Equipe de Vendas</h1>
