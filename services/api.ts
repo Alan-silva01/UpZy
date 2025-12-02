@@ -506,6 +506,14 @@ export async function buscarDadosPerformance(
 export async function buscarMetaAtiva(lojaId: string) {
   console.log('🎯 Buscando meta ativa para loja:', lojaId);
 
+  // Primeiro, buscar TODAS as metas para debug
+  const { data: todasMetas } = await supabase
+    .from('metas')
+    .select('*')
+    .eq('loja_id', lojaId);
+
+  console.log('📋 TODAS as metas da loja:', todasMetas);
+
   const { data, error } = await supabase
     .from('metas')
     .select('*')
@@ -516,7 +524,7 @@ export async function buscarMetaAtiva(lojaId: string) {
   if (error) {
     if (error.code === 'PGRST116') {
       // Nenhuma meta ativa encontrada
-      console.log('⚠️ Nenhuma meta ativa');
+      console.log('⚠️ Nenhuma meta ativa encontrada');
       return null;
     }
     console.error('❌ Erro ao buscar meta ativa:', error);
