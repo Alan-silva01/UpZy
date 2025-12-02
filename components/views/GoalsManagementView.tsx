@@ -303,7 +303,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   return (
-    <div className="pt-32 pb-28 space-y-4 animate-slide-up">
+    <div className="pb-28 space-y-4 animate-slide-up" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-2">
         <button

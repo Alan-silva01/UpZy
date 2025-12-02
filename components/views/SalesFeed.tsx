@@ -55,14 +55,14 @@ export const SalesFeed: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="pt-32 pb-28 space-y-4 flex items-center justify-center h-96">
+      <div className="pb-28 space-y-4 flex items-center justify-center h-96" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="pt-32 pb-28 space-y-4 animate-slide-up">
+    <div className="pb-28 space-y-4 animate-slide-up" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5rem)' }}>
       <div className="flex justify-between items-end px-1">
          <div>
            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">Timeline</span>
