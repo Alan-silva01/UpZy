@@ -82,11 +82,24 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
         background-color: #09090b; /* Zinc 950 */
         color: #f8fafc;
         -webkit-tap-highlight-color: transparent;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      #root {
+        padding: 0 !important;
+        margin: 0 !important;
       }
       
       /* Global reset for focus outlines to prevent "square" selection boxes */

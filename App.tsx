@@ -214,10 +214,10 @@ const App: React.FC = () => {
             <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
          </div>
 
-        {/* Container scrollável com padding-top para o header */}
-        <div className="relative z-10 px-4 min-h-screen flex flex-col overflow-y-auto">
+        {/* Container scrollável */}
+        <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
           {/* Page Transition Wrapper */}
-          <div key={activeTab} className="animate-page-enter">
+          <div key={activeTab} className="animate-page-enter px-4">
             {renderContent()}
           </div>
         </div>
