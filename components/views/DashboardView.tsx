@@ -231,7 +231,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         </div>
       </div>
 
-      <div className="pt-20 pb-28 space-y-4 animate-slide-up">
+      <div className="pt-24 pb-28 space-y-4 animate-slide-up">
         {/* Main Hero Card - Capsule Style */}
       <div className="relative w-full aspect-[16/10] rounded-[2rem] overflow-hidden shadow-2xl group transition-transform duration-500 hover:scale-[1.02]">
         {/* Background Image/Gradient */}

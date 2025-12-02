@@ -109,7 +109,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   return (
     <>
       <Header user={user} onLogout={onLogout} />
-      <div className="pt-20 pb-28 space-y-6 animate-slide-up">
+      <div className="pt-24 pb-28 space-y-6 animate-slide-up">
 
       {/* Main Goal Card */}
       <div className="relative w-full rounded-[2.5rem] overflow-hidden shadow-2xl group">

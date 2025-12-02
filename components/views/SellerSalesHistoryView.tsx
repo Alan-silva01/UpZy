@@ -200,7 +200,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     return (
       <>
         <Header user={user} title="Minhas Vendas" subtitle="Histórico" />
-        <div className="pt-20 pb-28 space-y-6 flex items-center justify-center h-96">
+        <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         </div>
       </>
@@ -237,7 +237,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         </div>
       </div>
 
-      <div className="pt-20 pb-28 space-y-6 animate-slide-up">
+      <div className="pt-24 pb-28 space-y-6 animate-slide-up">
 
       {/* Filtros */}
       {mostrarFiltros && (
