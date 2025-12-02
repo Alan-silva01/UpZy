@@ -11,6 +11,7 @@ import { SettingsView } from './components/views/SettingsView';
 import { GoalsManagementView } from './components/views/GoalsManagementView';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
+import { SaleSuccessModal } from './components/modals/SaleSuccessModal';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario } from './services/auth';
 import { Loader2 } from 'lucide-react';
@@ -20,6 +21,8 @@ const App: React.FC = () => {
   const [lojaId, setLojaId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+  const [isSaleSuccessModalOpen, setIsSaleSuccessModalOpen] = useState(false);
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
   const [loadingSessao, setLoadingSessao] = useState(true);
 
   // Verificar sessão ao carregar
@@ -67,8 +70,6 @@ const App: React.FC = () => {
       setLoadingSessao(false);
     }
   };
-
-  console.log('🚀 App - User:', user, 'LojaId:', lojaId);
 
   const handleLogin = async (loggedInUser: User) => {
     setUser(loggedInUser);
@@ -147,10 +148,29 @@ const App: React.FC = () => {
     });
 
     if (sucesso) {
-      alert(`Venda de R$ ${data.amount} registrada com sucesso!`);
+      // Fechar modal de nova venda
+      setIsSaleModalOpen(false);
+
+      // Salvar dados da venda para exibir no modal de sucesso
+      setLastSaleData({
+        valor: parseFloat(data.amount),
+        cliente: data.customerName,
+        numeroPedido: data.orderId
+      });
+
+      // Abrir modal de sucesso
+      setIsSaleSuccessModalOpen(true);
+
+      // Disparar evento customizado para forçar atualização
+      window.dispatchEvent(new CustomEvent('forceRefreshDashboard'));
     } else {
       alert('Erro ao registrar venda. Tente novamente.');
     }
+  };
+
+  const handleContinuarVendendo = () => {
+    // Disparar evento customizado para forçar atualização ao clicar em continuar
+    window.dispatchEvent(new CustomEvent('forceRefreshDashboard'));
   };
 
   const renderContent = () => {
@@ -217,7 +237,7 @@ const App: React.FC = () => {
         {/* Container scrollável */}
         <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
           {/* Page Transition Wrapper */}
-          <div key={activeTab} className="animate-page-enter px-4">
+          <div className="px-4">
             {renderContent()}
           </div>
         </div>
@@ -234,6 +254,18 @@ const App: React.FC = () => {
           onClose={() => setIsSaleModalOpen(false)}
           onSubmit={handleNewSale}
         />
+
+        {lastSaleData && (
+          <SaleSuccessModal
+            isOpen={isSaleSuccessModalOpen}
+            onClose={() => {
+              setIsSaleSuccessModalOpen(false);
+              setLastSaleData(null);
+            }}
+            onContinue={handleContinuarVendendo}
+            saleData={lastSaleData}
+          />
+        )}
       </main>
     </div>
   );

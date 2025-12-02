@@ -30,7 +30,21 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       carregarUltimasVendas();
     };
     inicializar();
-  }, [user.sellerId]);
+
+    // Listener para forçar atualização silenciosa
+    const handleForceRefresh = () => {
+      console.log('🔄 [Dashboard Vendedor] Atualização forçada disparada!');
+      carregarDadosVendedor(true); // silencioso
+      carregarUltimasVendas();
+    };
+
+    window.addEventListener('forceRefreshDashboard', handleForceRefresh);
+
+    return () => {
+      window.removeEventListener('forceRefreshDashboard', handleForceRefresh);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Executa apenas uma vez na montagem
 
   // Real-time subscriptions (atualizações silenciosas - sem loader)
   // IMPORTANTE: SEM filtro de vendedor_id para receber TODAS as vendas da loja

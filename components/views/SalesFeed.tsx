@@ -13,6 +13,18 @@ export const SalesFeed: React.FC = () => {
 
   useEffect(() => {
     carregarDados();
+
+    // Listener para forçar atualização silenciosa
+    const handleForceRefresh = () => {
+      console.log('🔄 [Timeline Vendas] Atualização forçada disparada!');
+      carregarDados(true); // silencioso
+    };
+
+    window.addEventListener('forceRefreshDashboard', handleForceRefresh);
+
+    return () => {
+      window.removeEventListener('forceRefreshDashboard', handleForceRefresh);
+    };
   }, []);
 
   // Real-time subscriptions para vendas
