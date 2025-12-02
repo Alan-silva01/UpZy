@@ -5,6 +5,7 @@ import { buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { Header } from '../Header';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface SellerSalesHistoryViewProps {
   user: User;
@@ -17,6 +18,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Sale>>({});
+  const [lojaId, setLojaId] = useState<string>('');
 
   // Modais de confirmação
   const [modalDelete, setModalDelete] = useState<{ isOpen: boolean; vendaId: string | null }>({ isOpen: false, vendaId: null });
@@ -32,26 +34,53 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   useEffect(() => {
-    carregarVendas();
+    const init = async () => {
+      const loja = await buscarLojaIdUsuario(user.id);
+      if (loja) {
+        setLojaId(loja);
+      }
+      carregarVendas();
+    };
+    init();
   }, [user.sellerId]);
+
+  // Real-time subscriptions para histórico de vendas
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova venda no histórico! Recarregando...');
+      carregarVendas(true); // silencioso
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda atualizada no histórico! Recarregando...');
+      carregarVendas(true); // silencioso
+    },
+    onDelete: () => {
+      console.log('🔴 Venda deletada do histórico! Recarregando...');
+      carregarVendas(true); // silencioso
+    }
+  });
 
   useEffect(() => {
     aplicarFiltros();
   }, [vendas, filtroNome, filtroPedido, filtroDataInicio, filtroDataFim, filtroValorMin, filtroValorMax]);
 
-  const carregarVendas = async () => {
+  const carregarVendas = async (silencioso = false) => {
     if (!user.sellerId) return;
 
-    setLoading(true);
+    if (!silencioso) {
+      setLoading(true);
+    }
     try {
-      const lojaId = await buscarLojaIdUsuario(user.id);
-      if (!lojaId) return;
+      const loja = await buscarLojaIdUsuario(user.id);
+      if (!loja) return;
 
       const { data, error } = await supabase
         .from('vendas')
         .select('*')
         .eq('vendedor_id', user.sellerId)
-        .eq('loja_id', lojaId)
+        .eq('loja_id', loja)
         .order('data_venda', { ascending: false });
 
       if (error) throw error;
@@ -62,7 +91,9 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
       console.error('Erro ao carregar vendas:', error);
       alert('Erro ao carregar vendas');
     } finally {
-      setLoading(false);
+      if (!silencioso) {
+        setLoading(false);
+      }
     }
   };
 

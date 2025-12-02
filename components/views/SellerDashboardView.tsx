@@ -33,22 +33,23 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   }, [user.sellerId]);
 
   // Real-time subscriptions (atualizações silenciosas - sem loader)
+  // IMPORTANTE: SEM filtro de vendedor_id para receber TODAS as vendas da loja
   useRealtimeSubscription({
     table: 'vendas',
     lojaId,
-    filter: `vendedor_id=eq.${user.sellerId}`,
+    // Removido filter para receber eventos de TODOS os vendedores da loja
     onInsert: () => {
-      console.log('🔴 Nova venda do vendedor detectada! Recarregando dados...');
+      console.log('🔴 Nova venda detectada! Recarregando dados...');
       carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     },
     onUpdate: () => {
-      console.log('🔴 Venda do vendedor atualizada! Recarregando dados...');
+      console.log('🔴 Venda atualizada! Recarregando dados...');
       carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     },
     onDelete: () => {
-      console.log('🔴 Venda do vendedor deletada! Recarregando dados...');
+      console.log('🔴 Venda deletada! Recarregando dados...');
       carregarDadosVendedor(true); // silencioso
       carregarUltimasVendas();
     }
@@ -78,6 +79,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   });
 
   const carregarDadosVendedor = async (silencioso = false) => {
+    console.log('📊 [Dashboard Vendedor] Carregando dados do vendedor...', { silencioso, sellerId: user.sellerId });
     if (!silencioso) {
       setLoading(true);
     }
@@ -86,6 +88,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       const vendedores = await buscarVendedores(lojaId);
       const vendedor = vendedores.find(v => v.id === user.sellerId);
       if (vendedor) {
+        console.log('📊 [Dashboard Vendedor] Vendedor encontrado:', vendedor);
         setSellerProfile(vendedor);
 
         // Buscar estatísticas reais do vendedor
@@ -98,12 +101,21 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
         const valorTotal = vendas?.reduce((acc, v) => acc + v.valor, 0) || 0;
         const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
 
+        console.log('📊 [Dashboard Vendedor] Estatísticas calculadas:', {
+          totalVendas,
+          valorTotal,
+          ticketMedio,
+          currentSales: vendedor.currentSales,
+          target: vendedor.target
+        });
+
         setSellerProfile(prev => ({
           ...vendedor,
           totalVendas,
           ticketMedio
         } as any));
       } else {
+        console.warn('⚠️ [Dashboard Vendedor] Vendedor não encontrado na lista!');
         // Fallback se não encontrar
         setSellerProfile({
           id: user.sellerId || '0',
@@ -122,6 +134,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   };
 
   const carregarUltimasVendas = async () => {
+    console.log('📋 [Dashboard Vendedor] Carregando últimas vendas...', { sellerId: user.sellerId });
     if (!user.sellerId) return;
 
     const lojaId = await buscarLojaIdUsuario(user.id);
@@ -136,10 +149,11 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       .limit(5);
 
     if (error) {
-      console.error('Erro ao carregar vendas:', error);
+      console.error('❌ [Dashboard Vendedor] Erro ao carregar vendas:', error);
       return;
     }
 
+    console.log('📋 [Dashboard Vendedor] Últimas vendas carregadas:', vendas?.length || 0, 'vendas');
     setUltimasVendas((vendas as Sale[]) || []);
   };
 

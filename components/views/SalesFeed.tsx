@@ -3,31 +3,56 @@ import { Clock, Loader2 } from 'lucide-react';
 import { Sale, Seller } from '../../types';
 import { buscarVendas, buscarVendedores } from '../../services/api';
 import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 export const SalesFeed: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lojaId, setLojaId] = useState<string>('');
 
   useEffect(() => {
     carregarDados();
   }, []);
 
-  const carregarDados = async () => {
-    setLoading(true);
+  // Real-time subscriptions para vendas
+  useRealtimeSubscription({
+    table: 'vendas',
+    lojaId,
+    onInsert: () => {
+      console.log('🔴 Nova venda na timeline! Recarregando...');
+      carregarDados(true); // silencioso
+    },
+    onUpdate: () => {
+      console.log('🔴 Venda atualizada na timeline! Recarregando...');
+      carregarDados(true); // silencioso
+    },
+    onDelete: () => {
+      console.log('🔴 Venda deletada da timeline! Recarregando...');
+      carregarDados(true); // silencioso
+    }
+  });
+
+  const carregarDados = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+    }
     const user = await verificarSessao();
     if (user) {
-      const lojaId = await buscarLojaIdUsuario(user.id);
-      if (lojaId) {
+      const loja = await buscarLojaIdUsuario(user.id);
+      if (loja) {
+        setLojaId(loja);
         const [vendas, vendedores] = await Promise.all([
-          buscarVendas(lojaId),
-          buscarVendedores(lojaId)
+          buscarVendas(loja),
+          buscarVendedores(loja)
         ]);
         setSales(vendas);
         setSellers(vendedores);
       }
     }
-    setLoading(false);
+    if (!silencioso) {
+      setLoading(false);
+    }
   };
 
   const getSellerAvatar = (id: string) => {
