@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { Crown, ChevronDown, ShoppingBag, Loader2 } from 'lucide-react';
+import { Crown, ChevronDown, ShoppingBag, Loader2, Trophy, Calendar } from 'lucide-react';
 import { Seller, Sale } from '../../types';
-import { buscarVendedores, buscarVendas } from '../../services/api';
+import { buscarVendedores, buscarVendas, buscarRankingClientes, ClienteRanking } from '../../services/api';
 import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
 
 export const TeamRanking: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [clientes, setClientes] = useState<ClienteRanking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [lojaId, setLojaId] = useState<string | null>(null);
 
   useEffect(() => {
     carregarDados();
@@ -19,16 +23,48 @@ export const TeamRanking: React.FC = () => {
     setLoading(true);
     const user = await verificarSessao();
     if (user) {
-      const lojaId = await buscarLojaIdUsuario(user.id);
-      if (lojaId) {
-        const [vendedores, vendas] = await Promise.all([
-          buscarVendedores(lojaId),
-          buscarVendas(lojaId)
+      const loja = await buscarLojaIdUsuario(user.id);
+      if (loja) {
+        setLojaId(loja);
+        const [vendedores, vendas, rankingClientes] = await Promise.all([
+          buscarVendedores(loja),
+          buscarVendas(loja),
+          buscarRankingClientes(loja, 5)
         ]);
         setSellers(vendedores);
         setSales(vendas);
+        setClientes(rankingClientes);
       }
     }
+    setLoading(false);
+  };
+
+  const aplicarFiltroData = async () => {
+    if (!lojaId) return;
+
+    setLoading(true);
+    try {
+      const rankingClientes = await buscarRankingClientes(
+        lojaId,
+        5,
+        dataInicio ? new Date(dataInicio).toISOString() : undefined,
+        dataFim ? new Date(dataFim + 'T23:59:59').toISOString() : undefined
+      );
+      setClientes(rankingClientes);
+    } catch (error) {
+      console.error('Erro ao aplicar filtro:', error);
+    }
+    setLoading(false);
+  };
+
+  const limparFiltro = async () => {
+    setDataInicio('');
+    setDataFim('');
+    if (!lojaId) return;
+
+    setLoading(true);
+    const rankingClientes = await buscarRankingClientes(lojaId, 5);
+    setClientes(rankingClientes);
     setLoading(false);
   };
 
@@ -210,6 +246,97 @@ export const TeamRanking: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Ranking de Clientes */}
+      <div className="mt-8 space-y-4">
+        <div className="px-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Trophy className="w-4 h-4 text-emerald-500" />
+            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">Top Clientes</span>
+          </div>
+          <h2 className="text-lg font-bold text-white tracking-tight">Quem Mais Comprou</h2>
+        </div>
+
+        {/* Filtro de Datas */}
+        <div className="glass-card rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="w-4 h-4 text-zinc-400" />
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Filtrar Período</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">Data Início</label>
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className="w-full bg-zinc-900/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">Data Fim</label>
+              <input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+                className="w-full bg-zinc-900/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={aplicarFiltroData}
+              disabled={!dataInicio || !dataFim}
+              className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              Aplicar Filtro
+            </button>
+            <button
+              onClick={limparFiltro}
+              className="px-4 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de Clientes */}
+        {clientes.length === 0 ? (
+          <div className="glass-card rounded-2xl p-6 text-center">
+            <p className="text-zinc-500 text-sm">Nenhum cliente encontrado no período selecionado.</p>
+          </div>
+        ) : (
+          <div className="space-y-2 px-1">
+            {clientes.map((cliente, index) => (
+              <div
+                key={`${cliente.nome}-${index}`}
+                className="glass-card rounded-2xl p-4 hover:bg-white/5 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30">
+                    <span className="text-emerald-400 font-bold text-sm">#{index + 1}</span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white text-sm truncate">{cliente.nome}</h3>
+                    <p className="text-[10px] text-zinc-500">
+                      {cliente.quantidadeCompras} {cliente.quantidadeCompras === 1 ? 'compra' : 'compras'}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-emerald-400 font-bold text-sm">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cliente.totalGasto)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

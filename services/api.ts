@@ -711,3 +711,109 @@ export async function deletarVendedor(vendedorId: string): Promise<{ sucesso: bo
     return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
   }
 }
+
+// ============================================
+// RANKING DE CLIENTES
+// ============================================
+
+export interface ClienteRanking {
+  nome: string;
+  totalGasto: number;
+  quantidadeCompras: number;
+}
+
+/**
+ * Busca o ranking de clientes por total gasto
+ * Agrupa clientes pelo nome, soma as vendas e retorna os top 5
+ */
+export async function buscarRankingClientes(
+  lojaId: string,
+  limite: number = 5,
+  dataInicio?: string,
+  dataFim?: string
+): Promise<ClienteRanking[]> {
+  console.log('🏆 Buscando ranking de clientes para loja:', lojaId);
+
+  // Se não houver datas especificadas, usar período da meta ativa ou mês atual
+  let inicio = dataInicio;
+  let fim = dataFim;
+
+  if (!inicio || !fim) {
+    const metaAtiva = await buscarMetaAtiva(lojaId);
+
+    if (metaAtiva) {
+      inicio = metaAtiva.data_inicio;
+      fim = metaAtiva.data_fim;
+      console.log(`🎯 Usando período da meta ativa: ${inicio} a ${fim}`);
+    } else {
+      // Usar mês atual
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+
+      const fimMes = new Date();
+      fimMes.setMonth(fimMes.getMonth() + 1);
+      fimMes.setDate(0);
+      fimMes.setHours(23, 59, 59, 999);
+
+      inicio = inicioMes.toISOString();
+      fim = fimMes.toISOString();
+      console.log(`📅 Usando mês atual: ${inicio} a ${fim}`);
+    }
+  }
+
+  // Buscar todas as vendas do período
+  const { data: vendas, error } = await supabase
+    .from('vendas')
+    .select('nome_cliente, valor')
+    .eq('loja_id', lojaId)
+    .gte('data_venda', inicio)
+    .lte('data_venda', fim)
+    .not('nome_cliente', 'is', null);
+
+  if (error) {
+    console.error('❌ Erro ao buscar vendas para ranking:', error);
+    return [];
+  }
+
+  if (!vendas || vendas.length === 0) {
+    console.log('⚠️ Nenhuma venda com cliente encontrada');
+    return [];
+  }
+
+  console.log(`✅ ${vendas.length} vendas encontradas`);
+
+  // Agrupar vendas por nome de cliente (case-insensitive e normalizado)
+  const clientesMap = new Map<string, { totalGasto: number; quantidadeCompras: number }>();
+
+  vendas.forEach((venda) => {
+    const nomeNormalizado = venda.nome_cliente.toLowerCase().trim();
+
+    if (clientesMap.has(nomeNormalizado)) {
+      const cliente = clientesMap.get(nomeNormalizado)!;
+      cliente.totalGasto += venda.valor;
+      cliente.quantidadeCompras += 1;
+    } else {
+      clientesMap.set(nomeNormalizado, {
+        totalGasto: venda.valor,
+        quantidadeCompras: 1
+      });
+    }
+  });
+
+  // Converter para array e ordenar por total gasto
+  const ranking: ClienteRanking[] = Array.from(clientesMap.entries())
+    .map(([nome, dados]) => ({
+      nome: nome.split(' ').map(palavra =>
+        palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()
+      ).join(' '), // Capitalizar nome
+      totalGasto: dados.totalGasto,
+      quantidadeCompras: dados.quantidadeCompras
+    }))
+    .sort((a, b) => b.totalGasto - a.totalGasto)
+    .slice(0, limite);
+
+  console.log('🏆 Ranking de clientes:', ranking);
+
+  return ranking;
+}
