@@ -109,8 +109,8 @@ export const SalesFeed: React.FC = () => {
 
       <div className="relative px-1">
         {/* Continuous Line */}
-        <div className="absolute left-4 top-4 bottom-0 w-px bg-gradient-to-b from-emerald-500/50 via-zinc-800 to-transparent"></div>
-        
+        <div className="absolute left-[18.5px] top-4 bottom-0 w-px bg-gradient-to-b from-emerald-500/50 via-zinc-800 to-transparent"></div>
+
         <div className="space-y-3">
           {sales.length === 0 ? (
             <div className="text-center py-12 text-zinc-500">
@@ -118,9 +118,9 @@ export const SalesFeed: React.FC = () => {
             </div>
           ) : (
             sales.map((sale) => (
-              <div key={sale.id} className="relative pl-8 group">
+              <div key={sale.id} className="relative pl-12 group">
                 {/* Timeline Dot */}
-                <div className="absolute left-[12px] top-5 w-2 h-2 rounded-full bg-zinc-950 border border-emerald-500 z-10 group-hover:scale-125 transition-transform duration-300 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                <div className="absolute left-[13px] top-5 w-[11px] h-[11px] rounded-full bg-zinc-950 border-2 border-emerald-500 z-10 group-hover:scale-125 transition-transform duration-300 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
 
                 <div className="glass-card rounded-2xl p-4 hover:bg-white/5 transition-all duration-300 border-zinc-800/50">
                   <div className="flex justify-between items-start mb-2">

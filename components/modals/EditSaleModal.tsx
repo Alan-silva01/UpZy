@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, DollarSign, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
 import { Sale } from '../../types';
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
 
 interface EditSaleModalProps {
   isOpen: boolean;
@@ -111,7 +111,7 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
               required
               type="text"
               value={formData.nomeCliente}
-              onChange={e => setFormData({...formData, nomeCliente: e.target.value})}
+              onChange={e => setFormData({...formData, nomeCliente: capitalizeName(e.target.value)})}
               className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
               placeholder="Nome do cliente"
             />

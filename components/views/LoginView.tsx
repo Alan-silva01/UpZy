@@ -9,6 +9,7 @@ interface LoginViewProps {
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -17,10 +18,43 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    setSuccessMessage('');
+    setIsLoading(true);
+
+    if (!formData.email) {
+      setErro('Digite seu email');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await import('../../lib/supabase').then(m => m.supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      }));
+
+      if (error) throw error;
+
+      setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setSuccessMessage('');
+      }, 3000);
+    } catch (error: any) {
+      setErro(error.message || 'Erro ao enviar email de recuperação');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
@@ -80,12 +114,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
        </div>
 
       <div className="w-full max-w-sm relative z-10 animate-slide-up">
-        <div className="text-center mb-8 flex flex-col items-center">
-          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-24 h-24 mb-4 object-contain" />
-          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tighter mb-2">UpZy</h1>
-          <p className="text-zinc-500 text-sm tracking-widest uppercase">
-            {isRegistering ? 'Crie sua Loja' : 'Sales Intelligence'}
-          </p>
+        {/* Logo no topo */}
+        <div className="text-center mb-6 flex flex-col items-center">
+          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-20 h-20 object-contain" />
         </div>
 
         <div className="glass-card rounded-[2.5rem] p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-500">
@@ -97,7 +128,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+          {/* Mensagem de sucesso */}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-2 animate-slide-up">
+              <AlertCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+              <p className="text-emerald-200 text-xs">{successMessage}</p>
+            </div>
+          )}
+
+          <form onSubmit={showForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4 mb-6">
 
             {isRegistering && (
               <div className="space-y-4 animate-slide-up">

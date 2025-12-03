@@ -7,12 +7,13 @@ import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { EditSaleModal } from '../modals/EditSaleModal';
+import { SellerSettingsModal } from '../modals/SellerSettingsModal';
 import { formatCurrency } from '../../utils/formatters';
 
 interface SellerDashboardProps {
   user: User;
   onLogout?: () => void;
-  onViewAllSales?: () => void;
+  onViewAllSales?: (saleId?: string) => void;
 }
 
 export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLogout, onViewAllSales }) => {
@@ -21,6 +22,8 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   const [ultimasVendas, setUltimasVendas] = useState<Sale[]>([]);
   const [lojaId, setLojaId] = useState<string>('');
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [userName, setUserName] = useState(user.name);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -343,7 +346,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
               return (
                 <div
                   key={venda.id}
-                  onClick={() => setEditingSale(venda)}
+                  onClick={() => onViewAllSales?.(venda.id)}
                   className="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900 transition-all cursor-pointer active:scale-[0.98]"
                 >
                   <div className="flex justify-between items-start mb-2">

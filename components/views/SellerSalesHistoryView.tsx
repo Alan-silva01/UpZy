@@ -9,9 +9,10 @@ import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 interface SellerSalesHistoryViewProps {
   user: User;
   onBack: () => void;
+  initialEditSaleId?: string;
 }
 
-export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ user, onBack }) => {
+export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ user, onBack, initialEditSaleId }) => {
   const [vendas, setVendas] = useState<Sale[]>([]);
   const [vendasFiltradas, setVendasFiltradas] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,23 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   useEffect(() => {
     aplicarFiltros();
   }, [vendas, filtroNome, filtroPedido, filtroDataInicio, filtroDataFim, filtroValorMin, filtroValorMax]);
+
+  // Abrir venda para edição se initialEditSaleId foi passado
+  useEffect(() => {
+    if (initialEditSaleId && vendas.length > 0) {
+      const venda = vendas.find(v => v.id === initialEditSaleId);
+      if (venda) {
+        handleEdit(venda);
+        // Scroll suave para centralizar a venda após um pequeno delay
+        setTimeout(() => {
+          const element = document.getElementById(`venda-${initialEditSaleId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+      }
+    }
+  }, [initialEditSaleId, vendas]);
 
   const carregarVendas = async (silencioso = false) => {
     if (!user.sellerId) return;
@@ -495,6 +513,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
           vendasFiltradas.map((venda) => (
             <div
               key={venda.id}
+              id={`venda-${venda.id}`}
               className="glass-card rounded-[1.5rem] p-4 border border-zinc-800 hover:border-zinc-700 transition-colors"
             >
               {editingId === venda.id ? (
@@ -549,7 +568,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="col-span-2 space-y-1">
                       <label className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold ml-1">
                         Valor (R$)
                       </label>
@@ -558,18 +577,6 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
                         step="0.01"
                         value={editData.valor || ''}
                         onChange={(e) => setEditData({ ...editData, valor: parseFloat(e.target.value) })}
-                        className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold ml-1">
-                        Qtd. Itens
-                      </label>
-                      <input
-                        type="number"
-                        value={editData.quantidade_itens || ''}
-                        onChange={(e) => setEditData({ ...editData, quantidade_itens: parseInt(e.target.value) })}
                         className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50"
                       />
                     </div>

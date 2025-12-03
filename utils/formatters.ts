@@ -28,6 +28,9 @@ export function formatarNomeProprio(nome: string): string {
   return formatadas.join(' ');
 }
 
+// Alias para compatibilidade
+export const capitalizeName = formatarNomeProprio;
+
 /**
  * Formata um número para moeda brasileira (R$)
  * @param value - Valor numérico a ser formatado

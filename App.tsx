@@ -13,6 +13,7 @@ import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { SaleSuccessModal } from './components/modals/SaleSuccessModal';
+import { SellerSettingsModal } from './components/modals/SellerSettingsModal';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { Loader2 } from 'lucide-react';
@@ -26,6 +27,8 @@ const App: React.FC = () => {
   const [isSaleSuccessModalOpen, setIsSaleSuccessModalOpen] = useState(false);
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const [loadingSessao, setLoadingSessao] = useState(true);
+  const [selectedSaleId, setSelectedSaleId] = useState<string | undefined>(undefined);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Verificar sessão ao carregar
   useEffect(() => {
@@ -212,19 +215,29 @@ const App: React.FC = () => {
           return <SellerDashboardView
             user={user}
             onLogout={handleLogout}
-            onViewAllSales={() => setActiveTab(Tab.SELLER_SALES_HISTORY)}
+            onViewAllSales={(saleId?: string) => {
+              setSelectedSaleId(saleId);
+              setActiveTab(Tab.SELLER_SALES_HISTORY);
+            }}
           />;
         case Tab.SELLER_SALES_HISTORY:
           return <SellerSalesHistoryView
             user={user}
-            onBack={() => setActiveTab(Tab.SELLER_HOME)}
+            onBack={() => {
+              setSelectedSaleId(undefined);
+              setActiveTab(Tab.SELLER_HOME);
+            }}
+            initialEditSaleId={selectedSaleId}
           />;
         case Tab.SALES: return <SalesFeed />; // Seller sees sales history (filtered in real app)
         default:
           return <SellerDashboardView
             user={user}
             onLogout={handleLogout}
-            onViewAllSales={() => setActiveTab(Tab.SELLER_SALES_HISTORY)}
+            onViewAllSales={(saleId?: string) => {
+              setSelectedSaleId(saleId);
+              setActiveTab(Tab.SELLER_SALES_HISTORY);
+            }}
           />;
       }
     }
@@ -253,7 +266,12 @@ const App: React.FC = () => {
          </div>
 
         {/* Header Global */}
-        <Header user={user} onLogout={handleLogout} storeName={nomeLoja} />
+        <Header
+          user={user}
+          onLogout={handleLogout}
+          storeName={nomeLoja}
+          onOpenSettings={user.role === 'SELLER' ? () => setIsSettingsModalOpen(true) : undefined}
+        />
 
         {/* Container scrollável */}
         <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
@@ -285,6 +303,19 @@ const App: React.FC = () => {
             }}
             onContinue={handleContinuarVendendo}
             saleData={lastSaleData}
+          />
+        )}
+
+        {/* Modal de Configurações do Vendedor */}
+        {user && user.role === 'SELLER' && (
+          <SellerSettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            userId={user.id}
+            currentName={user.name}
+            onNameUpdate={(newName: string) => {
+              setUser({ ...user, name: newName });
+            }}
           />
         )}
       </main>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, DollarSign, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
 import { PaymentMethod, PaymentType } from '../../types';
-import { formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
+import { formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
 
 interface NewSaleModalProps {
   isOpen: boolean;
@@ -98,11 +98,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
           {/* Customer */}
           <div className="space-y-2">
             <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Cliente</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               value={formData.customerName}
-              onChange={e => setFormData({...formData, customerName: e.target.value})}
+              onChange={e => setFormData({...formData, customerName: capitalizeName(e.target.value)})}
               className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
               placeholder="Nome do cliente"
             />
