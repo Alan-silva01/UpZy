@@ -4,7 +4,6 @@ import { ArrowLeft, Search, Edit3, Trash2, Save, X, Loader2, Filter } from 'luci
 import { buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
-import { Header } from '../Header';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface SellerSalesHistoryViewProps {
@@ -287,12 +286,9 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
   if (loading) {
     return (
-      <>
-        <Header user={user} title="Minhas Vendas" subtitle="Histórico" />
-        <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-        </div>
-      </>
+      <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
     );
   }
 

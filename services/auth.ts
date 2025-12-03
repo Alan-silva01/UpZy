@@ -237,3 +237,24 @@ export async function buscarLojaIdUsuario(userId: string): Promise<string | null
     return null;
   }
 }
+
+// Buscar nome da loja
+export async function buscarNomeLoja(lojaId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('lojas')
+      .select('nome')
+      .eq('id', lojaId)
+      .single();
+
+    if (error || !data) {
+      console.error('Erro ao buscar nome da loja:', error);
+      return null;
+    }
+
+    return data.nome;
+  } catch (error) {
+    console.error('Erro ao buscar nome da loja:', error);
+    return null;
+  }
+}

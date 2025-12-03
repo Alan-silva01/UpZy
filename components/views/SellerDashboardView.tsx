@@ -5,7 +5,6 @@ import { Target, TrendingUp, AlertCircle, Loader2, Receipt, ArrowRight } from 'l
 import { buscarLojaIdUsuario } from '../../services/auth';
 import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
-import { Header } from '../Header';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { EditSaleModal } from '../modals/EditSaleModal';
 
@@ -197,19 +196,14 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
 
   if (loading || !sellerProfile) {
     return (
-      <>
-        <Header user={user} onLogout={onLogout} />
-        <div className="pt-32 pb-28 space-y-6 flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-        </div>
-      </>
+      <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <>
-      <Header user={user} onLogout={onLogout} />
-      <div className="pt-24 pb-28 space-y-6 animate-slide-up">
+    <div className="pt-24 pb-28 space-y-6 animate-slide-up">
 
       {/* Main Goal Card */}
       <div className="relative w-full rounded-[2.5rem] overflow-hidden shadow-2xl group">
@@ -389,6 +383,5 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
         />
       )}
     </div>
-    </>
   );
 };

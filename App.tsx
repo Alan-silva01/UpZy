@@ -9,16 +9,18 @@ import { SellerSalesHistoryView } from './components/views/SellerSalesHistoryVie
 import { LoginView } from './components/views/LoginView';
 import { SettingsView } from './components/views/SettingsView';
 import { GoalsManagementView } from './components/views/GoalsManagementView';
+import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { SaleSuccessModal } from './components/modals/SaleSuccessModal';
 import { Tab, User } from './types';
-import { verificarSessao, fazerLogout, buscarLojaIdUsuario } from './services/auth';
+import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [lojaId, setLojaId] = useState<string | null>(null);
+  const [nomeLoja, setNomeLoja] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   const [isSaleSuccessModalOpen, setIsSaleSuccessModalOpen] = useState(false);
@@ -50,6 +52,13 @@ const App: React.FC = () => {
         console.log('🏪 Loja ID:', loja);
         setLojaId(loja);
 
+        // Buscar nome da loja
+        if (loja) {
+          const nome = await buscarNomeLoja(loja);
+          console.log('🏪 Nome da Loja:', nome);
+          setNomeLoja(nome);
+        }
+
         if (usuarioSessao.role === 'ADMIN') {
           setActiveTab(Tab.DASHBOARD);
         } else {
@@ -60,11 +69,13 @@ const App: React.FC = () => {
         // Garantir que user é null se não houver sessão
         setUser(null);
         setLojaId(null);
+        setNomeLoja(null);
       }
     } catch (error) {
       console.error('❌ Erro ao verificar sessão:', error);
       setUser(null);
       setLojaId(null);
+      setNomeLoja(null);
     } finally {
       console.log('✅ Verificação de sessão concluída');
       setLoadingSessao(false);
@@ -75,6 +86,12 @@ const App: React.FC = () => {
     setUser(loggedInUser);
     const loja = await buscarLojaIdUsuario(loggedInUser.id);
     setLojaId(loja);
+
+    // Buscar nome da loja
+    if (loja) {
+      const nome = await buscarNomeLoja(loja);
+      setNomeLoja(nome);
+    }
 
     // Set default tab based on role
     if (loggedInUser.role === 'ADMIN') {
@@ -88,6 +105,7 @@ const App: React.FC = () => {
     await fazerLogout();
     setUser(null);
     setLojaId(null);
+    setNomeLoja(null);
     setActiveTab(Tab.DASHBOARD);
   };
 
@@ -233,6 +251,9 @@ const App: React.FC = () => {
             <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
             <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
          </div>
+
+        {/* Header Global */}
+        <Header user={user} onLogout={handleLogout} storeName={nomeLoja} />
 
         {/* Container scrollável */}
         <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
