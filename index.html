@@ -11,7 +11,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#09090b" />
 
     <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -158,6 +158,16 @@
       }
       .recharts-surface {
         outline: none;
+      }
+
+      /* Safe area para iOS PWA - ajusta o padding-top global */
+      :root {
+        --header-height: calc(72px + env(safe-area-inset-top, 0px));
+      }
+
+      /* Classe customizada para padding-top com safe area */
+      .pt-header {
+        padding-top: var(--header-height);
       }
     </style>
   <script type="importmap">

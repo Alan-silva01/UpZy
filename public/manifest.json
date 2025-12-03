@@ -4,8 +4,8 @@
   "description": "Sistema de gestão de vendas e comissões para equipes comerciais",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
   "orientation": "portrait",
   "scope": "/",
   "icons": [

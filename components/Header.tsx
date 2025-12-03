@@ -12,11 +12,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName }) => 
   const isAdmin = user.role === 'ADMIN';
 
   return (
-    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-black border-b border-zinc-800/50 z-50 shadow-lg">
+    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
       {/* Safe area para iOS PWA - adiciona padding no topo quando necessário */}
       <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Conteúdo do header */}
-        <div className="px-4 py-4 flex justify-between items-center bg-black backdrop-blur-xl">
+        <div className="px-4 py-4 flex justify-between items-center bg-zinc-950 backdrop-blur-xl">
         {isAdmin ? (
           // Layout para Admin - Logo e nome da loja centralizado
           <>

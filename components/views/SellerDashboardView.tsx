@@ -196,14 +196,14 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
 
   if (loading || !sellerProfile) {
     return (
-      <div className="pt-24 pb-28 space-y-6 flex items-center justify-center h-96">
+      <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="pt-24 pb-28 space-y-6 animate-slide-up">
+    <div className="pt-header pb-28 space-y-6 animate-slide-up">
 
       {/* Main Goal Card */}
       <div className="relative w-full rounded-[2.5rem] overflow-hidden shadow-2xl group">
