@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Target, Calendar, DollarSign, Trash2, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
 
 interface Meta {
   id: string;
@@ -25,6 +26,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
 
   // Form state
   const [valorTotal, setValorTotal] = useState('');
+  const [displayValor, setDisplayValor] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -54,6 +56,13 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayValor(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setValorTotal(numeric.toString());
   };
 
   const criarMeta = async () => {
@@ -95,6 +104,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
       } else {
         // Limpar formulário
         setValorTotal('');
+        setDisplayValor('');
         setDataInicio('');
         setDataFim('');
         setShowForm(false);
@@ -135,10 +145,6 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
   const formatarData = (dataISO: string) => {
     const data = new Date(dataISO);
     return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
-
-  const formatarValor = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   };
 
   if (!isOpen) return null;
@@ -193,7 +199,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
                           <div className="flex items-center gap-2 mb-1">
                             <DollarSign size={16} className="text-emerald-400" />
                             <span className="text-xl font-bold text-white">
-                              {formatarValor(meta.valor_total)}
+                              {formatCurrency(meta.valor_total)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -235,13 +241,14 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose, lojaId,
                         Valor Total da Meta
                       </label>
                       <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">R$</div>
                         <input
-                          type="number"
-                          value={valorTotal}
-                          onChange={(e) => setValorTotal(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 transition-colors text-sm"
+                          type="text"
+                          inputMode="numeric"
+                          value={displayValor}
+                          onChange={handleValorChange}
+                          placeholder="R$ 0,00"
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-11 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 transition-colors text-sm font-mono"
                         />
                       </div>
                       <p className="text-xs text-zinc-600 mt-1">

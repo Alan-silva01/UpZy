@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, DollarSign, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
 import { PaymentMethod, PaymentType } from '../../types';
+import { formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
 
 interface NewSaleModalProps {
   isOpen: boolean;
@@ -17,15 +18,24 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
     paymentType: 'spot' as PaymentType,
     installments: 1
   });
+  const [displayAmount, setDisplayAmount] = useState('');
 
   if (!isOpen) return null;
 
   const showPaymentTypeOption = ['card_credit', 'boleto', 'promissory'].includes(formData.paymentMethod);
   const showInstallments = showPaymentTypeOption && formData.paymentType === 'installments';
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayAmount(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setFormData({...formData, amount: numeric.toString()});
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+    setDisplayAmount('');
     onClose();
   };
 
@@ -68,19 +78,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
 
           {/* Amount */}
           <div className="space-y-2">
-            <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Valor (R$)</label>
+            <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Valor</label>
             <div className="relative">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">
-                  <DollarSign size={16} />
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">
+                  R$
                </div>
                <input
                 required
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={e => setFormData({...formData, amount: e.target.value})}
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors font-mono"
-                placeholder="0.00"
+                type="text"
+                inputMode="numeric"
+                value={displayAmount}
+                onChange={handleAmountChange}
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                placeholder="R$ 0,00"
               />
             </div>
           </div>

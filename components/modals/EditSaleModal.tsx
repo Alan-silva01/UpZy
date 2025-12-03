@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, DollarSign, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
 import { Sale } from '../../types';
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
 
 interface EditSaleModalProps {
   isOpen: boolean;
@@ -18,11 +19,19 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
     tipoPagamento: sale.tipo_pagamento || 'avista',
     parcelas: sale.parcelas || 1
   });
+  const [displayAmount, setDisplayAmount] = useState(formatCurrency(sale.amount));
 
   if (!isOpen) return null;
 
   const showPaymentTypeOption = ['cartao_credito', 'boleto', 'promissoria'].includes(formData.metodoPagamento);
   const showInstallments = showPaymentTypeOption && formData.tipoPagamento === 'parcelado';
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayAmount(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setFormData({...formData, valor: numeric.toString()});
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,19 +87,19 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
 
           {/* Amount */}
           <div className="space-y-2">
-            <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Valor (R$)</label>
+            <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Valor</label>
             <div className="relative">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">
-                  <DollarSign size={16} />
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">
+                  R$
                </div>
                <input
                 required
-                type="number"
-                step="0.01"
-                value={formData.valor}
-                onChange={e => setFormData({...formData, valor: e.target.value})}
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors font-mono"
-                placeholder="0.00"
+                type="text"
+                inputMode="numeric"
+                value={displayAmount}
+                onChange={handleAmountChange}
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                placeholder="R$ 0,00"
               />
             </div>
           </div>

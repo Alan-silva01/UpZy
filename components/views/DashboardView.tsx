@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { GoalsModal } from '../modals/GoalsModal';
 import { ManageGoalsModal } from '../modals/ManageGoalsModal';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { formatCurrency } from '../../utils/formatters';
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
 
@@ -317,50 +318,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
           <div className="space-y-0.5">
             <div className="text-zinc-400 text-xs font-medium">Faturamento Total</div>
             <div className="text-3xl font-bold text-white tracking-tight">
-               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(stats.totalSales)}
+               {formatCurrency(stats.totalSales)}
             </div>
             <div className="text-[10px] text-zinc-400">
-              de <span className="text-zinc-300">{new Intl.NumberFormat('pt-BR', { notation: "compact", compactDisplay: "short", style: 'currency', currency: 'BRL' }).format(stats.monthlyTarget)}</span> meta
+              {percentage >= 100 ? (
+                <>Parabéns! Passou <span className="text-amber-400 font-bold">{formatCurrency(stats.totalSales - stats.monthlyTarget)}</span> da meta</>
+              ) : (
+                <>de <span className="text-zinc-300">{formatCurrency(stats.monthlyTarget, true)}</span> meta</>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-end">
-              <span className="text-2xl font-light text-white">{percentage.toFixed(0)}<span className="text-sm text-emerald-400">%</span></span>
+              <span className={`text-2xl font-light ${percentage >= 100 ? 'text-amber-400' : 'text-white'}`}>{percentage.toFixed(0)}<span className={`text-sm ${percentage >= 100 ? 'text-amber-500' : 'text-emerald-400'}`}>%</span></span>
               <span className={`text-[10px] font-medium ${variacaoMesAnterior >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {variacaoMesAnterior >= 0 ? '+' : ''}{variacaoMesAnterior.toFixed(1)}% vs mês anterior
               </span>
             </div>
-            <ProgressBar
-              current={stats.totalSales}
-              total={stats.monthlyTarget}
-              heightClass="h-1"
-              colorClass="bg-gradient-to-r from-emerald-400 to-emerald-300"
-            />
+
+            {/* Progress Bar com marca da meta */}
+            <div className="relative">
+              <div className="w-full bg-zinc-800 rounded-full h-1 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${percentage >= 100 ? "bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500" : "bg-gradient-to-r from-emerald-400 to-emerald-300"}`}
+                  style={{ width: `${Math.min(percentage, 200)}%` }}
+                />
+              </div>
+              {/* Marca da meta aos 100% - posição proporcional */}
+              {percentage > 100 && (
+                <div
+                  className="absolute top-0 w-0.5 h-1 bg-white/80 shadow-lg"
+                  style={{ left: `${(stats.monthlyTarget / stats.totalSales) * 100}%` }}
+                >
+                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-lg"></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Action Strip */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
-         <button className="flex-1 min-w-[130px] h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex flex-col justify-between hover:border-zinc-700 transition-colors relative overflow-hidden group">
+         <button className="flex-1 min-w-[130px] h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex flex-col items-center justify-center hover:border-zinc-700 transition-colors relative overflow-hidden group">
             <div className="absolute right-0 top-0 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl -mr-3 -mt-3 group-hover:bg-emerald-500/20 transition-all"></div>
-            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-2">
                <DollarSign size={14} />
             </div>
-            <div>
-               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(stats.totalSales)}</div>
+            <div className="text-center">
+               <div className="text-base font-bold text-white">{formatCurrency(stats.totalSales, true)}</div>
                <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Vendido</div>
             </div>
          </button>
 
-         <button className="flex-1 min-w-[130px] h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex flex-col justify-between hover:border-zinc-700 transition-colors relative overflow-hidden group">
+         <button className="flex-1 min-w-[130px] h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex flex-col items-center justify-center hover:border-zinc-700 transition-colors relative overflow-hidden group">
              <div className="absolute right-0 top-0 w-12 h-12 bg-purple-500/10 rounded-full blur-xl -mr-3 -mt-3 group-hover:bg-purple-500/20 transition-all"></div>
-             <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+             <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 mb-2">
                <Target size={14} />
             </div>
-            <div>
-               <div className="text-base font-bold text-white">{new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(Math.max(0, stats.monthlyTarget - stats.totalSales))}</div>
+            <div className="text-center">
+               <div className="text-base font-bold text-white">{formatCurrency(Math.max(0, stats.monthlyTarget - stats.totalSales), true)}</div>
                <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Falta Vender</div>
             </div>
          </button>
@@ -458,7 +476,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
                   </span>
                   <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm">
                      <span className="text-[10px] text-emerald-400 font-semibold tracking-wide">
-                        {new Intl.NumberFormat('pt-BR', { notation: "compact", style: 'currency', currency: 'BRL' }).format(activeItem.value)}
+                        {formatCurrency(activeItem.value, true)}
                      </span>
                   </div>
                </div>

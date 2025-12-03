@@ -27,3 +27,76 @@ export function formatarNomeProprio(nome: string): string {
 
   return formatadas.join(' ');
 }
+
+/**
+ * Formata um número para moeda brasileira (R$)
+ * @param value - Valor numérico a ser formatado
+ * @param compact - Se true, usa notação compacta (ex: R$ 45,9 mil)
+ * @returns String formatada em moeda brasileira
+ */
+export function formatCurrency(value: number, compact: boolean = false): string {
+  if (compact) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      notation: 'compact',
+      compactDisplay: 'short',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1
+    }).format(value);
+  }
+
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+/**
+ * Formata entrada de texto para moeda enquanto o usuário digita
+ * @param value - String com o valor digitado
+ * @returns String formatada em moeda
+ */
+export function formatCurrencyInput(value: string): string {
+  // Remove tudo exceto números
+  const numericValue = value.replace(/\D/g, '');
+
+  if (!numericValue) return '';
+
+  // Converte para número (centavos)
+  const numberValue = parseInt(numericValue, 10) / 100;
+
+  // Formata como moeda
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(numberValue);
+}
+
+/**
+ * Converte string de moeda formatada para número
+ * @param value - String formatada (ex: "R$ 1.234,56")
+ * @returns Número decimal
+ */
+export function parseCurrencyInput(value: string): number {
+  // Remove tudo exceto números
+  const numericValue = value.replace(/\D/g, '');
+
+  if (!numericValue) return 0;
+
+  // Converte de centavos para reais
+  return parseInt(numericValue, 10) / 100;
+}
+
+/**
+ * Retorna apenas os dígitos de uma string formatada de moeda
+ * @param value - String formatada (ex: "R$ 1.234,56")
+ * @returns String com apenas números (ex: "123456")
+ */
+export function getNumericValue(value: string): string {
+  return value.replace(/\D/g, '');
+}
