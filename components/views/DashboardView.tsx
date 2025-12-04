@@ -5,8 +5,6 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sec
 import { buscarVendedores, calcularEstatisticasLoja, buscarDadosPerformance } from '../../services/api';
 import { Seller, StoreStats } from '../../types';
 import { supabase } from '../../lib/supabase';
-import { GoalsModal } from '../modals/GoalsModal';
-import { ManageGoalsModal } from '../modals/ManageGoalsModal';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -39,9 +37,10 @@ const renderActiveShape = (props: any) => {
 interface DashboardViewProps {
   lojaId: string;
   userId?: string;
+  onNavigateToGoals?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, onNavigateToGoals }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [vendedores, setVendedores] = useState<Seller[]>([]);
@@ -50,8 +49,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
   const [periodoGrafico, setPeriodoGrafico] = useState<'semana' | 'mes'>('semana');
   const [nomeLoja, setNomeLoja] = useState<string>('');
   const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
-  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
-  const [isManageGoalsModalOpen, setIsManageGoalsModalOpen] = useState(false);
   const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
   const [avatarLoja, setAvatarLoja] = useState<string>('');
 
@@ -308,7 +305,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
               <span className="text-[10px] text-emerald-100 font-medium">Meta Mensal</span>
             </div>
             <button
-              onClick={() => setIsGoalsModalOpen(true)}
+              onClick={onNavigateToGoals}
               className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors"
             >
               <ArrowUpRight size={14} />
@@ -455,6 +452,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
                         stroke="none"
                         onMouseEnter={onPieEnter}
                         onClick={onPieEnter}
+                        isAnimationActive={true}
+                        animationBegin={0}
+                        animationDuration={300}
                         className="outline-none focus:outline-none cursor-pointer"
                      >
                         {sellerData.map((entry, index) => (
@@ -510,31 +510,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId }) 
         <span className="text-zinc-500 text-xs font-bold tracking-tight">UpZy</span>
       </div>
 
-      {/* Modal de Metas - Criar Nova */}
-      <GoalsModal
-        isOpen={isGoalsModalOpen}
-        onClose={() => {
-          setIsGoalsModalOpen(false);
-          carregarDados(); // Recarregar dados após fechar modal (caso meta tenha sido alterada)
-        }}
-        lojaId={lojaId}
-        userId={userId || ''}
-      />
-
-      {/* Modal de Gerenciar Metas - Ativar/Desativar */}
-      <ManageGoalsModal
-        isOpen={isManageGoalsModalOpen}
-        onClose={() => {
-          setIsManageGoalsModalOpen(false);
-          carregarDados(); // Recarregar dados após mudar meta ativa
-        }}
-        lojaId={lojaId}
-        onMetaSelected={(metaId) => {
-          // Callback quando uma meta é ativada/desativada
-          console.log('Meta selecionada:', metaId);
-          carregarDados();
-        }}
-      />
       </div>
     </>
   );

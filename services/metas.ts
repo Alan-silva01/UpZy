@@ -59,26 +59,31 @@ export async function calcularMetaVendedor(
     const meta = await buscarMetaAtiva(lojaId);
     if (!meta) return null;
 
-    // Buscar número de vendedores ativos na loja
+    // Buscar todos os vendedores ativos na loja com suas metas
     const { data: vendedores, error: vendedoresError } = await supabase
       .from('vendedores')
-      .select('id')
+      .select('id, meta')
       .eq('loja_id', lojaId);
 
-    if (vendedoresError || !vendedores) {
+    if (vendedoresError || !vendedores || vendedores.length === 0) {
       console.error('Erro ao buscar vendedores:', vendedoresError);
       return null;
     }
 
-    const numeroVendedores = vendedores.length;
-    if (numeroVendedores === 0) return null;
+    // Calcular meta individual (divisão igual para todos)
+    const metaIndividual = meta.valor_total / vendedores.length;
 
-    // Calcular meta individual
-    const metaIndividual = meta.valor_total / numeroVendedores;
-
-    // Se tiver vendedorId, buscar vendas do vendedor no período
-    let valorAtual = 0;
     if (vendedorId) {
+      // Buscar o vendedor específico
+      const vendedor = vendedores.find(v => v.id === vendedorId);
+
+      if (!vendedor) {
+        console.error('Vendedor não encontrado');
+        return null;
+      }
+
+      // Buscar vendas do vendedor no período
+      let valorAtual = 0;
       const { data: vendas, error: vendasError } = await supabase
         .from('vendas')
         .select('valor')
@@ -89,18 +94,30 @@ export async function calcularMetaVendedor(
       if (!vendasError && vendas) {
         valorAtual = vendas.reduce((acc, venda) => acc + venda.valor, 0);
       }
+
+      const percentual = metaIndividual > 0 ? (valorAtual / metaIndividual) * 100 : 0;
+
+      return {
+        metaId: meta.id,
+        valorMeta: metaIndividual,
+        valorAtual,
+        percentual,
+        dataInicio: meta.data_inicio,
+        dataFim: meta.data_fim
+      };
+    } else {
+      // Se não tiver vendedorId, retornar meta média
+      const metaMedia = meta.valor_total / vendedores.length;
+
+      return {
+        metaId: meta.id,
+        valorMeta: metaMedia,
+        valorAtual: 0,
+        percentual: 0,
+        dataInicio: meta.data_inicio,
+        dataFim: meta.data_fim
+      };
     }
-
-    const percentual = metaIndividual > 0 ? (valorAtual / metaIndividual) * 100 : 0;
-
-    return {
-      metaId: meta.id,
-      valorMeta: metaIndividual,
-      valorAtual,
-      percentual,
-      dataInicio: meta.data_inicio,
-      dataFim: meta.data_fim
-    };
   } catch (error) {
     console.error('Erro ao calcular meta do vendedor:', error);
     return null;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Target, Loader2, AlertCircle } from 'lucide-react';
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
 
 interface EditSellerModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const EditSellerModal: React.FC<EditSellerModalProps> = ({
     nome: '',
     meta: 0
   });
+  const [displayMeta, setDisplayMeta] = useState('');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -32,6 +34,7 @@ export const EditSellerModal: React.FC<EditSellerModalProps> = ({
         nome: seller.name,
         meta: seller.target
       });
+      setDisplayMeta(formatCurrency(seller.target));
     }
   }, [seller]);
 
@@ -43,11 +46,6 @@ export const EditSellerModal: React.FC<EditSellerModalProps> = ({
 
     if (!formData.nome) {
       setErro('Preencha o nome do vendedor');
-      return;
-    }
-
-    if (formData.meta <= 0) {
-      setErro('A meta deve ser maior que zero');
       return;
     }
 
@@ -73,12 +71,19 @@ export const EditSellerModal: React.FC<EditSellerModalProps> = ({
     }
   };
 
+  const handleMetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayMeta(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setFormData({ ...formData, meta: numeric });
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pt-20 animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="w-full max-w-md relative animate-slide-up my-auto">
+      <div className="w-full max-w-md relative animate-slide-up">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent rounded-[2rem] blur-2xl"></div>
 
@@ -109,35 +114,41 @@ export const EditSellerModal: React.FC<EditSellerModalProps> = ({
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {/* Nome */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-400 transition-colors">
-                <User size={18} />
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Nome</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Nome Completo"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  onBlur={(e) => setFormData({ ...formData, nome: capitalizeName(e.target.value) })}
+                  disabled={loading}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Nome Completo"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                disabled={loading}
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-              />
             </div>
 
             {/* Meta */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-400 transition-colors">
-                <Target size={18} />
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Meta Mensal</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                  <Target size={18} />
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="R$ 0,00"
+                  value={displayMeta}
+                  onChange={handleMetaChange}
+                  disabled={loading}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+                />
               </div>
-              <input
-                type="number"
-                placeholder="Meta Mensal (R$)"
-                value={formData.meta}
-                onChange={(e) => setFormData({ ...formData, meta: Number(e.target.value) })}
-                disabled={loading}
-                min="0"
-                step="1000"
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-              />
             </div>
 
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-4">

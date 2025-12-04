@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Lock, Target, Loader2, AlertCircle } from 'lucide-react';
+import { formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
 
 interface AddSellerModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
     senha: '',
     meta: 50000
   });
+  const [displayMeta, setDisplayMeta] = useState('R$ 50.000,00');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -42,6 +44,7 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
     try {
       await onAdd(formData);
       setFormData({ nome: '', email: '', senha: '', meta: 50000 });
+      setDisplayMeta('R$ 50.000,00');
       onClose();
     } catch (error: any) {
       setErro(error.message || 'Erro ao cadastrar vendedor');
@@ -53,14 +56,22 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
   const handleClose = () => {
     if (!loading) {
       setFormData({ nome: '', email: '', senha: '', meta: 50000 });
+      setDisplayMeta('R$ 50.000,00');
       setErro('');
       onClose();
     }
   };
 
+  const handleMetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayMeta(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setFormData({ ...formData, meta: numeric });
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="w-full max-w-md relative animate-slide-up my-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pt-20 animate-fade-in" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+      <div className="w-full max-w-md relative animate-slide-up">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 to-transparent rounded-[2rem] blur-2xl"></div>
 
@@ -91,18 +102,22 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {/* Nome */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <User size={18} />
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Nome</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Nome Completo"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  onBlur={(e) => setFormData({ ...formData, nome: capitalizeName(e.target.value) })}
+                  disabled={loading}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Nome Completo"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                disabled={loading}
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-              />
             </div>
 
             {/* Email */}
@@ -137,20 +152,22 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
             </div>
 
             {/* Meta */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <Target size={18} />
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Meta Mensal</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                  <Target size={18} />
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="R$ 0,00"
+                  value={displayMeta}
+                  onChange={handleMetaChange}
+                  disabled={loading}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
+                />
               </div>
-              <input
-                type="number"
-                placeholder="Meta Mensal (R$)"
-                value={formData.meta}
-                onChange={(e) => setFormData({ ...formData, meta: Number(e.target.value) })}
-                disabled={loading}
-                min="0"
-                step="1000"
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-              />
             </div>
 
             {/* Actions */}

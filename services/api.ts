@@ -39,17 +39,23 @@ export async function buscarVendedores(lojaId: string): Promise<Seller[]> {
   // Verificar se há meta ativa
   const metaAtiva = await buscarMetaAtiva(lojaId);
 
-  // Calcular meta individual se houver meta ativa
-  let metaIndividual = 0;
   let dataInicio = '';
   let dataFim = '';
 
   if (metaAtiva) {
-    metaIndividual = metaAtiva.valor_total / data.length;
     dataInicio = metaAtiva.data_inicio;
     dataFim = metaAtiva.data_fim;
-    console.log(`🎯 Meta ativa encontrada! Individual: R$ ${metaIndividual}`);
+    console.log(`🎯 Meta ativa encontrada!`);
   }
+
+  // Calcular meta padrão (divisão igual entre todos)
+  const metaPadrao = metaAtiva && data.length > 0
+    ? metaAtiva.valor_total / data.length
+    : 0;
+
+  console.log(`📊 Meta da loja: R$ ${metaAtiva?.valor_total || 0}`);
+  console.log(`📊 Total de vendedores: ${data.length}`);
+  console.log(`📊 Meta padrão por vendedor: R$ ${metaPadrao}`);
 
   // Buscar vendas para cada vendedor
   const vendedoresComVendas = await Promise.all(
@@ -66,14 +72,17 @@ export async function buscarVendedores(lojaId: string): Promise<Seller[]> {
 
       const ultimaVenda = await buscarUltimaVenda(vendedor.id);
 
-      console.log(`💼 Vendedor ${vendedor.usuarios.nome}: R$ ${vendasTotal} vendido`);
+      // Todos usam a meta padrão (divisão igual)
+      const metaVendedor = metaAtiva ? metaPadrao : 0;
+
+      console.log(`💼 Vendedor ${vendedor.usuarios.nome}: R$ ${vendasTotal} vendido | Meta: R$ ${metaVendedor}`);
 
       return {
         id: vendedor.id,
         name: vendedor.usuarios.nome,
         avatar: vendedor.usuarios.avatar || `https://picsum.photos/100/100?random=${vendedor.id}`,
         currentSales: vendasTotal,
-        target: metaAtiva ? metaIndividual : vendedor.meta, // Usa meta da meta ativa ou meta individual do vendedor
+        target: metaVendedor,
         lastSaleTime: ultimaVenda?.data_venda
       };
     })

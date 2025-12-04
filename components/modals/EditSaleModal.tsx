@@ -111,7 +111,8 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
               required
               type="text"
               value={formData.nomeCliente}
-              onChange={e => setFormData({...formData, nomeCliente: capitalizeName(e.target.value)})}
+              onChange={e => setFormData({...formData, nomeCliente: e.target.value})}
+              onBlur={e => setFormData({...formData, nomeCliente: capitalizeName(e.target.value)})}
               className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
               placeholder="Nome do cliente"
             />

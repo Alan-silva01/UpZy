@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2 } from 'lucide-react';
+import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ImageCropUpload } from '../ui/ImageCropUpload';
@@ -22,6 +22,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
   const [storeData, setStoreData] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [storeAvatar, setStoreAvatar] = useState<string>('');
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [loadingSaveName, setLoadingSaveName] = useState(false);
+  const [loadingSavePassword, setLoadingSavePassword] = useState(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState('');
+  const [mensagemErro, setMensagemErro] = useState('');
+  const [editandoNome, setEditandoNome] = useState(false);
+  const [editandoSenha, setEditandoSenha] = useState(false);
+  const [editandoAvatar, setEditandoAvatar] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -91,10 +101,96 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
       }
 
       setStoreAvatar(publicUrl);
-      alert('Avatar atualizado com sucesso!');
+      setMensagemSucesso('Avatar atualizado com sucesso!');
+      setTimeout(() => setMensagemSucesso(''), 3000);
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
+      setMensagemErro('Erro ao atualizar avatar');
+      setTimeout(() => setMensagemErro(''), 3000);
       throw error;
+    }
+  };
+
+  const handleSaveStoreName = async () => {
+    if (!storeData?.id || !storeName.trim()) {
+      setMensagemErro('Nome da loja não pode estar vazio');
+      setTimeout(() => setMensagemErro(''), 3000);
+      return;
+    }
+
+    setLoadingSaveName(true);
+    try {
+      const { error } = await supabase
+        .from('lojas')
+        .update({ nome: storeName.trim() })
+        .eq('id', storeData.id);
+
+      if (error) throw error;
+
+      setMensagemSucesso('Nome da loja atualizado com sucesso!');
+      setTimeout(() => setMensagemSucesso(''), 3000);
+    } catch (error) {
+      console.error('Erro ao atualizar nome da loja:', error);
+      setMensagemErro('Erro ao atualizar nome da loja');
+      setTimeout(() => setMensagemErro(''), 3000);
+    } finally {
+      setLoadingSaveName(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      setMensagemErro('Preencha todos os campos de senha');
+      setTimeout(() => setMensagemErro(''), 3000);
+      return;
+    }
+
+    if (novaSenha.length < 6) {
+      setMensagemErro('A senha deve ter pelo menos 6 caracteres');
+      setTimeout(() => setMensagemErro(''), 3000);
+      return;
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      setMensagemErro('As senhas não coincidem');
+      setTimeout(() => setMensagemErro(''), 3000);
+      return;
+    }
+
+    setLoadingSavePassword(true);
+    try {
+      // Primeiro, validar a senha atual
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: senhaAtual
+      });
+
+      if (signInError) {
+        setMensagemErro('Senha atual incorreta');
+        setTimeout(() => setMensagemErro(''), 3000);
+        setLoadingSavePassword(false);
+        return;
+      }
+
+      // Se a senha atual estiver correta, atualizar para a nova senha
+      const { error } = await supabase.auth.updateUser({
+        password: novaSenha
+      });
+
+      if (error) throw error;
+
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setEditandoSenha(false);
+      setMensagemSucesso('Senha atualizada com sucesso!');
+      setTimeout(() => setMensagemSucesso(''), 3000);
+    } catch (error: any) {
+      console.error('Erro ao atualizar senha:', error);
+      setMensagemErro(error.message || 'Erro ao atualizar senha');
+      setTimeout(() => setMensagemErro(''), 3000);
+    } finally {
+      setLoadingSavePassword(false);
     }
   };
 
@@ -112,6 +208,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
          <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase mb-0.5">SaaS</span>
          <h1 className="text-xl font-bold text-white tracking-tight">Configurações</h1>
       </div>
+
+      {/* Mensagens de Sucesso/Erro */}
+      {mensagemSucesso && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2 animate-slide-up">
+          <CheckCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+          <p className="text-emerald-200 text-xs">{mensagemSucesso}</p>
+        </div>
+      )}
+      {mensagemErro && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-start gap-2 animate-slide-up">
+          <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+          <p className="text-red-200 text-xs">{mensagemErro}</p>
+        </div>
+      )}
 
       {/* Subscription Card */}
       <div className="relative w-full aspect-[16/9] rounded-[2rem] overflow-hidden shadow-2xl group transition-transform hover:scale-[1.01]">
@@ -151,39 +261,197 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
          </div>
       </div>
 
-      {/* Store Settings */}
-      <div className="glass-card rounded-[2rem] p-6 space-y-6">
-         <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-               <StoreIcon size={20} />
+      {/* Avatar da Loja Card */}
+      <div className="glass-card rounded-[2rem] overflow-hidden">
+         <button
+            onClick={() => setEditandoAvatar(!editandoAvatar)}
+            className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+         >
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                  <User size={20} />
+               </div>
+               <div className="text-left">
+                  <h3 className="text-white font-bold text-sm">Avatar da Loja</h3>
+                  <p className="text-[10px] text-zinc-500">Alterar imagem de perfil</p>
+               </div>
             </div>
-            <div>
-               <h3 className="text-white font-bold text-sm">Dados da Loja</h3>
-               <p className="text-[10px] text-zinc-500">Informações visíveis para a equipe</p>
+            <div className={`text-zinc-400 transition-transform ${editandoAvatar ? 'rotate-180' : ''}`}>
+               <ArrowUpRight size={18} className="rotate-90" />
             </div>
-         </div>
+         </button>
 
-         {/* Avatar da Loja */}
-         <ImageCropUpload
-           currentImage={storeAvatar}
-           onUpload={handleAvatarUpload}
-           label="Avatar da Loja"
-         />
-
-         <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Nome da Loja</label>
-            <div className="relative">
-               <input
-                  type="text"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors text-sm"
+         {editandoAvatar && (
+            <div className="px-6 pb-6 space-y-4 animate-slide-up">
+               <ImageCropUpload
+                 currentImage={storeAvatar}
+                 onUpload={handleAvatarUpload}
+                 label="Selecionar nova imagem"
                />
-               <button className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
-                  <CheckCircle size={16} />
-               </button>
             </div>
-         </div>
+         )}
+      </div>
+
+      {/* Nome da Loja Card */}
+      <div className="glass-card rounded-[2rem] overflow-hidden">
+         <button
+            onClick={() => setEditandoNome(!editandoNome)}
+            className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+         >
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                  <StoreIcon size={20} />
+               </div>
+               <div className="text-left">
+                  <h3 className="text-white font-bold text-sm">Nome da Loja</h3>
+                  <p className="text-[10px] text-zinc-500">{storeName || 'Alterar nome da loja'}</p>
+               </div>
+            </div>
+            <div className={`text-zinc-400 transition-transform ${editandoNome ? 'rotate-180' : ''}`}>
+               <ArrowUpRight size={18} className="rotate-90" />
+            </div>
+         </button>
+
+         {editandoNome && (
+            <div className="px-6 pb-6 space-y-4 animate-slide-up">
+               <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Novo Nome</label>
+                  <div className="relative">
+                     <input
+                        type="text"
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        disabled={loadingSaveName}
+                        placeholder="Digite o novo nome da loja"
+                        className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors text-sm disabled:opacity-50"
+                     />
+                  </div>
+               </div>
+
+               <div className="flex gap-3">
+                  <button
+                     onClick={() => {
+                        setEditandoNome(false);
+                        setStoreName(storeData?.nome || '');
+                     }}
+                     disabled={loadingSaveName}
+                     className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 text-xs font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
+                  >
+                     Cancelar
+                  </button>
+                  <button
+                     onClick={handleSaveStoreName}
+                     disabled={loadingSaveName || !storeName.trim()}
+                     className="flex-1 py-3 rounded-xl bg-indigo-500 text-white text-xs font-bold hover:bg-indigo-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                     {loadingSaveName ? (
+                        <>
+                           <Loader2 size={14} className="animate-spin" />
+                           Salvando...
+                        </>
+                     ) : (
+                        <>
+                           <CheckCircle size={14} />
+                           Salvar
+                        </>
+                     )}
+                  </button>
+               </div>
+            </div>
+         )}
+      </div>
+
+      {/* Alterar Senha Card */}
+      <div className="glass-card rounded-[2rem] overflow-hidden">
+         <button
+            onClick={() => setEditandoSenha(!editandoSenha)}
+            className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+         >
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+                  <Lock size={20} />
+               </div>
+               <div className="text-left">
+                  <h3 className="text-white font-bold text-sm">Alterar Senha</h3>
+                  <p className="text-[10px] text-zinc-500">Modificar senha de acesso</p>
+               </div>
+            </div>
+            <div className={`text-zinc-400 transition-transform ${editandoSenha ? 'rotate-180' : ''}`}>
+               <ArrowUpRight size={18} className="rotate-90" />
+            </div>
+         </button>
+
+         {editandoSenha && (
+            <div className="px-6 pb-6 space-y-4 animate-slide-up">
+               <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Senha Atual</label>
+                  <input
+                     type="password"
+                     value={senhaAtual}
+                     onChange={(e) => setSenhaAtual(e.target.value)}
+                     disabled={loadingSavePassword}
+                     placeholder="Digite sua senha atual"
+                     className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 transition-colors text-sm disabled:opacity-50"
+                  />
+               </div>
+
+               <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Nova Senha</label>
+                  <input
+                     type="password"
+                     value={novaSenha}
+                     onChange={(e) => setNovaSenha(e.target.value)}
+                     disabled={loadingSavePassword}
+                     placeholder="Mínimo 6 caracteres"
+                     className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 transition-colors text-sm disabled:opacity-50"
+                  />
+               </div>
+
+               <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold ml-1">Confirmar Nova Senha</label>
+                  <input
+                     type="password"
+                     value={confirmarSenha}
+                     onChange={(e) => setConfirmarSenha(e.target.value)}
+                     disabled={loadingSavePassword}
+                     placeholder="Digite a senha novamente"
+                     className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 transition-colors text-sm disabled:opacity-50"
+                  />
+               </div>
+
+               <div className="flex gap-3">
+                  <button
+                     onClick={() => {
+                        setEditandoSenha(false);
+                        setSenhaAtual('');
+                        setNovaSenha('');
+                        setConfirmarSenha('');
+                     }}
+                     disabled={loadingSavePassword}
+                     className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 text-xs font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
+                  >
+                     Cancelar
+                  </button>
+                  <button
+                     onClick={handleSavePassword}
+                     disabled={loadingSavePassword || !senhaAtual || !novaSenha || !confirmarSenha}
+                     className="flex-1 py-3 rounded-xl bg-amber-500 text-black text-xs font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                     {loadingSavePassword ? (
+                        <>
+                           <Loader2 size={14} className="animate-spin" />
+                           Salvando...
+                        </>
+                     ) : (
+                        <>
+                           <Lock size={14} />
+                           Alterar Senha
+                        </>
+                     )}
+                  </button>
+               </div>
+            </div>
+         )}
       </div>
 
       {/* Account Info */}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, DollarSign, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, Clock, CreditCard, Banknote, FileText, Smartphone } from 'lucide-react';
 import { PaymentMethod, PaymentType } from '../../types';
 import { formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
 
@@ -10,15 +10,33 @@ interface NewSaleModalProps {
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  // Obter data e hora atual para preencher os campos
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const time = now.toTimeString().slice(0, 5); // HH:MM
+    return { date, time };
+  };
+
   const [formData, setFormData] = useState({
     orderId: '',
     amount: '',
     customerName: '',
     paymentMethod: 'pix' as PaymentMethod,
     paymentType: 'spot' as PaymentType,
-    installments: 1
+    installments: 1,
+    saleDate: getCurrentDateTime().date,
+    saleTime: getCurrentDateTime().time
   });
   const [displayAmount, setDisplayAmount] = useState('');
+
+  // Atualizar data e hora quando o modal abre
+  useEffect(() => {
+    if (isOpen) {
+      const { date, time } = getCurrentDateTime();
+      setFormData(prev => ({ ...prev, saleDate: date, saleTime: time }));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -35,6 +53,35 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+    // Resetar o formulário após o submit
+    const { date, time } = getCurrentDateTime();
+    setFormData({
+      orderId: '',
+      amount: '',
+      customerName: '',
+      paymentMethod: 'pix' as PaymentMethod,
+      paymentType: 'spot' as PaymentType,
+      installments: 1,
+      saleDate: date,
+      saleTime: time
+    });
+    setDisplayAmount('');
+    onClose();
+  };
+
+  const handleClose = () => {
+    // Resetar o formulário ao fechar
+    const { date, time } = getCurrentDateTime();
+    setFormData({
+      orderId: '',
+      amount: '',
+      customerName: '',
+      paymentMethod: 'pix' as PaymentMethod,
+      paymentType: 'spot' as PaymentType,
+      installments: 1,
+      saleDate: date,
+      saleTime: time
+    });
     setDisplayAmount('');
     onClose();
   };
@@ -51,13 +98,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={handleClose}></div>
 
       {/* Modal Content */}
       <div className="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] rounded-b-none sm:rounded-[2.5rem] relative overflow-hidden animate-slide-up shadow-2xl flex flex-col max-h-[85vh] mb-4">
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-zinc-900/50 backdrop-blur-md sticky top-0 z-20">
           <h2 className="text-xl font-bold text-white">Nova Venda</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -102,10 +149,47 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onS
               required
               type="text"
               value={formData.customerName}
-              onChange={e => setFormData({...formData, customerName: capitalizeName(e.target.value)})}
+              onChange={e => setFormData({...formData, customerName: e.target.value})}
+              onBlur={e => setFormData({...formData, customerName: capitalizeName(e.target.value)})}
               className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
               placeholder="Nome do cliente"
             />
+          </div>
+
+          {/* Data e Hora da Venda */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Data da Venda</label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                  <Calendar size={16} />
+                </div>
+                <input
+                  required
+                  type="date"
+                  value={formData.saleDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={e => setFormData({...formData, saleDate: e.target.value})}
+                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Hora</label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                  <Clock size={16} />
+                </div>
+                <input
+                  required
+                  type="time"
+                  value={formData.saleTime}
+                  onChange={e => setFormData({...formData, saleTime: e.target.value})}
+                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Payment Method */}

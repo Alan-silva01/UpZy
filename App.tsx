@@ -199,7 +199,7 @@ const App: React.FC = () => {
 
     if (user.role === 'ADMIN') {
       switch (activeTab) {
-        case Tab.DASHBOARD: return <DashboardView lojaId={lojaId} userId={user.id} />;
+        case Tab.DASHBOARD: return <DashboardView lojaId={lojaId} userId={user.id} onNavigateToGoals={() => setActiveTab(Tab.GOALS)} />;
         case Tab.TEAM: return <TeamRanking />;
         case Tab.SALES: return <SalesFeed />;
         case Tab.CUSTOMERS: return <CustomerRanking />;
