@@ -10,6 +10,7 @@ interface LoginViewProps {
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -113,10 +114,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           <div className="absolute bottom-[10%] left-[-10%] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[100px]"></div>
        </div>
 
-      <div className="w-full max-w-sm relative z-10 animate-slide-up">
+      <div className="w-full max-w-sm relative z-10 animate-slide-up -mt-20">
         {/* Logo no topo */}
-        <div className="text-center mb-6 flex flex-col items-center">
+        <div className="text-center mb-8 flex flex-col items-center gap-3">
           <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-20 h-20 object-contain" />
+          <h1 className="text-white text-2xl font-bold tracking-wider">UpZy</h1>
         </div>
 
         <div className="glass-card rounded-[2.5rem] p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-500">
@@ -138,7 +140,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
           <form onSubmit={showForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4 mb-6">
 
-            {isRegistering && (
+            {showForgotPassword && (
+              <div className="mb-4 animate-slide-up">
+                <h2 className="text-white text-xl font-bold mb-2">Recuperar Senha</h2>
+                <p className="text-zinc-400 text-sm">Digite seu email e enviaremos um link para redefinir sua senha.</p>
+              </div>
+            )}
+
+            {isRegistering && !showForgotPassword && (
               <div className="space-y-4 animate-slide-up">
                 <div className="relative group">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
@@ -183,20 +192,63 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               />
             </div>
 
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
-                <Lock size={20} />
+            {!showForgotPassword && !isRegistering && (
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
+                  <Lock size={20} />
+                </div>
+                <input
+                  type="password"
+                  placeholder="Senha"
+                  value={formData.senha}
+                  onChange={(e) => setFormData({...formData, senha: e.target.value})}
+                  required
+                  minLength={6}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-zinc-900/80 transition-all"
+                />
               </div>
-              <input
-                type="password"
-                placeholder="Senha"
-                value={formData.senha}
-                onChange={(e) => setFormData({...formData, senha: e.target.value})}
-                required
-                minLength={6}
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-zinc-900/80 transition-all"
-              />
-            </div>
+            )}
+
+            {isRegistering && !showForgotPassword && (
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
+                  <Lock size={20} />
+                </div>
+                <input
+                  type="password"
+                  placeholder="Senha"
+                  value={formData.senha}
+                  onChange={(e) => setFormData({...formData, senha: e.target.value})}
+                  required
+                  minLength={6}
+                  className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
+                />
+              </div>
+            )}
+
+            {!isRegistering && !showForgotPassword && (
+              <div className="flex items-center justify-between text-xs animate-slide-up">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-zinc-900/50 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 focus:ring-2 cursor-pointer"
+                  />
+                  <span className="text-zinc-400 group-hover:text-white transition-colors">Lembrar-me</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(true);
+                    setErro('');
+                  }}
+                  className="text-zinc-400 hover:text-white transition-colors underline decoration-zinc-600 hover:decoration-white underline-offset-2"
+                >
+                  Esqueci a senha
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -210,7 +262,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                  </>
                ) : (
                  <>
-                   {isRegistering ? 'Criar Conta' : 'Entrar'}
+                   {showForgotPassword ? 'Enviar Link de Recuperação' : isRegistering ? 'Criar Conta' : 'Entrar'}
                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                  </>
                )}
@@ -219,21 +271,36 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
           {/* Toggle */}
           <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegistering(!isRegistering);
-                setErro('');
-              }}
-              disabled={isLoading}
-              className="text-zinc-500 hover:text-white transition-colors text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 w-full disabled:opacity-50"
-            >
-               {isRegistering ? (
-                 <>Já tem uma conta? <span className="underline decoration-emerald-500 decoration-2 underline-offset-4 text-white">Entrar</span></>
-               ) : (
-                 <>Não tem conta? <span className="underline decoration-indigo-500 decoration-2 underline-offset-4 text-white">Criar Loja</span></>
-               )}
-            </button>
+            {showForgotPassword ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setErro('');
+                  setSuccessMessage('');
+                }}
+                disabled={isLoading}
+                className="text-zinc-500 hover:text-white transition-colors text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 w-full disabled:opacity-50"
+              >
+                Voltar para <span className="underline decoration-emerald-500 decoration-2 underline-offset-4 text-white">Login</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setErro('');
+                }}
+                disabled={isLoading}
+                className="text-zinc-500 hover:text-white transition-colors text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 w-full disabled:opacity-50"
+              >
+                 {isRegistering ? (
+                   <>Já tem uma conta? <span className="underline decoration-emerald-500 decoration-2 underline-offset-4 text-white">Entrar</span></>
+                 ) : (
+                   <>Não tem conta? <span className="underline decoration-indigo-500 decoration-2 underline-offset-4 text-white">Criar Loja</span></>
+                 )}
+              </button>
+            )}
           </div>
         </div>
       </div>

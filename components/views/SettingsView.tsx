@@ -6,6 +6,8 @@ import { ImageCropUpload } from '../ui/ImageCropUpload';
 
 interface SettingsViewProps {
   onLogout: () => void;
+  onStoreNameUpdate?: (newName: string) => void;
+  onStoreAvatarUpdate?: (newAvatar: string) => void;
 }
 
 interface StoreData {
@@ -16,7 +18,7 @@ interface StoreData {
   avatar_url?: string;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
   const [storeName, setStoreName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
@@ -101,6 +103,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
       }
 
       setStoreAvatar(publicUrl);
+
+      // Notificar o App.tsx para atualizar o Header
+      if (onStoreAvatarUpdate) {
+        onStoreAvatarUpdate(publicUrl);
+      }
+
       setMensagemSucesso('Avatar atualizado com sucesso!');
       setTimeout(() => setMensagemSucesso(''), 3000);
     } catch (error) {
@@ -127,8 +135,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
 
       if (error) throw error;
 
+      // Atualizar o nome no state local
+      setStoreData(prev => prev ? { ...prev, nome: storeName.trim() } : null);
+
+      // Notificar o App.tsx para atualizar o Header
+      if (onStoreNameUpdate) {
+        onStoreNameUpdate(storeName.trim());
+      }
+
       setMensagemSucesso('Nome da loja atualizado com sucesso!');
       setTimeout(() => setMensagemSucesso(''), 3000);
+      setEditandoNome(false);
     } catch (error) {
       console.error('Erro ao atualizar nome da loja:', error);
       setMensagemErro('Erro ao atualizar nome da loja');
@@ -239,7 +256,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
                  </div>
                  <span className="font-mono text-xs text-zinc-400 tracking-wider">UPZY CARD</span>
                </div>
-               <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">ATIVO</span>
+               {storeData?.status === 'INACTIVE' ? (
+                 <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold border border-red-500/30">INATIVO</span>
+               ) : (
+                 <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">ATIVO</span>
+               )}
             </div>
 
             <div>

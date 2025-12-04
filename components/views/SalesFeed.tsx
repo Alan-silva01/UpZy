@@ -134,9 +134,6 @@ export const SalesFeed: React.FC = () => {
                       <div className="text-emerald-400 font-bold text-sm leading-tight">
                          + {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.amount)}
                       </div>
-                      <span className="text-[9px] text-zinc-500 bg-zinc-900/50 px-1.5 py-0.5 rounded-full inline-block mt-1 border border-zinc-800">
-                        {sale.itemsCount} itens
-                      </span>
                     </div>
                   </div>
 

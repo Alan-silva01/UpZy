@@ -12,8 +12,8 @@ export interface User {
 export interface Store {
   id: string;
   name: string;
-  plan: 'FREE' | 'PRO' | 'ENTERPRISE';
-  status: 'ACTIVE' | 'PAST_DUE';
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+  status: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE';
   renewalDate: string;
 }
 

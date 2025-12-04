@@ -10,9 +10,10 @@ interface SellerSalesHistoryViewProps {
   user: User;
   onBack: () => void;
   initialEditSaleId?: string;
+  onBlockedAction?: () => void;
 }
 
-export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ user, onBack, initialEditSaleId }) => {
+export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ user, onBack, initialEditSaleId, onBlockedAction }) => {
   const [vendas, setVendas] = useState<Sale[]>([]);
   const [vendasFiltradas, setVendasFiltradas] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,10 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   const [filtroValorMin, setFiltroValorMin] = useState('');
   const [filtroValorMax, setFiltroValorMax] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const vendasPorPagina = 20;
 
   useEffect(() => {
     const init = async () => {
@@ -178,6 +183,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     setFiltroDataFim('');
     setFiltroValorMin('');
     setFiltroValorMax('');
+    setMostrarFiltros(false);
   };
 
   const aplicarFiltroHoje = () => {
@@ -302,6 +308,17 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     return map[metodo] || metodo;
   };
 
+  // Cálculos de paginação
+  const totalPaginas = Math.ceil(vendasFiltradas.length / vendasPorPagina);
+  const indiceInicio = (paginaAtual - 1) * vendasPorPagina;
+  const indiceFim = indiceInicio + vendasPorPagina;
+  const vendasPaginadas = vendasFiltradas.slice(indiceInicio, indiceFim);
+
+  // Resetar página para 1 quando filtros mudarem
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filtroNome, filtroPedido, filtroDataInicio, filtroDataFim, filtroValorMin, filtroValorMax]);
+
   if (loading) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
@@ -312,35 +329,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
   return (
     <>
-      {/* Header Fixo com botão de voltar customizado */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950 border-b border-zinc-800/50 z-50 shadow-lg">
-        {/* Conteúdo do header */}
-        <div className="px-4 py-4 flex items-center gap-3 bg-zinc-950/95 backdrop-blur-xl">
-          <button
-            onClick={onBack}
-            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-          >
-            <ArrowLeft size={18} className="text-white" />
-          </button>
-          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-10 h-10 object-contain" />
-          <div className="flex-1">
-            <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">Histórico</span>
-            <h1 className="text-lg font-bold text-white tracking-tight">Minhas Vendas</h1>
-          </div>
-          <button
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-            className={`p-2 rounded-full border transition-all ${
-              mostrarFiltros
-                ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
-                : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
-            }`}
-          >
-            <Filter size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div className="pt-header pb-28 space-y-6 animate-slide-up">
+    <div className="pt-header pb-28 space-y-6 animate-slide-up">
 
       {/* Filtros */}
       {mostrarFiltros && (
@@ -483,16 +472,28 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         </div>
       )}
 
-      {/* Contador de Resultados */}
-      <div className="px-1 flex items-center justify-between">
+      {/* Contador de Resultados com Botão de Filtro */}
+      <div className="px-1 flex items-center justify-between gap-3">
         <p className="text-xs text-zinc-500">
           {vendasFiltradas.length} {vendasFiltradas.length === 1 ? 'venda encontrada' : 'vendas encontradas'}
         </p>
-        <p className="text-xs font-bold text-emerald-400">
-          Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-            vendasFiltradas.reduce((acc, v) => acc + v.valor, 0)
-          )}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-bold text-emerald-400">
+            Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+              vendasFiltradas.reduce((acc, v) => acc + v.valor, 0)
+            )}
+          </p>
+          <button
+            onClick={() => setMostrarFiltros(!mostrarFiltros)}
+            className={`p-2 rounded-full border transition-all ${
+              mostrarFiltros
+                ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
+                : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+            }`}
+          >
+            <Filter size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Lista de Vendas */}
@@ -510,7 +511,7 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
             )}
           </div>
         ) : (
-          vendasFiltradas.map((venda) => (
+          vendasPaginadas.map((venda) => (
             <div
               key={venda.id}
               id={`venda-${venda.id}`}
@@ -653,13 +654,25 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(venda)}
+                        onClick={() => {
+                          if (onBlockedAction) {
+                            onBlockedAction();
+                            return;
+                          }
+                          handleEdit(venda);
+                        }}
                         className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-indigo-500/20 hover:text-indigo-400 transition-all"
                       >
                         <Edit3 size={14} />
                       </button>
                       <button
-                        onClick={() => confirmDelete(venda.id)}
+                        onClick={() => {
+                          if (onBlockedAction) {
+                            onBlockedAction();
+                            return;
+                          }
+                          confirmDelete(venda.id);
+                        }}
                         className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-red-500/20 hover:text-red-400 transition-all"
                       >
                         <Trash2 size={14} />
@@ -667,17 +680,11 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-end mb-3">
-                    <div>
-                      <p className="text-[9px] text-zinc-500 uppercase mb-1">Valor</p>
-                      <p className="text-white font-bold text-lg">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valor)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[9px] text-zinc-500 uppercase mb-1">Itens</p>
-                      <p className="text-white font-bold text-sm">{venda.quantidade_itens}</p>
-                    </div>
+                  <div className="mb-3">
+                    <p className="text-[9px] text-zinc-500 uppercase mb-1">Valor</p>
+                    <p className="text-white font-bold text-lg">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valor)}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -697,7 +704,35 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         )}
       </div>
 
-      {/* Modais de Confirmação */}
+      {/* Controles de Paginação */}
+      {vendasFiltradas.length > vendasPorPagina && (
+        <div className="flex items-center justify-between px-4 py-3 glass-card rounded-2xl border border-zinc-800">
+          <div className="text-xs text-zinc-400">
+            Página <span className="font-bold text-white">{paginaAtual}</span> de <span className="font-bold text-white">{totalPaginas}</span>
+            <span className="mx-2">•</span>
+            <span className="text-zinc-500">{vendasFiltradas.length} vendas</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPaginaAtual(prev => Math.max(1, prev - 1))}
+              disabled={paginaAtual === 1}
+              className="px-3 py-1.5 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-xs font-bold text-zinc-300 hover:bg-indigo-500/20 hover:border-indigo-500/50 hover:text-indigo-400 disabled:opacity-30 disabled:hover:bg-zinc-800/50 disabled:hover:border-zinc-700/50 disabled:hover:text-zinc-300 transition-all"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPaginaAtual(prev => Math.min(totalPaginas, prev + 1))}
+              disabled={paginaAtual === totalPaginas}
+              className="px-3 py-1.5 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-xs font-bold text-zinc-300 hover:bg-indigo-500/20 hover:border-indigo-500/50 hover:text-indigo-400 disabled:opacity-30 disabled:hover:bg-zinc-800/50 disabled:hover:border-zinc-700/50 disabled:hover:text-zinc-300 transition-all"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Modais de Confirmação */}
       <ConfirmModal
         isOpen={modalDelete.isOpen}
         onClose={() => setModalDelete({ isOpen: false, vendaId: null })}
@@ -719,7 +754,6 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
         confirmText="Sim, salvar"
         cancelText="Cancelar"
       />
-    </div>
     </>
   );
 };

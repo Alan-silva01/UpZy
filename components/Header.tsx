@@ -6,10 +6,11 @@ interface HeaderProps {
   user: User;
   onLogout?: () => void;
   storeName?: string | null;
+  storeAvatar?: string | null;
   onOpenSettings?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, onOpenSettings }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, storeAvatar, onOpenSettings }) => {
   const isAdmin = user.role === 'ADMIN';
 
   // Extrai primeiro nome e capitaliza
@@ -48,9 +49,9 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, onOpe
               )}
 
               <img
-                src={user.avatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full border-2 border-zinc-800"
+                src={storeAvatar || user.avatar}
+                alt="Store Avatar"
+                className="w-10 h-10 rounded-full border-2 border-zinc-800 object-cover"
               />
             </div>
           </>

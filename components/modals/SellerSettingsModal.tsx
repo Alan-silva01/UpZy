@@ -44,14 +44,17 @@ export const SellerSettingsModal: React.FC<SellerSettingsModalProps> = ({
     setMensagemNome('');
 
     try {
+      const nomeFormatado = capitalizeName(nome.trim());
+
       const { error } = await supabase
         .from('usuarios')
-        .update({ nome: nome.trim() })
+        .update({ nome: nomeFormatado })
         .eq('id', userId);
 
       if (error) throw error;
 
-      onNameUpdate(nome.trim());
+      onNameUpdate(nomeFormatado);
+      setNome(nomeFormatado); // Atualiza o campo com o nome formatado
       setMensagemNome('Nome atualizado com sucesso!');
 
       setTimeout(() => {
@@ -161,7 +164,7 @@ export const SellerSettingsModal: React.FC<SellerSettingsModalProps> = ({
                 <input
                   type="text"
                   value={nome}
-                  onChange={e => setNome(capitalizeName(e.target.value))}
+                  onChange={e => setNome(e.target.value)}
                   className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                   placeholder="Seu nome completo"
                 />

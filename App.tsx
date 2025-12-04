@@ -14,14 +14,18 @@ import { BottomNav } from './components/BottomNav';
 import { NewSaleModal } from './components/modals/NewSaleModal';
 import { SaleSuccessModal } from './components/modals/SaleSuccessModal';
 import { SellerSettingsModal } from './components/modals/SellerSettingsModal';
+import { InactiveAccountToast } from './components/ui/InactiveAccountToast';
+import { InactiveAccountModal } from './components/modals/InactiveAccountModal';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
+import { useStoreStatus } from './hooks/useStoreStatus';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [lojaId, setLojaId] = useState<string | null>(null);
   const [nomeLoja, setNomeLoja] = useState<string | null>(null);
+  const [avatarLoja, setAvatarLoja] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   const [isSaleSuccessModalOpen, setIsSaleSuccessModalOpen] = useState(false);
@@ -29,6 +33,19 @@ const App: React.FC = () => {
   const [loadingSessao, setLoadingSessao] = useState(true);
   const [selectedSaleId, setSelectedSaleId] = useState<string | undefined>(undefined);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [inactiveModalOpen, setInactiveModalOpen] = useState(false);
+  const [blockedAction, setBlockedAction] = useState('');
+  const [showInactiveToast, setShowInactiveToast] = useState(false);
+
+  // Hook para verificar status da loja
+  const { isBlocked } = useStoreStatus(lojaId);
+
+  // Mostrar toast quando detectar conta inativa
+  useEffect(() => {
+    if (isBlocked && user) {
+      setShowInactiveToast(true);
+    }
+  }, [isBlocked, user]);
 
   // Verificar sessão ao carregar
   useEffect(() => {
@@ -55,11 +72,24 @@ const App: React.FC = () => {
         console.log('🏪 Loja ID:', loja);
         setLojaId(loja);
 
-        // Buscar nome da loja
+        // Buscar nome e avatar da loja
         if (loja) {
           const nome = await buscarNomeLoja(loja);
           console.log('🏪 Nome da Loja:', nome);
           setNomeLoja(nome);
+
+          // Buscar avatar da loja
+          const { supabase } = await import('./lib/supabase');
+          const { data: lojaData } = await supabase
+            .from('lojas')
+            .select('avatar_url')
+            .eq('id', loja)
+            .single();
+
+          if (lojaData?.avatar_url) {
+            console.log('🖼️ Avatar da Loja:', lojaData.avatar_url);
+            setAvatarLoja(lojaData.avatar_url);
+          }
         }
 
         if (usuarioSessao.role === 'ADMIN') {
@@ -73,12 +103,14 @@ const App: React.FC = () => {
         setUser(null);
         setLojaId(null);
         setNomeLoja(null);
+        setAvatarLoja(null);
       }
     } catch (error) {
       console.error('❌ Erro ao verificar sessão:', error);
       setUser(null);
       setLojaId(null);
       setNomeLoja(null);
+      setAvatarLoja(null);
     } finally {
       console.log('✅ Verificação de sessão concluída');
       setLoadingSessao(false);
@@ -90,10 +122,22 @@ const App: React.FC = () => {
     const loja = await buscarLojaIdUsuario(loggedInUser.id);
     setLojaId(loja);
 
-    // Buscar nome da loja
+    // Buscar nome e avatar da loja
     if (loja) {
       const nome = await buscarNomeLoja(loja);
       setNomeLoja(nome);
+
+      // Buscar avatar da loja
+      const { supabase } = await import('./lib/supabase');
+      const { data: lojaData } = await supabase
+        .from('lojas')
+        .select('avatar_url')
+        .eq('id', loja)
+        .single();
+
+      if (lojaData?.avatar_url) {
+        setAvatarLoja(lojaData.avatar_url);
+      }
     }
 
     // Set default tab based on role
@@ -109,11 +153,27 @@ const App: React.FC = () => {
     setUser(null);
     setLojaId(null);
     setNomeLoja(null);
+    setAvatarLoja(null);
     setActiveTab(Tab.DASHBOARD);
+  };
+
+  // Função para verificar se a ação está bloqueada
+  const checkBlocked = (action: string): boolean => {
+    if (isBlocked) {
+      setBlockedAction(action);
+      setInactiveModalOpen(true);
+      return true;
+    }
+    return false;
   };
 
   const handleNewSale = async (data: any) => {
     if (!lojaId || !user) return;
+
+    // Verificar se a conta está bloqueada
+    if (checkBlocked('registrar uma venda')) {
+      return;
+    }
 
     console.log('💳 Registrando venda - User:', user);
     console.log('💳 User.sellerId:', user.sellerId);
@@ -165,7 +225,8 @@ const App: React.FC = () => {
       nomeCliente: data.customerName,
       metodoPagamento: metodoPagamentoMap[data.paymentMethod] || data.paymentMethod,
       tipoPagamento: data.paymentType === 'spot' ? 'avista' : 'parcelado',
-      parcelas: data.installments
+      parcelas: data.installments,
+      dataVenda: `${data.saleDate}T${data.saleTime}:00.000Z`
     });
 
     if (sucesso) {
@@ -203,8 +264,15 @@ const App: React.FC = () => {
         case Tab.TEAM: return <TeamRanking />;
         case Tab.SALES: return <SalesFeed />;
         case Tab.CUSTOMERS: return <CustomerRanking />;
-        case Tab.ADMIN_SELLERS: return <AdminSellersView lojaId={lojaId} />;
-        case Tab.SETTINGS: return <SettingsView onLogout={handleLogout} />;
+        case Tab.ADMIN_SELLERS: return <AdminSellersView
+          lojaId={lojaId}
+          onBlockedAction={isBlocked ? () => checkBlocked('gerenciar vendedores (adicionar, editar ou excluir)') : undefined}
+        />;
+        case Tab.SETTINGS: return <SettingsView
+          onLogout={handleLogout}
+          onStoreNameUpdate={(newName: string) => setNomeLoja(newName)}
+          onStoreAvatarUpdate={(newAvatar: string) => setAvatarLoja(newAvatar)}
+        />;
         case Tab.GOALS: return <GoalsManagementView lojaId={lojaId} userId={user.id} onBack={() => setActiveTab(Tab.DASHBOARD)} />;
         default: return <DashboardView lojaId={lojaId} userId={user.id} />;
       }
@@ -228,6 +296,7 @@ const App: React.FC = () => {
               setActiveTab(Tab.SELLER_HOME);
             }}
             initialEditSaleId={selectedSaleId}
+            onBlockedAction={isBlocked ? () => checkBlocked('editar ou excluir vendas') : undefined}
           />;
         case Tab.SALES: return <SalesFeed />; // Seller sees sales history (filtered in real app)
         default:
@@ -270,6 +339,7 @@ const App: React.FC = () => {
           user={user}
           onLogout={handleLogout}
           storeName={nomeLoja}
+          storeAvatar={avatarLoja}
           onOpenSettings={user.role === 'SELLER' ? () => setIsSettingsModalOpen(true) : undefined}
         />
 
@@ -285,7 +355,13 @@ const App: React.FC = () => {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           userRole={user.role}
-          onNewSale={() => setIsSaleModalOpen(true)}
+          onNewSale={() => {
+            // Verificar se a conta está bloqueada antes de abrir modal
+            if (checkBlocked('registrar uma venda')) {
+              return;
+            }
+            setIsSaleModalOpen(true);
+          }}
         />
 
         <NewSaleModal
@@ -318,6 +394,21 @@ const App: React.FC = () => {
             }}
           />
         )}
+
+        {/* Toast de Conta Inativa (aparece e desaparece automaticamente) */}
+        {showInactiveToast && user && (
+          <InactiveAccountToast
+            isAdmin={user.role === 'ADMIN'}
+            onClose={() => setShowInactiveToast(false)}
+          />
+        )}
+
+        {/* Modal de Conta Inativa (quando tenta fazer ação bloqueada) */}
+        <InactiveAccountModal
+          isOpen={inactiveModalOpen}
+          onClose={() => setInactiveModalOpen(false)}
+          actionAttempted={blockedAction}
+        />
       </main>
     </div>
   );

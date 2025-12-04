@@ -88,8 +88,8 @@ export async function calcularMetaVendedor(
         .from('vendas')
         .select('valor')
         .eq('vendedor_id', vendedorId)
-        .gte('data', meta.data_inicio)
-        .lte('data', meta.data_fim);
+        .gte('data_venda', meta.data_inicio)
+        .lte('data_venda', meta.data_fim);
 
       if (!vendasError && vendas) {
         valorAtual = vendas.reduce((acc, venda) => acc + venda.valor, 0);

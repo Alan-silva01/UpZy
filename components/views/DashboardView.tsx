@@ -46,7 +46,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   const [vendedores, setVendedores] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<{ name: string; sales: number }[]>([]);
-  const [periodoGrafico, setPeriodoGrafico] = useState<'semana' | 'mes'>('semana');
+  const [periodoGrafico, setPeriodoGrafico] = useState<'meta' | 'semana' | 'mes'>('meta');
   const [nomeLoja, setNomeLoja] = useState<string>('');
   const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
   const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
@@ -177,8 +177,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
           .from('vendas')
           .select('valor')
           .eq('loja_id', lojaId)
-          .gte('data', mesAnteriorInicio.toISOString())
-          .lte('data', mesAnteriorFim.toISOString());
+          .gte('data_venda', mesAnteriorInicio.toISOString())
+          .lte('data_venda', mesAnteriorFim.toISOString());
 
         if (vendasError) {
           console.error('Erro ao buscar vendas do mês anterior:', vendasError);
@@ -193,8 +193,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
               .from('vendas')
               .select('valor')
               .eq('loja_id', lojaId)
-              .gte('data', metaAtivaData.data_inicio)
-              .lte('data', metaAtivaData.data_fim);
+              .gte('data_venda', metaAtivaData.data_inicio)
+              .lte('data_venda', metaAtivaData.data_fim);
 
             totalAtualParaComparacao = vendasMeta?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
           }
@@ -387,11 +387,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
           <h3 className="text-sm font-semibold text-white">Performance</h3>
           <select
             value={periodoGrafico}
-            onChange={(e) => setPeriodoGrafico(e.target.value as 'semana' | 'mes')}
-            className="bg-zinc-800 text-[10px] text-zinc-400 border border-zinc-700 rounded-full px-2 py-0.5 outline-none cursor-pointer"
+            onChange={(e) => setPeriodoGrafico(e.target.value as 'meta' | 'semana' | 'mes')}
+            className="bg-zinc-800 text-[10px] text-zinc-400 border border-zinc-700 rounded-full px-3 py-1 outline-none cursor-pointer font-medium"
           >
+            <option value="meta">Meta Ativa</option>
             <option value="semana">Esta Semana</option>
-            <option value="mes">Últimos 30 Dias</option>
+            <option value="mes">Este Mês</option>
           </select>
         </div>
 

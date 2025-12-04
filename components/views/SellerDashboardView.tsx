@@ -24,6 +24,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userName, setUserName] = useState(user.name);
+  const [metaAtiva, setMetaAtiva] = useState<{ dataInicio: string; dataFim: string } | null>(null);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -104,6 +105,23 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     }
     const lojaId = await buscarLojaIdUsuario(user.id);
     if (lojaId) {
+      // Buscar meta ativa primeiro
+      const { data: metaAtivaData } = await supabase
+        .from('metas')
+        .select('*')
+        .eq('loja_id', lojaId)
+        .eq('status', 'ACTIVE')
+        .maybeSingle();
+
+      if (metaAtivaData) {
+        setMetaAtiva({
+          dataInicio: metaAtivaData.data_inicio,
+          dataFim: metaAtivaData.data_fim
+        });
+      } else {
+        setMetaAtiva(null);
+      }
+
       const vendedores = await buscarVendedores(lojaId);
       const vendedor = vendedores.find(v => v.id === user.sellerId);
       if (vendedor) {
@@ -111,10 +129,19 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
         setSellerProfile(vendedor);
 
         // Buscar estatísticas reais do vendedor
-        const { data: vendas } = await supabase
+        // Se houver meta ativa, filtrar apenas vendas dentro do período da meta
+        let query = supabase
           .from('vendas')
           .select('valor')
           .eq('vendedor_id', user.sellerId);
+
+        if (metaAtivaData) {
+          query = query
+            .gte('data_venda', metaAtivaData.data_inicio)
+            .lte('data_venda', metaAtivaData.data_fim);
+        }
+
+        const { data: vendas } = await query;
 
         const totalVendas = vendas?.length || 0;
         const valorTotal = vendas?.reduce((acc, v) => acc + v.valor, 0) || 0;
@@ -125,13 +152,15 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
           valorTotal,
           ticketMedio,
           currentSales: vendedor.currentSales,
-          target: vendedor.target
+          target: vendedor.target,
+          metaAtiva: metaAtivaData ? 'SIM' : 'NÃO'
         });
 
         setSellerProfile(prev => ({
           ...vendedor,
           totalVendas,
-          ticketMedio
+          ticketMedio,
+          currentSales: metaAtivaData ? valorTotal : vendedor.currentSales
         } as any));
       } else {
         console.warn('⚠️ [Dashboard Vendedor] Vendedor não encontrado na lista!');
@@ -159,11 +188,28 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     const lojaId = await buscarLojaIdUsuario(user.id);
     if (!lojaId) return;
 
-    const { data: vendas, error } = await supabase
+    // Buscar meta ativa
+    const { data: metaAtivaData } = await supabase
+      .from('metas')
+      .select('*')
+      .eq('loja_id', lojaId)
+      .eq('status', 'ACTIVE')
+      .maybeSingle();
+
+    // Se houver meta ativa, filtrar apenas vendas dentro do período da meta
+    let query = supabase
       .from('vendas')
       .select('*')
       .eq('vendedor_id', user.sellerId)
-      .eq('loja_id', lojaId)
+      .eq('loja_id', lojaId);
+
+    if (metaAtivaData) {
+      query = query
+        .gte('data_venda', metaAtivaData.data_inicio)
+        .lte('data_venda', metaAtivaData.data_fim);
+    }
+
+    const { data: vendas, error } = await query
       .order('data_venda', { ascending: false })
       .limit(5);
 
@@ -172,7 +218,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       return;
     }
 
-    console.log('📋 [Dashboard Vendedor] Últimas vendas carregadas:', vendas?.length || 0, 'vendas');
+    console.log('📋 [Dashboard Vendedor] Últimas vendas carregadas:', vendas?.length || 0, 'vendas', metaAtivaData ? '(filtrado por meta)' : '(todas)');
     setUltimasVendas((vendas as Sale[]) || []);
   };
 
@@ -225,7 +271,7 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
             </div>
 
             <div className="text-center py-3">
-              <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-2">Vendido este mês</div>
+              <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-2">Vendido nesta meta</div>
               <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400 tracking-tighter">
                 {formatCurrency(sellerProfile.currentSales)}
               </div>

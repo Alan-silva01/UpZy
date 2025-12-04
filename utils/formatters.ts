@@ -103,3 +103,34 @@ export function parseCurrencyInput(value: string): number {
 export function getNumericValue(value: string): string {
   return value.replace(/\D/g, '');
 }
+
+/**
+ * Formata uma data ISO sem conversão de timezone
+ * Evita o problema de datas mudarem devido ao fuso horário
+ * @param dataISO - String da data em formato ISO (ex: "2025-12-01T00:00:00.000Z")
+ * @param formato - Formato desejado: 'curto' (01 dez, 2025) ou 'completo' (01 de dezembro de 2025)
+ * @returns String formatada em português brasileiro
+ */
+export function formatarDataSemTimezone(dataISO: string, formato: 'curto' | 'completo' = 'curto'): string {
+  // Extrair ano, mês e dia diretamente da string sem conversão de timezone
+  const [ano, mes, dia] = dataISO.split('T')[0].split('-');
+
+  const meses = [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+  ];
+
+  const mesesCurtos = [
+    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+    'jul', 'ago', 'set', 'out', 'nov', 'dez'
+  ];
+
+  const mesIndex = parseInt(mes) - 1;
+  const mesNome = formato === 'curto' ? mesesCurtos[mesIndex] : meses[mesIndex];
+
+  if (formato === 'curto') {
+    return `${dia} de ${mesNome}, ${ano}`;
+  } else {
+    return `${dia} de ${mesNome} de ${ano}`;
+  }
+}

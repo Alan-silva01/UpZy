@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Target, Calendar, DollarSign, Check, Loader2, TrendingUp, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { formatarDataSemTimezone } from '../../utils/formatters';
 
 interface Meta {
   id: string;
@@ -71,8 +72,8 @@ export const ManageGoalsModal: React.FC<ManageGoalsModalProps> = ({
             .from('vendas')
             .select('valor')
             .eq('loja_id', lojaId)
-            .gte('data', meta.data_inicio)
-            .lte('data', meta.data_fim);
+            .gte('data_venda', meta.data_inicio)
+            .lte('data_venda', meta.data_fim);
 
           const vendasTotal = vendas?.reduce((acc, v) => acc + v.valor, 0) || 0;
           const percentualAtingido = meta.valor_total > 0 ? (vendasTotal / meta.valor_total) * 100 : 0;
@@ -155,8 +156,7 @@ export const ManageGoalsModal: React.FC<ManageGoalsModalProps> = ({
   };
 
   const formatarData = (dataISO: string) => {
-    const data = new Date(dataISO);
-    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    return formatarDataSemTimezone(dataISO, 'curto');
   };
 
   const formatarValor = (valor: number) => {

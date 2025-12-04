@@ -10,9 +10,10 @@ import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface AdminSellersViewProps {
   lojaId: string;
+  onBlockedAction?: () => void;
 }
 
-export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) => {
+export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBlockedAction }) => {
   const [localSellers, setLocalSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -158,7 +159,13 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
            <h1 className="text-xl font-bold text-white tracking-tight">Gerenciar Vendedores</h1>
          </div>
          <button
-           onClick={() => setModalAberto(true)}
+           onClick={() => {
+             if (onBlockedAction) {
+               onBlockedAction();
+               return;
+             }
+             setModalAberto(true);
+           }}
            className="bg-white text-black p-2 rounded-full hover:bg-zinc-200 transition-colors"
          >
             <Plus size={20} />
@@ -187,13 +194,25 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId }) =>
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => abrirModalEditar(seller)}
+                      onClick={() => {
+                        if (onBlockedAction) {
+                          onBlockedAction();
+                          return;
+                        }
+                        abrirModalEditar(seller);
+                      }}
                       className="p-2 rounded-full bg-zinc-800 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/50 border border-transparent transition-colors"
                     >
                       <Edit3 size={16} />
                     </button>
                     <button
-                      onClick={() => abrirModalDeletar(seller)}
+                      onClick={() => {
+                        if (onBlockedAction) {
+                          onBlockedAction();
+                          return;
+                        }
+                        abrirModalDeletar(seller);
+                      }}
                       className="p-2 rounded-full bg-zinc-800 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 border border-transparent transition-colors"
                     >
                       <Trash2 size={16} />

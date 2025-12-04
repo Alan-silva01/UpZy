@@ -56,7 +56,7 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
       .insert({
         nome: lojaFormatada,
         plano: 'FREE',
-        status: 'ACTIVE',
+        status: 'INACTIVE', // Começa inativa até ativar a conta
         data_renovacao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
       })
       .select()
@@ -256,5 +256,113 @@ export async function buscarNomeLoja(lojaId: string): Promise<string | null> {
   } catch (error) {
     console.error('Erro ao buscar nome da loja:', error);
     return null;
+  }
+}
+
+// ============================================
+// GERENCIAMENTO DE STATUS DA LOJA
+// ============================================
+
+export interface StatusLoja {
+  status: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE';
+  plano: 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+  bloqueado: boolean;
+}
+
+// Verificar status da loja
+export async function verificarStatusLoja(lojaId: string): Promise<StatusLoja | null> {
+  try {
+    const { data, error } = await supabase
+      .from('lojas')
+      .select('status, plano')
+      .eq('id', lojaId)
+      .single();
+
+    if (error || !data) {
+      console.error('Erro ao verificar status da loja:', error);
+      return null;
+    }
+
+    return {
+      status: data.status,
+      plano: data.plano,
+      bloqueado: data.status === 'INACTIVE'
+    };
+  } catch (error) {
+    console.error('Erro ao verificar status da loja:', error);
+    return null;
+  }
+}
+
+// Ativar loja (apenas admin pode fazer isso manualmente ou via sistema de pagamento)
+export async function ativarLoja(lojaId: string): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    const { error } = await supabase
+      .from('lojas')
+      .update({ status: 'ACTIVE' })
+      .eq('id', lojaId);
+
+    if (error) {
+      console.error('Erro ao ativar loja:', error);
+      return { sucesso: false, mensagem: 'Erro ao ativar loja' };
+    }
+
+    return { sucesso: true, mensagem: 'Loja ativada com sucesso!' };
+  } catch (error: any) {
+    console.error('Erro ao ativar loja:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Desativar loja
+export async function desativarLoja(lojaId: string): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    const { error } = await supabase
+      .from('lojas')
+      .update({ status: 'INACTIVE' })
+      .eq('id', lojaId);
+
+    if (error) {
+      console.error('Erro ao desativar loja:', error);
+      return { sucesso: false, mensagem: 'Erro ao desativar loja' };
+    }
+
+    return { sucesso: true, mensagem: 'Loja desativada com sucesso!' };
+  } catch (error: any) {
+    console.error('Erro ao desativar loja:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Atualizar plano da loja (ativa automaticamente se for STARTER ou PRO)
+export async function atualizarPlanoLoja(
+  lojaId: string,
+  novoPlano: 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'
+): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    // Se o plano for STARTER ou PRO, ativar automaticamente
+    const novoStatus = (novoPlano === 'STARTER' || novoPlano === 'PRO' || novoPlano === 'ENTERPRISE') ? 'ACTIVE' : 'INACTIVE';
+
+    const { error } = await supabase
+      .from('lojas')
+      .update({
+        plano: novoPlano,
+        status: novoStatus
+      })
+      .eq('id', lojaId);
+
+    if (error) {
+      console.error('Erro ao atualizar plano:', error);
+      return { sucesso: false, mensagem: 'Erro ao atualizar plano' };
+    }
+
+    const mensagem = novoStatus === 'ACTIVE'
+      ? `Plano atualizado para ${novoPlano} e loja ativada com sucesso!`
+      : `Plano atualizado para ${novoPlano}.`;
+
+    return { sucesso: true, mensagem };
+  } catch (error: any) {
+    console.error('Erro ao atualizar plano:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
   }
 }

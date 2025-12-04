@@ -243,6 +243,7 @@ export async function criarVenda(venda: {
   metodoPagamento?: 'pix' | 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'boleto' | 'promissoria';
   tipoPagamento?: 'avista' | 'parcelado';
   parcelas?: number;
+  dataVenda?: string;
 }): Promise<boolean> {
   // Formatar nome do cliente
   const nomeClienteFormatado = venda.nomeCliente ? formatarNomeProprio(venda.nomeCliente) : undefined;
@@ -257,7 +258,8 @@ export async function criarVenda(venda: {
       nome_cliente: nomeClienteFormatado,
       metodo_pagamento: venda.metodoPagamento,
       tipo_pagamento: venda.tipoPagamento,
-      parcelas: venda.parcelas || 1
+      parcelas: venda.parcelas || 1,
+      data_venda: venda.dataVenda || new Date().toISOString()
     });
 
   if (error) {
@@ -404,102 +406,144 @@ async function buscarUltimaVenda(vendedorId: string): Promise<VendaDB | null> {
 }
 
 // ============================================
-// DADOS DE PERFORMANCE
+// DADOS DE PERFORMANCE - GRÁFICO ACUMULATIVO
 // ============================================
 
 export async function buscarDadosPerformance(
   lojaId: string,
-  periodo: 'semana' | 'mes'
+  periodo: 'meta' | 'semana' | 'mes'
 ): Promise<{ name: string; sales: number }[]> {
-  const dataFim = new Date();
-  const dataInicio = new Date();
+  console.log('📊 [PERFORMANCE] Iniciando busca de dados para loja:', lojaId, 'período:', periodo);
 
-  if (periodo === 'semana') {
-    // Últimos 7 dias
-    dataInicio.setDate(dataInicio.getDate() - 6);
+  let dataInicio: string;
+  let dataFim: string;
+  let nomePeriodo: string;
+
+  if (periodo === 'meta') {
+    // Buscar meta ativa
+    const metaAtiva = await buscarMetaAtiva(lojaId);
+
+    if (metaAtiva) {
+      dataInicio = metaAtiva.data_inicio.split('T')[0];
+      dataFim = metaAtiva.data_fim.split('T')[0];
+      nomePeriodo = 'Meta Ativa';
+      console.log(`🎯 [PERFORMANCE] Meta ativa encontrada: ${dataInicio} a ${dataFim}`);
+    } else {
+      // Fallback: mês atual
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      dataInicio = primeiroDia.toISOString().split('T')[0];
+      dataFim = ultimoDia.toISOString().split('T')[0];
+      nomePeriodo = 'Mês Atual (sem meta)';
+      console.log(`⚠️ [PERFORMANCE] Nenhuma meta ativa. Usando mês atual: ${dataInicio} a ${dataFim}`);
+    }
+  } else if (periodo === 'semana') {
+    // Semana atual (últimos 7 dias)
+    const hoje = new Date();
+    const seteDiasAtras = new Date(hoje);
+    seteDiasAtras.setDate(hoje.getDate() - 6);
+    dataInicio = seteDiasAtras.toISOString().split('T')[0];
+    dataFim = hoje.toISOString().split('T')[0];
+    nomePeriodo = 'Esta Semana';
+    console.log(`📅 [PERFORMANCE] Esta Semana: ${dataInicio} a ${dataFim}`);
   } else {
-    // Últimos 30 dias
-    dataInicio.setDate(dataInicio.getDate() - 29);
+    // Este Mês (do dia 1 até hoje ou último dia do mês)
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    dataInicio = primeiroDia.toISOString().split('T')[0];
+    dataFim = ultimoDia.toISOString().split('T')[0];
+    nomePeriodo = 'Este Mês';
+    console.log(`📅 [PERFORMANCE] Este Mês: ${dataInicio} a ${dataFim}`);
   }
 
-  dataInicio.setHours(0, 0, 0, 0);
-  dataFim.setHours(23, 59, 59, 999);
-
+  // Buscar TODAS as vendas da loja no período
   const { data: vendas, error } = await supabase
     .from('vendas')
-    .select('valor, data_venda')
+    .select('valor, data_venda, vendedor_id')
     .eq('loja_id', lojaId)
-    .gte('data_venda', dataInicio.toISOString())
-    .lte('data_venda', dataFim.toISOString());
+    .gte('data_venda', dataInicio + 'T00:00:00')
+    .lte('data_venda', dataFim + 'T23:59:59')
+    .order('data_venda', { ascending: true });
 
-  if (error || !vendas) {
-    console.error('Erro ao buscar dados de performance:', error);
+  if (error) {
+    console.error('❌ [PERFORMANCE] Erro ao buscar vendas:', error);
     return [];
   }
 
-  // Agrupar vendas por dia
+  if (!vendas || vendas.length === 0) {
+    console.warn('⚠️ [PERFORMANCE] Nenhuma venda encontrada no período');
+    return [];
+  }
+
+  console.log(`✅ [PERFORMANCE] ${vendas.length} vendas encontradas no período`);
+
+  // Criar mapa de vendas por dia (não acumulativo ainda)
   const vendasPorDia: { [key: string]: number } = {};
 
-  if (periodo === 'semana') {
-    // Últimos 7 dias
-    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    for (let i = 6; i >= 0; i--) {
-      const dia = new Date();
-      dia.setDate(dia.getDate() - i);
-      dia.setHours(0, 0, 0, 0);
-      const diaSemana = diasSemana[dia.getDay()];
-      const chave = dia.toISOString().split('T')[0];
-      vendasPorDia[chave] = 0;
-    }
-  } else {
-    // Últimos 30 dias
-    for (let i = 29; i >= 0; i--) {
-      const dia = new Date();
-      dia.setDate(dia.getDate() - i);
-      dia.setHours(0, 0, 0, 0);
-      const chave = dia.toISOString().split('T')[0];
-      vendasPorDia[chave] = 0;
-    }
+  // Calcular todos os dias do período
+  const inicio = new Date(dataInicio + 'T00:00:00');
+  const fim = new Date(dataFim + 'T00:00:00');
+  const diasNoPeriodo = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Inicializar todos os dias com 0
+  for (let i = 0; i < diasNoPeriodo; i++) {
+    const dia = new Date(inicio);
+    dia.setDate(inicio.getDate() + i);
+    const chave = dia.toISOString().split('T')[0];
+    vendasPorDia[chave] = 0;
   }
 
   // Somar vendas por dia
   vendas.forEach((venda) => {
-    const dataVenda = new Date(venda.data_venda);
-    const chave = dataVenda.toISOString().split('T')[0];
+    const chave = venda.data_venda.split('T')[0];
     if (vendasPorDia.hasOwnProperty(chave)) {
       vendasPorDia[chave] += venda.valor;
     }
   });
 
-  // Converter para formato do gráfico
-  if (periodo === 'semana') {
-    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    return Object.keys(vendasPorDia)
-      .sort()
-      .map((chave) => {
-        const data = new Date(chave + 'T00:00:00');
-        const diaSemana = diasSemana[data.getDay()];
-        return {
-          name: diaSemana,
-          sales: Math.round(vendasPorDia[chave])
-        };
-      });
-  } else {
-    // Para mês, mostrar apenas alguns dias (a cada 3 dias)
-    const resultado = Object.keys(vendasPorDia)
-      .sort()
-      .map((chave, index) => {
-        const data = new Date(chave + 'T00:00:00');
-        const dia = data.getDate();
-        return {
-          name: `${dia}`,
-          sales: Math.round(vendasPorDia[chave])
-        };
-      })
-      .filter((_, index) => index % 3 === 0); // Mostrar a cada 3 dias
+  // Ordenar as datas
+  const datasOrdenadas = Object.keys(vendasPorDia).sort();
 
-    return resultado;
-  }
+  // Calcular valores ACUMULATIVOS
+  let acumulado = 0;
+  const dadosAcumulativos: { name: string; sales: number }[] = [];
+
+  const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  datasOrdenadas.forEach((chave, index) => {
+    acumulado += vendasPorDia[chave];
+
+    let label: string;
+    const data = new Date(chave + 'T00:00:00');
+
+    // Definir label baseado no tamanho do período
+    if (diasNoPeriodo <= 7) {
+      // Até 7 dias: mostrar dia da semana
+      label = diasSemana[data.getDay()];
+    } else if (diasNoPeriodo <= 15) {
+      // 8-15 dias: mostrar número do dia
+      label = data.getDate().toString();
+    } else {
+      // Mais de 15 dias: mostrar a cada 3 dias
+      if (index % 3 === 0 || index === datasOrdenadas.length - 1) {
+        label = data.getDate().toString();
+      } else {
+        return; // Pular este dia
+      }
+    }
+
+    dadosAcumulativos.push({
+      name: label,
+      sales: Math.round(acumulado)
+    });
+  });
+
+  console.log(`📈 [PERFORMANCE] Gráfico acumulativo gerado com ${dadosAcumulativos.length} pontos`);
+  console.log(`💰 [PERFORMANCE] Total acumulado final: R$ ${acumulado.toFixed(2)}`);
+
+  return dadosAcumulativos;
 }
 
 // ============================================
