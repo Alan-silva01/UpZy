@@ -506,44 +506,26 @@ export async function buscarDadosPerformance(
   // Ordenar as datas
   const datasOrdenadas = Object.keys(vendasPorDia).sort();
 
-  // Calcular valores ACUMULATIVOS
-  let acumulado = 0;
-  const dadosAcumulativos: { name: string; sales: number }[] = [];
+  // Gerar dados diários (não acumulativos)
+  const dadosDiarios: { name: string; sales: number }[] = [];
 
-  const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-  datasOrdenadas.forEach((chave, index) => {
-    acumulado += vendasPorDia[chave];
-
-    let label: string;
+  datasOrdenadas.forEach((chave) => {
     const data = new Date(chave + 'T00:00:00');
 
-    // Definir label baseado no tamanho do período
-    if (diasNoPeriodo <= 7) {
-      // Até 7 dias: mostrar dia da semana
-      label = diasSemana[data.getDay()];
-    } else if (diasNoPeriodo <= 15) {
-      // 8-15 dias: mostrar número do dia
-      label = data.getDate().toString();
-    } else {
-      // Mais de 15 dias: mostrar a cada 3 dias
-      if (index % 3 === 0 || index === datasOrdenadas.length - 1) {
-        label = data.getDate().toString();
-      } else {
-        return; // Pular este dia
-      }
-    }
+    // Sempre mostrar o número do dia no eixo X
+    const label = data.getDate().toString();
 
-    dadosAcumulativos.push({
+    dadosDiarios.push({
       name: label,
-      sales: Math.round(acumulado)
+      sales: Math.round(vendasPorDia[chave])
     });
   });
 
-  console.log(`📈 [PERFORMANCE] Gráfico acumulativo gerado com ${dadosAcumulativos.length} pontos`);
-  console.log(`💰 [PERFORMANCE] Total acumulado final: R$ ${acumulado.toFixed(2)}`);
+  const totalGeral = datasOrdenadas.reduce((acc, chave) => acc + vendasPorDia[chave], 0);
+  console.log(`📈 [PERFORMANCE] Gráfico diário gerado com ${dadosDiarios.length} pontos`);
+  console.log(`💰 [PERFORMANCE] Total geral do período: R$ ${totalGeral.toFixed(2)}`);
 
-  return dadosAcumulativos;
+  return dadosDiarios;
 }
 
 // ============================================
