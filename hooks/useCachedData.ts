@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useCache } from '../contexts/CacheContext';
 
 interface UseCachedDataOptions<T> {
@@ -18,11 +18,10 @@ export function useCachedData<T>({
 }: UseCachedDataOptions<T>) {
   const cache = useCache();
   const [data, setData] = useState<T | null>(() => {
-    // Inicializar com cache se disponível
-    if (enabled && cache.isCacheValid(key, maxAge)) {
-      return cache.getCache<T>(key);
-    }
-    return null;
+    // SEMPRE inicializar com cache, mesmo se expirado
+    // Isso garante que sempre há dados para mostrar instantaneamente
+    const cachedData = cache.getCache<T>(key);
+    return cachedData || null;
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -31,7 +30,7 @@ export function useCachedData<T>({
   const fetchData = useCallback(async (force = false) => {
     if (!enabled) return;
 
-    // Verificar se tem cache válido e não é força
+    // Se tem cache válido e não é força, não buscar
     if (!force && cache.isCacheValid(key, maxAge)) {
       const cachedData = cache.getCache<T>(key);
       if (cachedData) {
@@ -52,9 +51,18 @@ export function useCachedData<T>({
       return;
     }
 
+    // Se tem dados em cache (mesmo expirados), NÃO mostrar loading
+    // Atualiza em background silenciosamente
+    const hasStaleData = !!cache.getCache<T>(key);
+
     try {
       fetchInProgressRef.current = true;
-      setLoading(true);
+
+      // Só mostra loading se NÃO tem dados antigos
+      if (!hasStaleData) {
+        setLoading(true);
+      }
+
       cache.setCacheLoading(key, true);
       setError(null);
 
@@ -82,16 +90,24 @@ export function useCachedData<T>({
   // Carregar dados na montagem
   useEffect(() => {
     if (enabled) {
-      // Tentar usar cache primeiro
+      // Sempre mostrar cache primeiro (mesmo expirado)
       const cachedData = cache.getCache<T>(key);
-      if (cachedData && cache.isCacheValid(key, maxAge)) {
+      if (cachedData) {
         setData(cachedData);
         setLoading(false);
-      } else if (!fetchInProgressRef.current) {
-        fetchData();
+
+        // Se expirado, buscar em background silenciosamente
+        if (!cache.isCacheValid(key, maxAge) && !fetchInProgressRef.current) {
+          fetchData();
+        }
+      } else {
+        // Se não tem cache, buscar com loading
+        if (!fetchInProgressRef.current) {
+          fetchData();
+        }
       }
     }
-  }, [enabled, key]); // Removido fetchData e cache das dependências para evitar loops
+  }, [enabled, key]);
 
   const refetch = useCallback(() => {
     return fetchData(true);

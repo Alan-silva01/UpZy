@@ -6,7 +6,7 @@ import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } fro
 import { useStoreStatus } from './hooks/useStoreStatus';
 import { Loader2 } from 'lucide-react';
 
-// Lazy loading de componentes para melhor performance
+// Lazy loading de componentes com preloading
 const DashboardView = lazy(() => import('./components/views/DashboardView').then(m => ({ default: m.DashboardView })));
 const TeamRanking = lazy(() => import('./components/views/TeamRanking').then(m => ({ default: m.TeamRanking })));
 const SalesFeed = lazy(() => import('./components/views/SalesFeed').then(m => ({ default: m.SalesFeed })));
@@ -23,12 +23,20 @@ const SellerSettingsModal = lazy(() => import('./components/modals/SellerSetting
 const InactiveAccountToast = lazy(() => import('./components/ui/InactiveAccountToast').then(m => ({ default: m.InactiveAccountToast })));
 const InactiveAccountModal = lazy(() => import('./components/modals/InactiveAccountModal').then(m => ({ default: m.InactiveAccountModal })));
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-  </div>
-);
+// Funções de preload para carregar componentes antecipadamente
+const preloadDashboard = () => import('./components/views/DashboardView');
+const preloadTeamRanking = () => import('./components/views/TeamRanking');
+const preloadSalesFeed = () => import('./components/views/SalesFeed');
+const preloadCustomerRanking = () => import('./components/views/CustomerRanking');
+const preloadAdminSellers = () => import('./components/views/AdminSellersView');
+const preloadSellerDashboard = () => import('./components/views/SellerDashboardView');
+const preloadSellerHistory = () => import('./components/views/SellerSalesHistoryView');
+const preloadSettings = () => import('./components/views/SettingsView');
+const preloadGoals = () => import('./components/views/GoalsManagementView');
+const preloadNewSaleModal = () => import('./components/modals/NewSaleModal');
+
+// Loading fallback invisível para transição instantânea - NUNCA mostra loader
+const LoadingFallback = () => <div className="min-h-screen" />;
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -69,6 +77,40 @@ const App: React.FC = () => {
     return () => clearTimeout(timeout);
   }, []);
 
+  // PREFETCH AGRESSIVO: Carregar TODOS os componentes assim que o app inicializar
+  useEffect(() => {
+    if (user && lojaId) {
+      // Aguardar 500ms após login para começar prefetch (garante UI responsiva)
+      const timer = setTimeout(() => {
+        console.log('🚀 Iniciando prefetch agressivo de todos os componentes e dados...');
+
+        if (user.role === 'ADMIN') {
+          // Preload todos os componentes do admin
+          Promise.all([
+            preloadDashboard(),
+            preloadTeamRanking(),
+            preloadSalesFeed(),
+            preloadCustomerRanking(),
+            preloadAdminSellers(),
+            preloadSettings(),
+            preloadGoals(),
+            preloadNewSaleModal()
+          ]).then(() => console.log('✅ Componentes do Admin pré-carregados'));
+        } else {
+          // Preload todos os componentes do vendedor
+          Promise.all([
+            preloadSellerDashboard(),
+            preloadSellerHistory(),
+            preloadSalesFeed(),
+            preloadNewSaleModal()
+          ]).then(() => console.log('✅ Componentes do Vendedor pré-carregados'));
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, lojaId]);
+
   const verificarSessaoAtual = async () => {
     console.log('🔍 Verificando sessão...');
     try {
@@ -103,8 +145,24 @@ const App: React.FC = () => {
 
         if (usuarioSessao.role === 'ADMIN') {
           setActiveTab(Tab.DASHBOARD);
+          // Preload componentes do admin em background
+          setTimeout(() => {
+            preloadTeamRanking();
+            preloadSalesFeed();
+            preloadCustomerRanking();
+            preloadAdminSellers();
+            preloadSettings();
+            preloadGoals();
+            preloadNewSaleModal();
+          }, 100);
         } else {
           setActiveTab(Tab.SELLER_HOME);
+          // Preload componentes do vendedor em background
+          setTimeout(() => {
+            preloadSellerHistory();
+            preloadSalesFeed();
+            preloadNewSaleModal();
+          }, 100);
         }
       } else {
         console.log('⚠️ Nenhuma sessão ativa');
@@ -152,8 +210,20 @@ const App: React.FC = () => {
     // Set default tab based on role
     if (loggedInUser.role === 'ADMIN') {
       setActiveTab(Tab.DASHBOARD);
+      // Preload componentes do admin
+      preloadTeamRanking();
+      preloadSalesFeed();
+      preloadCustomerRanking();
+      preloadAdminSellers();
+      preloadSettings();
+      preloadGoals();
+      preloadNewSaleModal();
     } else {
       setActiveTab(Tab.SELLER_HOME);
+      // Preload componentes do vendedor
+      preloadSellerHistory();
+      preloadSalesFeed();
+      preloadNewSaleModal();
     }
   };
 
@@ -370,6 +440,7 @@ const App: React.FC = () => {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           userRole={user.role}
+          lojaId={lojaId}
           onNewSale={() => {
             // Verificar se a conta está bloqueada antes de abrir modal
             if (checkBlocked('registrar uma venda')) {

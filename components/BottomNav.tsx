@@ -1,37 +1,107 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Home, Users, TrendingUp, UserCheck, Settings, PlusCircle, History, Target } from 'lucide-react';
 import { Tab, Role } from '../types';
+import { usePreload } from '../hooks/usePreload';
+import { usePrefetchData } from '../hooks/usePrefetchData';
 
 interface BottomNavProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   userRole: Role;
   onNewSale?: () => void;
+  lojaId?: string | null;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, userRole, onNewSale }) => {
+interface NavItem {
+  id: Tab | string;
+  icon: React.ComponentType<any>;
+  label: string;
+  preloadKey?: string;
+}
 
-  const getNavItems = () => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, userRole, onNewSale, lojaId }) => {
+  const { preload } = usePreload();
+  const {
+    prefetchDashboardData,
+    prefetchTeamData,
+    prefetchSalesData,
+    prefetchGoalsData,
+    prefetchAdminSellersData,
+  } = usePrefetchData(lojaId || null);
+
+  const getNavItems = (): NavItem[] => {
     if (userRole === 'ADMIN') {
       return [
-        { id: Tab.DASHBOARD, icon: Home, label: 'Home' },
-        { id: Tab.TEAM, icon: Users, label: 'Team' },
-        { id: Tab.GOALS, icon: Target, label: 'Metas' },
-        { id: Tab.SALES, icon: TrendingUp, label: 'Sales' }, // Global Sales
-        { id: Tab.ADMIN_SELLERS, icon: UserCheck, label: 'Admin' }, // Changed Icon to UserCheck
-        { id: Tab.SETTINGS, icon: Settings, label: 'Config' }, // New Tab
+        { id: Tab.DASHBOARD, icon: Home, label: 'Home', preloadKey: 'dashboard' },
+        { id: Tab.TEAM, icon: Users, label: 'Team', preloadKey: 'team' },
+        { id: Tab.GOALS, icon: Target, label: 'Metas', preloadKey: 'goals' },
+        { id: Tab.SALES, icon: TrendingUp, label: 'Sales', preloadKey: 'sales' },
+        { id: Tab.ADMIN_SELLERS, icon: UserCheck, label: 'Admin', preloadKey: 'adminSellers' },
+        { id: Tab.SETTINGS, icon: Settings, label: 'Config', preloadKey: 'settings' },
       ];
     } else {
-      // Seller Items
       return [
-        { id: Tab.SELLER_HOME, icon: Home, label: 'Home' },
-        { id: 'NEW_SALE_ACTION', icon: PlusCircle, label: 'Novo' }, // Special Action
-        { id: Tab.SALES, icon: History, label: 'Histórico' }, // My History
+        { id: Tab.SELLER_HOME, icon: Home, label: 'Home', preloadKey: 'sellerDashboard' },
+        { id: 'NEW_SALE_ACTION', icon: PlusCircle, label: 'Novo', preloadKey: 'newSaleModal' },
+        { id: Tab.SALES, icon: History, label: 'Histórico', preloadKey: 'sellerHistory' },
       ];
     }
   };
 
   const navItems = getNavItems();
+
+  // PREFETCH IMEDIATO: Carregar TUDO assim que o BottomNav aparecer
+  useEffect(() => {
+    // Prefetch instantâneo (sem delay)
+    navItems.forEach(item => {
+      if (item.preloadKey) {
+        preload(item.preloadKey);
+      }
+    });
+
+    // Prefetch de TODOS os dados em paralelo
+    if (userRole === 'ADMIN' && lojaId) {
+      Promise.all([
+        prefetchDashboardData(),
+        prefetchTeamData(),
+        prefetchSalesData(),
+        prefetchGoalsData(),
+        prefetchAdminSellersData(),
+      ]).then(() => console.log('✅ Todos os dados do Admin pré-carregados'));
+    } else if (lojaId) {
+      Promise.all([
+        prefetchSalesData(),
+      ]).then(() => console.log('✅ Dados do Vendedor pré-carregados'));
+    }
+  }, [userRole, lojaId]);
+
+  // Função para fazer prefetch ao passar mouse
+  const handleMouseEnter = (tab: Tab | string) => {
+    // Preload do componente
+    const item = navItems.find(i => i.id === tab);
+    if (item?.preloadKey) {
+      preload(item.preloadKey);
+    }
+
+    // Prefetch dos dados
+    switch (tab) {
+      case Tab.DASHBOARD:
+        prefetchDashboardData();
+        break;
+      case Tab.TEAM:
+        prefetchTeamData();
+        break;
+      case Tab.SALES:
+        prefetchSalesData();
+        break;
+      case Tab.GOALS:
+        prefetchGoalsData();
+        break;
+      case Tab.ADMIN_SELLERS:
+        prefetchAdminSellersData();
+        break;
+    }
+  };
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
@@ -45,6 +115,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
               <button
                 key={item.id}
                 onClick={onNewSale}
+                onMouseEnter={() => handleMouseEnter(item.id)}
+                onTouchStart={() => handleMouseEnter(item.id)}
                 className="relative group flex items-center justify-center -mt-8"
               >
                 <div className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform duration-300">
@@ -58,6 +130,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
             <button
               key={item.id}
               onClick={() => onTabChange(item.id as Tab)}
+              onMouseEnter={() => handleMouseEnter(item.id)}
+              onTouchStart={() => handleMouseEnter(item.id)}
               className="relative group flex items-center justify-center"
             >
               <div className={`transition-all duration-300 ${isActive ? 'text-white scale-110' : 'text-zinc-500 hover:text-zinc-300'}`}>
