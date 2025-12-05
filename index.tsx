@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { CacheProvider } from './contexts/CacheContext';
 import { registerSW } from 'virtual:pwa-register';
 
 // Registrar Service Worker para PWA
@@ -29,6 +30,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <CacheProvider>
+      <App />
+    </CacheProvider>
   </React.StrictMode>
 );

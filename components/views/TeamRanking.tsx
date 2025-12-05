@@ -11,6 +11,7 @@ export const TeamRanking: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [clientes, setClientes] = useState<ClienteRanking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [lojaId, setLojaId] = useState<string | null>(null);
@@ -20,7 +21,9 @@ export const TeamRanking: React.FC = () => {
   }, []);
 
   const carregarDados = async () => {
-    setLoading(true);
+    if (!hasLoadedOnce) {
+      setLoading(true);
+    }
     const user = await verificarSessao();
     if (user) {
       const loja = await buscarLojaIdUsuario(user.id);
@@ -37,6 +40,7 @@ export const TeamRanking: React.FC = () => {
       }
     }
     setLoading(false);
+    setHasLoadedOnce(true);
   };
 
   const aplicarFiltroData = async () => {

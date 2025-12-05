@@ -89,11 +89,17 @@ export const ManageGoalsModal: React.FC<ManageGoalsModalProps> = ({
         })
       );
 
+      // Log completo das metas carregadas
+      console.log('🔍 [GERENCIAR METAS] Metas carregadas do banco:', JSON.stringify(metasComDados, null, 2));
+
       setMetas(metasComDados);
 
       // Identificar meta ativa
       const ativa = metasComDados.find(m => m.status === 'ACTIVE');
       if (ativa) {
+        console.log('✅ [GERENCIAR METAS] Meta ativa:', ativa);
+        console.log('📅 [GERENCIAR METAS] data_inicio:', ativa.data_inicio);
+        console.log('📅 [GERENCIAR METAS] data_fim:', ativa.data_fim);
         setMetaAtiva(ativa.id);
       }
     } catch (error) {
@@ -156,7 +162,10 @@ export const ManageGoalsModal: React.FC<ManageGoalsModalProps> = ({
   };
 
   const formatarData = (dataISO: string) => {
-    return formatarDataSemTimezone(dataISO, 'curto');
+    console.log('📅 Data ISO recebida:', dataISO);
+    const resultado = formatarDataSemTimezone(dataISO, 'curto');
+    console.log('📅 Data formatada:', resultado);
+    return resultado;
   };
 
   const formatarValor = (valor: number) => {

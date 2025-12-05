@@ -9,6 +9,7 @@ export const SalesFeed: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [lojaId, setLojaId] = useState<string>('');
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export const SalesFeed: React.FC = () => {
   });
 
   const carregarDados = async (silencioso = false) => {
-    if (!silencioso) {
+    if (!silencioso && !hasLoadedOnce) {
       setLoading(true);
     }
     const user = await verificarSessao();
@@ -62,9 +63,8 @@ export const SalesFeed: React.FC = () => {
         setSellers(vendedores);
       }
     }
-    if (!silencioso) {
-      setLoading(false);
-    }
+    setLoading(false);
+    setHasLoadedOnce(true);
   };
 
   const getSellerAvatar = (id: string) => {

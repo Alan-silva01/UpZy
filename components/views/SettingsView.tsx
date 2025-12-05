@@ -71,26 +71,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     if (!storeData?.id) return;
 
     try {
+      // Converter a imagem cropada para blob
+      const response = await fetch(croppedDataUrl);
+      const blob = await response.blob();
+
       // Upload para o storage do Supabase
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${storeData.id}-${Date.now()}.${fileExt}`;
-      const filePath = `lojas/${fileName}`;
+      const fileExt = 'jpg'; // Sempre usar jpg pois a imagem cropada é convertida para jpeg
+      const fileName = `loja-${storeData.id}-${Date.now()}.${fileExt}`;
+
+      console.log('🔄 Tentando upload...', { fileName, size: blob.size });
 
       const { error: uploadError, data } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, {
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
           cacheControl: '3600',
           upsert: true
         });
 
       if (uploadError) {
+        console.error('❌ Erro no upload:', uploadError);
         throw uploadError;
       }
+
+      console.log('✅ Upload bem-sucedido:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
+
+      console.log('📸 URL pública gerada:', publicUrl);
 
       // Update database
       const { error: updateError } = await supabase
@@ -99,6 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
         .eq('id', storeData.id);
 
       if (updateError) {
+        console.error('❌ Erro ao atualizar banco:', updateError);
         throw updateError;
       }
 
@@ -111,10 +123,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
 
       setMensagemSucesso('Avatar atualizado com sucesso!');
       setTimeout(() => setMensagemSucesso(''), 3000);
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      setMensagemErro('Erro ao atualizar avatar');
-      setTimeout(() => setMensagemErro(''), 3000);
+    } catch (error: any) {
+      console.error('❌ Erro completo:', error);
+      const errorMessage = error?.message || error?.error || 'Erro ao atualizar avatar';
+      setMensagemErro(`Erro: ${errorMessage}`);
+      setTimeout(() => setMensagemErro(''), 5000);
       throw error;
     }
   };

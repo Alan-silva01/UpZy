@@ -1,25 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { DashboardView } from './components/views/DashboardView';
-import { TeamRanking } from './components/views/TeamRanking';
-import { SalesFeed } from './components/views/SalesFeed';
-import { CustomerRanking } from './components/views/CustomerRanking';
-import { AdminSellersView } from './components/views/AdminSellersView';
-import { SellerDashboardView } from './components/views/SellerDashboardView';
-import { SellerSalesHistoryView } from './components/views/SellerSalesHistoryView';
-import { LoginView } from './components/views/LoginView';
-import { SettingsView } from './components/views/SettingsView';
-import { GoalsManagementView } from './components/views/GoalsManagementView';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
-import { NewSaleModal } from './components/modals/NewSaleModal';
-import { SaleSuccessModal } from './components/modals/SaleSuccessModal';
-import { SellerSettingsModal } from './components/modals/SellerSettingsModal';
-import { InactiveAccountToast } from './components/ui/InactiveAccountToast';
-import { InactiveAccountModal } from './components/modals/InactiveAccountModal';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { useStoreStatus } from './hooks/useStoreStatus';
 import { Loader2 } from 'lucide-react';
+
+// Lazy loading de componentes para melhor performance
+const DashboardView = lazy(() => import('./components/views/DashboardView').then(m => ({ default: m.DashboardView })));
+const TeamRanking = lazy(() => import('./components/views/TeamRanking').then(m => ({ default: m.TeamRanking })));
+const SalesFeed = lazy(() => import('./components/views/SalesFeed').then(m => ({ default: m.SalesFeed })));
+const CustomerRanking = lazy(() => import('./components/views/CustomerRanking').then(m => ({ default: m.CustomerRanking })));
+const AdminSellersView = lazy(() => import('./components/views/AdminSellersView').then(m => ({ default: m.AdminSellersView })));
+const SellerDashboardView = lazy(() => import('./components/views/SellerDashboardView').then(m => ({ default: m.SellerDashboardView })));
+const SellerSalesHistoryView = lazy(() => import('./components/views/SellerSalesHistoryView').then(m => ({ default: m.SellerSalesHistoryView })));
+const LoginView = lazy(() => import('./components/views/LoginView').then(m => ({ default: m.LoginView })));
+const SettingsView = lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
+const GoalsManagementView = lazy(() => import('./components/views/GoalsManagementView').then(m => ({ default: m.GoalsManagementView })));
+const NewSaleModal = lazy(() => import('./components/modals/NewSaleModal').then(m => ({ default: m.NewSaleModal })));
+const SaleSuccessModal = lazy(() => import('./components/modals/SaleSuccessModal').then(m => ({ default: m.SaleSuccessModal })));
+const SellerSettingsModal = lazy(() => import('./components/modals/SellerSettingsModal').then(m => ({ default: m.SellerSettingsModal })));
+const InactiveAccountToast = lazy(() => import('./components/ui/InactiveAccountToast').then(m => ({ default: m.InactiveAccountToast })));
+const InactiveAccountModal = lazy(() => import('./components/modals/InactiveAccountModal').then(m => ({ default: m.InactiveAccountModal })));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[200px]">
+    <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+  </div>
+);
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -322,7 +331,11 @@ const App: React.FC = () => {
   }
 
   if (!user) {
-    return <LoginView onLogin={handleLogin} />;
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <LoginView onLogin={handleLogin} />
+      </Suspense>
+    );
   }
 
   return (
@@ -345,9 +358,11 @@ const App: React.FC = () => {
 
         {/* Container scrollável */}
         <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
-          {/* Page Transition Wrapper */}
+          {/* Page Transition Wrapper com Suspense */}
           <div className="px-4">
-            {renderContent()}
+            <Suspense fallback={<LoadingFallback />}>
+              {renderContent()}
+            </Suspense>
           </div>
         </div>
 
@@ -364,51 +379,53 @@ const App: React.FC = () => {
           }}
         />
 
-        <NewSaleModal
-          isOpen={isSaleModalOpen}
-          onClose={() => setIsSaleModalOpen(false)}
-          onSubmit={handleNewSale}
-        />
-
-        {lastSaleData && (
-          <SaleSuccessModal
-            isOpen={isSaleSuccessModalOpen}
-            onClose={() => {
-              setIsSaleSuccessModalOpen(false);
-              setLastSaleData(null);
-            }}
-            onContinue={handleContinuarVendendo}
-            saleData={lastSaleData}
+        <Suspense fallback={null}>
+          <NewSaleModal
+            isOpen={isSaleModalOpen}
+            onClose={() => setIsSaleModalOpen(false)}
+            onSubmit={handleNewSale}
           />
-        )}
 
-        {/* Modal de Configurações do Vendedor */}
-        {user && user.role === 'SELLER' && (
-          <SellerSettingsModal
-            isOpen={isSettingsModalOpen}
-            onClose={() => setIsSettingsModalOpen(false)}
-            userId={user.id}
-            currentName={user.name}
-            onNameUpdate={(newName: string) => {
-              setUser({ ...user, name: newName });
-            }}
+          {lastSaleData && (
+            <SaleSuccessModal
+              isOpen={isSaleSuccessModalOpen}
+              onClose={() => {
+                setIsSaleSuccessModalOpen(false);
+                setLastSaleData(null);
+              }}
+              onContinue={handleContinuarVendendo}
+              saleData={lastSaleData}
+            />
+          )}
+
+          {/* Modal de Configurações do Vendedor */}
+          {user && user.role === 'SELLER' && (
+            <SellerSettingsModal
+              isOpen={isSettingsModalOpen}
+              onClose={() => setIsSettingsModalOpen(false)}
+              userId={user.id}
+              currentName={user.name}
+              onNameUpdate={(newName: string) => {
+                setUser({ ...user, name: newName });
+              }}
+            />
+          )}
+
+          {/* Toast de Conta Inativa (aparece e desaparece automaticamente) */}
+          {showInactiveToast && user && (
+            <InactiveAccountToast
+              isAdmin={user.role === 'ADMIN'}
+              onClose={() => setShowInactiveToast(false)}
+            />
+          )}
+
+          {/* Modal de Conta Inativa (quando tenta fazer ação bloqueada) */}
+          <InactiveAccountModal
+            isOpen={inactiveModalOpen}
+            onClose={() => setInactiveModalOpen(false)}
+            actionAttempted={blockedAction}
           />
-        )}
-
-        {/* Toast de Conta Inativa (aparece e desaparece automaticamente) */}
-        {showInactiveToast && user && (
-          <InactiveAccountToast
-            isAdmin={user.role === 'ADMIN'}
-            onClose={() => setShowInactiveToast(false)}
-          />
-        )}
-
-        {/* Modal de Conta Inativa (quando tenta fazer ação bloqueada) */}
-        <InactiveAccountModal
-          isOpen={inactiveModalOpen}
-          onClose={() => setInactiveModalOpen(false)}
-          actionAttempted={blockedAction}
-        />
+        </Suspense>
       </main>
     </div>
   );

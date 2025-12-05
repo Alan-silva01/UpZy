@@ -382,8 +382,14 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   const formatarData = (dataISO: string) => {
-    const data = new Date(dataISO);
-    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    // Extrair ano, mês e dia diretamente da string sem conversão de timezone
+    const dataParte = dataISO.includes('T') ? dataISO.split('T')[0] : dataISO.split(' ')[0];
+    const [ano, mes, dia] = dataParte.split('-');
+
+    const mesesCurtos = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    const mesNome = mesesCurtos[parseInt(mes) - 1];
+
+    return `${dia} de ${mesNome}. de ${ano}`;
   };
 
   const formatarValor = (valor: number) => {

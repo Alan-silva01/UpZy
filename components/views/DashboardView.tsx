@@ -45,6 +45,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [vendedores, setVendedores] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [chartData, setChartData] = useState<{ name: string; sales: number }[]>([]);
   const [periodoGrafico, setPeriodoGrafico] = useState<'meta' | 'semana' | 'mes'>('meta');
   const [nomeLoja, setNomeLoja] = useState<string>('');
@@ -122,7 +123,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   });
 
   const carregarDados = async (silencioso = false) => {
-    if (!silencioso) {
+    // Só mostra loading se não carregou ainda e não é silencioso
+    if (!silencioso && !hasLoadedOnce) {
       setLoading(true);
     }
     try {
@@ -215,6 +217,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -223,10 +226,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
     setChartData(dados);
   };
 
-  if (loading || !stats) {
+  // Só mostra loading se for a primeira vez e não tiver dados ainda
+  if (loading && !hasLoadedOnce && !stats) {
     return (
       <div className="pb-28 space-y-4 animate-slide-up flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Se não tem stats ainda mas já carregou uma vez, mostra conteúdo vazio
+  if (!stats) {
+    return (
+      <div className="pb-28 space-y-4 animate-slide-up flex items-center justify-center h-96">
+        <p className="text-zinc-500">Carregando dados...</p>
       </div>
     );
   }

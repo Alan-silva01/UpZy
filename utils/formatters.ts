@@ -113,7 +113,17 @@ export function getNumericValue(value: string): string {
  */
 export function formatarDataSemTimezone(dataISO: string, formato: 'curto' | 'completo' = 'curto'): string {
   // Extrair ano, mês e dia diretamente da string sem conversão de timezone
-  const [ano, mes, dia] = dataISO.split('T')[0].split('-');
+  // Suporta tanto formato "2025-12-01T00:00:00" quanto "2025-12-01 00:00:00"
+  const dataParte = dataISO.includes('T') ? dataISO.split('T')[0] : dataISO.split(' ')[0];
+
+  // Extrair componentes da data e subtrair 1 dia para compensar UTC
+  const [ano, mes, dia] = dataParte.split('-');
+  const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+  dataObj.setDate(dataObj.getDate() - 1);
+
+  const anoFinal = dataObj.getFullYear().toString();
+  const mesFinal = dataObj.getMonth();
+  const diaFinal = dataObj.getDate().toString().padStart(2, '0');
 
   const meses = [
     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -125,12 +135,11 @@ export function formatarDataSemTimezone(dataISO: string, formato: 'curto' | 'com
     'jul', 'ago', 'set', 'out', 'nov', 'dez'
   ];
 
-  const mesIndex = parseInt(mes) - 1;
-  const mesNome = formato === 'curto' ? mesesCurtos[mesIndex] : meses[mesIndex];
+  const mesNome = formato === 'curto' ? mesesCurtos[mesFinal] : meses[mesFinal];
 
   if (formato === 'curto') {
-    return `${dia} de ${mesNome}, ${ano}`;
+    return `${diaFinal} de ${mesNome}, ${anoFinal}`;
   } else {
-    return `${dia} de ${mesNome} de ${ano}`;
+    return `${diaFinal} de ${mesNome} de ${anoFinal}`;
   }
 }
