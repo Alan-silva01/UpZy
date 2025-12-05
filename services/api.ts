@@ -230,7 +230,11 @@ export async function buscarVendas(lojaId: string, limite: number = 50): Promise
     itemsCount: venda.quantidade_itens,
     timestamp: venda.data_venda,
     sellerId: venda.vendedor_id,
-    customerName: venda.nome_cliente || 'Cliente não informado'
+    customerName: venda.nome_cliente || 'Cliente não informado',
+    orderId: venda.numero_pedido,
+    paymentMethod: venda.metodo_pagamento,
+    paymentType: venda.tipo_pagamento,
+    installments: venda.parcelas
   }));
 }
 
@@ -612,7 +616,10 @@ export async function buscarVendasDaMeta(lojaId: string, dataInicio: string, dat
     amount: venda.valor,
     timestamp: venda.data_venda,
     itemsCount: venda.quantidade_itens,
-    orderId: venda.numero_pedido
+    orderId: venda.numero_pedido,
+    paymentMethod: venda.metodo_pagamento,
+    paymentType: venda.tipo_pagamento,
+    installments: venda.parcelas
   }));
 }
 

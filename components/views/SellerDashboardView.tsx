@@ -406,16 +406,21 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
                       <p className="text-white font-bold text-sm">
                         {formatCurrency(venda.valor)}
                       </p>
-                      <p className="text-[10px] text-zinc-500">#{venda.numero_pedido}</p>
+                      <p className="text-[10px] text-zinc-500">Pedido: {venda.numero_pedido}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-indigo-500/10 text-indigo-400 font-medium">
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
                       {metodoPagamento}
                     </span>
                     {venda.tipo_pagamento === 'parcelado' && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
                         {tipoPagamento}
+                      </span>
+                    )}
+                    {venda.tipo_pagamento === 'avista' && (
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                        À vista
                       </span>
                     )}
                   </div>

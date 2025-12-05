@@ -10,11 +10,18 @@ interface NewSaleModalProps {
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  // Obter data e hora atual para preencher os campos
+  // Obter data e hora atual LOCAL para preencher os campos
   const getCurrentDateTime = () => {
     const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const time = now.toTimeString().slice(0, 5); // HH:MM
+    // Usar componentes locais para evitar problemas de timezone
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    const date = `${year}-${month}-${day}`; // YYYY-MM-DD
+    const time = `${hours}:${minutes}`; // HH:MM
     return { date, time };
   };
 

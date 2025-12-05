@@ -296,6 +296,11 @@ const App: React.FC = () => {
       'promissory': 'promissoria'
     };
 
+    // Converter data/hora local para UTC corretamente
+    // O input de data/hora é considerado como horário local
+    const dataHoraLocal = new Date(`${data.saleDate}T${data.saleTime}:00`);
+    const dataVendaFormatada = dataHoraLocal.toISOString();
+
     const sucesso = await criarVenda({
       lojaId,
       vendedorId,
@@ -305,7 +310,7 @@ const App: React.FC = () => {
       metodoPagamento: metodoPagamentoMap[data.paymentMethod] || data.paymentMethod,
       tipoPagamento: data.paymentType === 'spot' ? 'avista' : 'parcelado',
       parcelas: data.installments,
-      dataVenda: `${data.saleDate}T${data.saleTime}:00.000Z`
+      dataVenda: dataVendaFormatada
     });
 
     if (sucesso) {

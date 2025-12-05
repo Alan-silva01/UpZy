@@ -33,6 +33,10 @@ export interface Sale {
   timestamp: string;
   sellerId: string;
   customerName: string;
+  orderId?: string;
+  paymentMethod?: string;
+  paymentType?: string;
+  installments?: number;
 }
 
 export interface Customer {

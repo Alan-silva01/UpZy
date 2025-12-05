@@ -143,3 +143,35 @@ export function formatarDataSemTimezone(dataISO: string, formato: 'curto' | 'com
     return `${diaFinal} de ${mesNome} de ${anoFinal}`;
   }
 }
+
+/**
+ * Formata timestamp em formato relativo ("3h atrás", "Agora", etc)
+ * IGNORA timezone completamente - trata tudo como horário local
+ * @param timestamp - String do timestamp do banco (ex: "2025-12-05 11:14:00+00")
+ * @returns String formatada em português brasileiro
+ */
+export function formatarTempoRelativo(timestamp: string): string {
+  // Extrair data/hora da string ignorando timezone
+  // Formato: "2025-12-05 11:14:00+00" ou "2025-12-05T11:14:00.000Z"
+  const timestampStr = timestamp.replace('T', ' ').replace('Z', '').split('+')[0].split('.')[0];
+  const [datePart, timePart] = timestampStr.split(' ');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes, seconds = 0] = timePart.split(':').map(Number);
+
+  // Criar data tratando os valores como horário LOCAL (ignorando UTC)
+  const date = new Date(year, month - 1, day, hours, minutes, seconds);
+  const now = new Date();
+
+  // Calcular diferença em millisegundos
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Agora';
+  if (diffMins < 60) return `${diffMins} min atrás`;
+  if (diffHours < 24) return `${diffHours}h atrás`;
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays < 7) return `${diffDays} dias`;
+  return date.toLocaleDateString('pt-BR');
+}

@@ -4,6 +4,7 @@ import { Sale, Seller } from '../../types';
 import { buscarVendas, buscarVendedores } from '../../services/api';
 import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { formatarTempoRelativo } from '../../utils/formatters';
 
 export const SalesFeed: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -75,20 +76,6 @@ export const SalesFeed: React.FC = () => {
     return sellers.find(s => s.id === id)?.name || 'Vendedor';
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins} min atrás`;
-    if (diffHours < 24) return `${diffHours}h atrás`;
-    if (diffDays === 1) return 'Ontem';
-    if (diffDays < 7) return `${diffDays} dias`;
-    return date.toLocaleDateString('pt-BR');
-  };
 
   if (loading) {
     return (
@@ -124,17 +111,42 @@ export const SalesFeed: React.FC = () => {
 
                 <div className="glass-card rounded-2xl p-4 hover:bg-white/5 transition-all duration-300 border-zinc-800/50">
                   <div className="flex justify-between items-start mb-2">
-                    <div>
+                    <div className="flex-1">
                        <h3 className="font-bold text-white text-sm">{sale.customerName}</h3>
                        <span className="text-zinc-500 text-[10px] flex items-center gap-1 mt-0.5">
-                         <Clock size={10} /> {formatTimestamp(sale.timestamp)}
+                         <Clock size={10} /> {formatarTempoRelativo(sale.timestamp)}
                        </span>
                     </div>
                     <div className="text-right">
                       <div className="text-emerald-400 font-bold text-sm leading-tight">
                          + {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.amount)}
                       </div>
+                      <span className="text-[10px] text-zinc-600">Pedido: {sale.orderId}</span>
                     </div>
+                  </div>
+
+                  {/* Payment Info */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                      {{
+                        'pix': 'PIX',
+                        'dinheiro': 'Dinheiro',
+                        'cartao_debito': 'Débito',
+                        'cartao_credito': 'Crédito',
+                        'boleto': 'Boleto',
+                        'promissoria': 'Promissória'
+                      }[sale.paymentMethod] || sale.paymentMethod}
+                    </span>
+                    {sale.paymentType === 'parcelado' && sale.installments && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                        {sale.installments}x
+                      </span>
+                    )}
+                    {sale.paymentType === 'avista' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                        À vista
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-dashed border-zinc-800/60">
