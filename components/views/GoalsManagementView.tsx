@@ -30,9 +30,10 @@ interface GoalsManagementViewProps {
   lojaId: string;
   userId: string;
   onBack: () => void;
+  onBlockedAction?: () => void;
 }
 
-export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId, userId, onBack }) => {
+export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId, userId, onBack, onBlockedAction }) => {
   const [metas, setMetas] = useState<MetaComDados[]>([]);
   const [loading, setLoading] = useState(false);
   const [metaExpandida, setMetaExpandida] = useState<string | null>(null);
@@ -207,6 +208,12 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   const criarOuEditarMeta = async () => {
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      onBlockedAction();
+      return;
+    }
+
     if (!valorTotal || !dataInicio || !dataFim) {
       alert('Preencha todos os campos!');
       return;
@@ -279,12 +286,25 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   const abrirModalDeletar = (meta: MetaComDados) => {
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      onBlockedAction();
+      return;
+    }
+
     setMetaSelecionada(meta);
     setModalDeletarAberto(true);
   };
 
   const excluirMeta = async () => {
     if (!metaSelecionada) return;
+
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      setModalDeletarAberto(false);
+      onBlockedAction();
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -305,17 +325,36 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   const abrirModalAtivar = (meta: MetaComDados) => {
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      onBlockedAction();
+      return;
+    }
+
     setMetaSelecionada(meta);
     setModalAtivarAberto(true);
   };
 
   const abrirModalDesativar = (meta: MetaComDados) => {
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      onBlockedAction();
+      return;
+    }
+
     setMetaSelecionada(meta);
     setModalDesativarAberto(true);
   };
 
   const ativarMeta = async () => {
     if (!metaSelecionada) return;
+
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      setModalAtivarAberto(false);
+      onBlockedAction();
+      return;
+    }
 
     try {
       console.log('🎯 Ativando meta:', metaSelecionada.id);
@@ -343,6 +382,13 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const desativarMeta = async () => {
     if (!metaSelecionada) return;
 
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      setModalDesativarAberto(false);
+      onBlockedAction();
+      return;
+    }
+
     try {
       console.log('⏸️ Desativando meta:', metaSelecionada.id);
 
@@ -366,6 +412,12 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   };
 
   const iniciarEdicao = (meta: Meta) => {
+    // Verificar se a loja está bloqueada
+    if (onBlockedAction) {
+      onBlockedAction();
+      return;
+    }
+
     setEditandoMeta(meta.id);
     setValorTotal(meta.valor_total.toString());
     setDataInicio(meta.data_inicio.split('T')[0]);
@@ -418,7 +470,13 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       {/* Botão Criar Nova Meta */}
       {!showForm && (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            if (onBlockedAction) {
+              onBlockedAction();
+              return;
+            }
+            setShowForm(true);
+          }}
           className="w-full py-4 rounded-2xl border-2 border-dashed border-zinc-800 hover:border-indigo-500/50 bg-zinc-900/50 hover:bg-indigo-500/5 text-zinc-500 hover:text-indigo-400 text-sm font-bold transition-all flex items-center justify-center gap-2"
         >
           <Plus size={18} />

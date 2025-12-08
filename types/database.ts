@@ -15,6 +15,20 @@ export interface UsuarioDB {
   papel: 'ADMIN' | 'SELLER';
   avatar: string | null;
   senha_hash: string;
+  plano_ativo?: 'monthly' | 'semester' | 'annual' | null;
+  data_expiracao?: string | null;
+  asaas_customer_id?: string | null;
+  whatsapp?: string | null;
+  cpf?: string | null;
+  billing_name?: string | null;
+  cep?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  status?: 'ativo' | 'inativo' | 'pendente' | null;
 }
 
 export interface VendedorDB {

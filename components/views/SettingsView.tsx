@@ -16,6 +16,7 @@ interface StoreData {
   plano: string;
   status: string;
   avatar_url?: string;
+  data_renovacao?: string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
@@ -46,7 +47,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
       if (user) {
         setUserEmail(user.email);
         const lojaId = await buscarLojaIdUsuario(user.id);
+
         if (lojaId) {
+          // Buscar dados da loja
           const { data: loja } = await supabase
             .from('lojas')
             .select('*')
@@ -65,6 +68,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     } finally {
       setLoading(false);
     }
+  };
+
+  const calcularDiasRestantes = () => {
+    if (!storeData?.data_renovacao) return null;
+
+    const dataRenovacao = new Date(storeData.data_renovacao);
+    const hoje = new Date();
+    const diffTime = dataRenovacao.getTime() - hoje.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
   };
 
   const handleAvatarUpload = async (file: File, croppedDataUrl: string) => {
@@ -269,20 +283,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
                  </div>
                  <span className="font-mono text-xs text-zinc-400 tracking-wider">UPZY CARD</span>
                </div>
-               {storeData?.status === 'INACTIVE' ? (
-                 <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold border border-red-500/30">INATIVO</span>
-               ) : (
+               {storeData?.status === 'ACTIVE' ? (
                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">ATIVO</span>
+               ) : storeData?.status === 'PAST_DUE' ? (
+                 <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">VENCIDO</span>
+               ) : (
+                 <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold border border-red-500/30">INATIVO</span>
                )}
             </div>
 
             <div>
                <div className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1">Plano Atual</div>
-               <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tighter">
-                 {storeData?.plano || 'FREE'}
+               <div className="flex items-baseline gap-2">
+                 {storeData?.plano === 'FREE' ? (
+                   <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tighter">
+                     FREE
+                   </div>
+                 ) : (
+                   <>
+                     <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tighter">
+                       PRO
+                     </div>
+                     <div className="text-sm font-medium text-zinc-400">
+                       {storeData?.plano?.replace('PRO - ', '')}
+                     </div>
+                   </>
+                 )}
                </div>
                <div className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1">
-                  {storeData?.plano === 'PRO' ? 'Renova em 30 dias' : 'Upgrade disponível'}
+                  {storeData?.plano === 'FREE'
+                    ? 'Você não tem um plano ativo'
+                    : calcularDiasRestantes() !== null && calcularDiasRestantes()! > 0
+                    ? `Plano expira em ${calcularDiasRestantes()} ${calcularDiasRestantes() === 1 ? 'dia' : 'dias'}`
+                    : storeData?.data_renovacao
+                    ? `Plano expirado em: ${new Date(storeData.data_renovacao).toLocaleDateString('pt-BR')}`
+                    : 'Plano expirado'}
                </div>
             </div>
 

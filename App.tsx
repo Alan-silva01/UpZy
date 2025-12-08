@@ -357,7 +357,12 @@ const App: React.FC = () => {
           onStoreNameUpdate={(newName: string) => setNomeLoja(newName)}
           onStoreAvatarUpdate={(newAvatar: string) => setAvatarLoja(newAvatar)}
         />;
-        case Tab.GOALS: return <GoalsManagementView lojaId={lojaId} userId={user.id} onBack={() => setActiveTab(Tab.DASHBOARD)} />;
+        case Tab.GOALS: return <GoalsManagementView
+          lojaId={lojaId}
+          userId={user.id}
+          onBack={() => setActiveTab(Tab.DASHBOARD)}
+          onBlockedAction={isBlocked ? () => checkBlocked('criar ou editar metas') : undefined}
+        />;
         default: return <DashboardView lojaId={lojaId} userId={user.id} />;
       }
     } else {

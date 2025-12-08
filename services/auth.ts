@@ -265,7 +265,7 @@ export async function buscarNomeLoja(lojaId: string): Promise<string | null> {
 
 export interface StatusLoja {
   status: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE';
-  plano: 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+  plano: 'FREE' | 'PRO - Mensal' | 'PRO - Semestral' | 'PRO - Anual';
   bloqueado: boolean;
 }
 
@@ -364,5 +364,121 @@ export async function atualizarPlanoLoja(
   } catch (error: any) {
     console.error('Erro ao atualizar plano:', error);
     return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}
+
+// ============================================
+// SINCRONIZAÇÃO DE PLANOS
+// ============================================
+
+// Mapear plano do usuário para plano da loja
+function mapearPlanoUsuarioParaLoja(planoUsuario: 'monthly' | 'semester' | 'annual' | null | undefined): 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE' {
+  if (!planoUsuario) return 'FREE';
+
+  switch (planoUsuario) {
+    case 'monthly':
+      return 'STARTER';
+    case 'semester':
+      return 'PRO';
+    case 'annual':
+      return 'ENTERPRISE';
+    default:
+      return 'FREE';
+  }
+}
+
+// Sincronizar plano e data de expiração do usuário com a loja
+export async function sincronizarPlanoUsuarioComLoja(userId: string): Promise<{ sucesso: boolean; mensagem: string }> {
+  try {
+    console.log('🔄 Iniciando sincronização de plano para usuário:', userId);
+
+    // 1. Buscar dados do usuário incluindo plano_ativo e data_expiracao
+    const { data: usuario, error: usuarioError } = await supabase
+      .from('usuarios')
+      .select('loja_id, plano_ativo, data_expiracao, status')
+      .eq('id', userId)
+      .single();
+
+    if (usuarioError || !usuario) {
+      console.error('❌ Erro ao buscar usuário:', usuarioError);
+      return { sucesso: false, mensagem: 'Erro ao buscar dados do usuário' };
+    }
+
+    // 2. Mapear o plano do usuário para o plano da loja
+    const planoLoja = mapearPlanoUsuarioParaLoja(usuario.plano_ativo);
+
+    // 3. Determinar status da loja baseado no status do usuário e data de expiração
+    let statusLoja: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE' = 'INACTIVE';
+
+    if (usuario.status === 'ativo') {
+      // Verificar se não está expirado
+      if (usuario.data_expiracao) {
+        const dataExpiracao = new Date(usuario.data_expiracao);
+        const agora = new Date();
+
+        if (dataExpiracao > agora) {
+          statusLoja = 'ACTIVE';
+        } else {
+          statusLoja = 'PAST_DUE';
+        }
+      } else {
+        // Se não tem data de expiração mas está ativo, considera ativo
+        statusLoja = 'ACTIVE';
+      }
+    }
+
+    // 4. Atualizar a loja com os dados do usuário
+    const { error: lojaError } = await supabase
+      .from('lojas')
+      .update({
+        plano: planoLoja,
+        status: statusLoja,
+        data_renovacao: usuario.data_expiracao
+      })
+      .eq('id', usuario.loja_id);
+
+    if (lojaError) {
+      console.error('❌ Erro ao atualizar loja:', lojaError);
+      return { sucesso: false, mensagem: 'Erro ao sincronizar plano com a loja' };
+    }
+
+    console.log('✅ Plano sincronizado com sucesso!', { planoLoja, statusLoja, dataRenovacao: usuario.data_expiracao });
+
+    return {
+      sucesso: true,
+      mensagem: `Plano ${planoLoja} sincronizado com sucesso!`
+    };
+  } catch (error: any) {
+    console.error('❌ Erro ao sincronizar plano:', error);
+    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Buscar informações do plano do usuário
+export async function buscarPlanoUsuario(userId: string): Promise<{
+  plano: 'monthly' | 'semester' | 'annual' | null;
+  dataExpiracao: string | null;
+  status: string | null;
+} | null> {
+  try {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('plano_ativo, data_expiracao, status')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      console.error('Erro ao buscar plano do usuário:', error);
+      return null;
+    }
+
+    return {
+      plano: data.plano_ativo,
+      dataExpiracao: data.data_expiracao,
+      status: data.status
+    };
+  } catch (error) {
+    console.error('Erro ao buscar plano do usuário:', error);
+    return null;
   }
 }
