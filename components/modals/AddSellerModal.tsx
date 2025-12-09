@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Target, Loader2, AlertCircle } from 'lucide-react';
-import { formatCurrencyInput, parseCurrencyInput, capitalizeName } from '../../utils/formatters';
+import { X, User, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { capitalizeName } from '../../utils/formatters';
 
 interface AddSellerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (dados: { nome: string; email: string; senha: string; meta: number }) => Promise<void>;
+  onAdd: (dados: { nome: string; email: string; senha: string }) => Promise<void>;
 }
 
 export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
-    senha: '',
-    meta: 0
+    senha: ''
   });
-  const [displayMeta, setDisplayMeta] = useState('R$ 0,00');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -35,16 +33,10 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
       return;
     }
 
-    if (formData.meta <= 0) {
-      setErro('A meta deve ser maior que zero');
-      return;
-    }
-
     setLoading(true);
     try {
       await onAdd(formData);
-      setFormData({ nome: '', email: '', senha: '', meta: 0 });
-      setDisplayMeta('R$ 0,00');
+      setFormData({ nome: '', email: '', senha: '' });
       onClose();
     } catch (error: any) {
       setErro(error.message || 'Erro ao cadastrar vendedor');
@@ -55,18 +47,10 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
 
   const handleClose = () => {
     if (!loading) {
-      setFormData({ nome: '', email: '', senha: '', meta: 0 });
-      setDisplayMeta('R$ 0,00');
+      setFormData({ nome: '', email: '', senha: '' });
       setErro('');
       onClose();
     }
-  };
-
-  const handleMetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCurrencyInput(e.target.value);
-    setDisplayMeta(formatted);
-    const numeric = parseCurrencyInput(formatted);
-    setFormData({ ...formData, meta: numeric });
   };
 
   return (
@@ -149,25 +133,6 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
                 minLength={6}
                 className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
               />
-            </div>
-
-            {/* Meta */}
-            <div className="space-y-2">
-              <label className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Meta Mensal</label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                  <Target size={18} />
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="R$ 0,00"
-                  value={displayMeta}
-                  onChange={handleMetaChange}
-                  disabled={loading}
-                  className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-                />
-              </div>
             </div>
 
             {/* Actions */}

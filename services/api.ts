@@ -4,6 +4,83 @@ import { Seller, Sale, StoreStats } from '../types';
 import { formatarNomeProprio, normalizarEmail } from '../utils/formatters';
 
 // ============================================
+// FUNÇÃO AUXILIAR - DETECTAR GÊNERO
+// ============================================
+
+function detectarGenero(nome: string): 'feminino' | 'masculino' {
+  const nomeMinusculo = nome.toLowerCase().trim();
+  const primeiroNome = nomeMinusculo.split(' ')[0];
+
+  // Lista de nomes masculinos comuns (especialmente os que terminam em 'a')
+  const nomesMasculinos = [
+    'luca', 'lucas', 'garcia', 'costa', 'silva', 'sousa', 'souza', 'josué', 'josue',
+    'moisés', 'moises', 'matheus', 'jonas', 'elias', 'isaías', 'isaias', 'nicolas',
+    'matías', 'matias', 'tomas', 'tomás', 'joshua', 'micah', 'ezra', 'levi'
+  ];
+
+  // Lista de nomes femininos comuns
+  const nomesFemininos = [
+    'maria', 'ana', 'julia', 'juliana', 'fernanda', 'amanda', 'beatriz', 'leticia',
+    'patricia', 'mariana', 'carolina', 'isabela', 'isabella', 'gabriela', 'rafaela',
+    'daniela', 'camila', 'natalia', 'natália', 'paula', 'carla', 'laura', 'sara',
+    'sarah', 'bianca', 'bruna', 'giovana', 'larissa', 'vanessa', 'aline', 'alice',
+    'helena', 'sophia', 'melissa', 'raquel', 'ruth', 'edith', 'judith', 'jessica',
+    'jéssica', 'priscila', 'marcela', 'adriana', 'luciana', 'renata', 'simone', 'viviane'
+  ];
+
+  // Verifica primeiro se é um nome masculino conhecido
+  if (nomesMasculinos.some(nm => primeiroNome === nm || primeiroNome.includes(nm))) {
+    return 'masculino';
+  }
+
+  // Verifica se é um nome feminino conhecido
+  if (nomesFemininos.some(nf => primeiroNome === nf || primeiroNome.includes(nf))) {
+    return 'feminino';
+  }
+
+  // Terminações típicas masculinas (para nomes não listados)
+  const terminacoesMasculinas = ['o', 'os', 'or', 'el', 'il', 'im', 'om', 'um', 'go', 'do', 'to', 'ro'];
+  for (const terminacao of terminacoesMasculinas) {
+    if (primeiroNome.endsWith(terminacao)) {
+      return 'masculino';
+    }
+  }
+
+  // Terminações típicas femininas (para nomes não listados)
+  const terminacoesFemininas = ['ana', 'ane', 'ina', 'ice', 'ete', 'ela', 'isa', 'lia', 'anda', 'ença'];
+  for (const terminacao of terminacoesFemininas) {
+    if (primeiroNome.endsWith(terminacao)) {
+      return 'feminino';
+    }
+  }
+
+  // Se termina em 'a' mas não foi pego pelas regras acima, verificar melhor
+  if (primeiroNome.endsWith('a') && primeiroNome.length > 3) {
+    // Nomes masculinos geralmente terminados em 'a' tem padrões específicos
+    if (primeiroNome.endsWith('ua') || primeiroNome.endsWith('ia')) {
+      return 'masculino';
+    }
+    return 'feminino';
+  }
+
+  // Padrão: masculino
+  return 'masculino';
+}
+
+function gerarAvatarUrl(nome: string): string {
+  const genero = detectarGenero(nome);
+
+  // Usando dicebear com diferentes estilos baseados no gênero
+  if (genero === 'feminino') {
+    // lorelei ou adventurer-neutral são bons para feminino
+    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(nome)}`;
+  } else {
+    // avataaars ou adventurer são bons para masculino
+    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(nome)}`;
+  }
+}
+
+// ============================================
 // VENDEDORES
 // ============================================
 
@@ -98,7 +175,6 @@ export async function cadastrarVendedor(dados: {
   nome: string;
   email: string;
   senha: string;
-  meta: number;
 }): Promise<{ sucesso: boolean; mensagem: string }> {
   try {
     console.log('📝 Iniciando cadastro de vendedor:', { email: dados.email, loja: dados.lojaId });
@@ -141,7 +217,7 @@ export async function cadastrarVendedor(dados: {
         email: emailNormalizado,
         nome: nomeFormatado,
         papel: 'SELLER',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`,
+        avatar: gerarAvatarUrl(nomeFormatado),
         senha_hash: 'handled_by_supabase_auth'
       });
 
@@ -152,14 +228,14 @@ export async function cadastrarVendedor(dados: {
 
     console.log('✅ Registro de usuário criado');
 
-    // 3. Criar vendedor
+    // 3. Criar vendedor (meta padrão será 0)
     console.log('💼 Criando vendedor...');
     const { error: vendedorError } = await supabase
       .from('vendedores')
       .insert({
         loja_id: dados.lojaId,
         usuario_id: authData.user.id,
-        meta: dados.meta
+        meta: 0
       });
 
     if (vendedorError) {
