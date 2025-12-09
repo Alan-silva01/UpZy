@@ -32,6 +32,13 @@ export function formatarNomeProprio(nome: string): string {
 export const capitalizeName = formatarNomeProprio;
 
 /**
+ * Normaliza email para sempre minúsculo
+ */
+export function normalizarEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
  * Formata um número para moeda brasileira (R$)
  * @param value - Valor numérico a ser formatado
  * @param compact - Se true, usa notação compacta (ex: R$ 45,9 mil)

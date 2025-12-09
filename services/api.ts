@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { VendedorDB, VendaDB, UsuarioDB } from '../types/database';
 import { Seller, Sale, StoreStats } from '../types';
-import { formatarNomeProprio } from '../utils/formatters';
+import { formatarNomeProprio, normalizarEmail } from '../utils/formatters';
 
 // ============================================
 // VENDEDORES
@@ -103,12 +103,13 @@ export async function cadastrarVendedor(dados: {
   try {
     console.log('📝 Iniciando cadastro de vendedor:', { email: dados.email, loja: dados.lojaId });
 
-    // Formatar nome
+    // Formatar nome e email
     const nomeFormatado = formatarNomeProprio(dados.nome);
+    const emailNormalizado = normalizarEmail(dados.email);
 
     // 1. Criar usuário na autenticação do Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: dados.email,
+      email: emailNormalizado,
       password: dados.senha,
       options: {
         data: {
@@ -137,7 +138,7 @@ export async function cadastrarVendedor(dados: {
       .insert({
         id: authData.user.id,
         loja_id: dados.lojaId,
-        email: dados.email,
+        email: emailNormalizado,
         nome: nomeFormatado,
         papel: 'SELLER',
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`,

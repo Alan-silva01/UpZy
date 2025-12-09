@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
-import { formatarNomeProprio } from '../utils/formatters';
+import { formatarNomeProprio, normalizarEmail } from '../utils/formatters';
 
 // ============================================
 // AUTENTICAÇÃO
@@ -21,13 +21,14 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
   try {
     console.log('📝 Iniciando registro de admin:', { email: dados.email, nomeLoja: dados.nomeLoja });
 
-    // Formatar nome
+    // Formatar nome e email
     const nomeFormatado = formatarNomeProprio(dados.nome);
     const lojaFormatada = formatarNomeProprio(dados.nomeLoja);
+    const emailNormalizado = normalizarEmail(dados.email);
 
     // 1. Criar usuário na autenticação do Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: dados.email,
+      email: emailNormalizado,
       password: dados.senha,
       options: {
         data: {
@@ -51,10 +52,15 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     // 2. Criar loja
     console.log('📦 Criando loja...');
+    // Gerar avatar com primeira letra do nome da loja (letra branca, fundo preto)
+    const primeiraLetra = lojaFormatada.charAt(0).toUpperCase();
+    const avatarLoja = `https://ui-avatars.com/api/?name=${encodeURIComponent(primeiraLetra)}&background=000000&color=ffffff&size=200&bold=true&format=svg`;
+
     const { data: loja, error: lojaError } = await supabase
       .from('lojas')
       .insert({
         nome: lojaFormatada,
+        avatar_url: avatarLoja,
         plano: 'FREE',
         status: 'INACTIVE', // Começa inativa até ativar a conta
         data_renovacao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
@@ -76,7 +82,7 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
       .insert({
         id: authData.user.id,
         loja_id: loja.id,
-        email: dados.email,
+        email: emailNormalizado,
         nome: nomeFormatado,
         papel: 'ADMIN',
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`,
@@ -93,7 +99,7 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
     const user: User = {
       id: authData.user.id,
       name: nomeFormatado,
-      email: dados.email,
+      email: emailNormalizado,
       role: 'ADMIN',
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${nomeFormatado}`
     };
@@ -114,8 +120,10 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 // Login
 export async function fazerLogin(credenciais: CredenciaisLogin): Promise<{ sucesso: boolean; mensagem: string; user?: User }> {
   try {
+    const emailNormalizado = normalizarEmail(credenciais.email);
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: credenciais.email,
+      email: emailNormalizado,
       password: credenciais.senha
     });
 
