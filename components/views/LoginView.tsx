@@ -117,7 +117,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
       <div className="w-full max-w-sm relative z-10 animate-slide-up -mt-20">
         {/* Logo no topo */}
         <div className="text-center mb-8 flex flex-col items-center gap-3">
-          <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-20 h-20 object-contain" />
+          <img src="/logo.svg" alt="UpZy Logo" className="w-20 h-20 object-contain" />
           <h1 className="text-white text-2xl font-bold tracking-wider">UpZy</h1>
         </div>
 

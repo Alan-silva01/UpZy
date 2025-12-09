@@ -274,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
               />
             ) : (
               <img
-                src="/favicon_pwa.png"
+                src="/logo.svg"
                 alt="UpZy"
                 className="w-8 h-8"
               />

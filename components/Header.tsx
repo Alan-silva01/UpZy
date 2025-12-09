@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, store
           // Layout para Admin - Logo e nome da loja centralizado
           <>
             <div className="flex items-center gap-3 flex-1">
-              <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-10 h-10 object-contain" />
+              <img src="/logo.svg" alt="UpZy Logo" className="w-10 h-10 object-contain" />
               <div className="flex-1 text-center">
                 <h1 className="text-lg font-bold text-white tracking-tight">
                   {storeName || 'Minha Loja'}
@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, store
           // Layout para Vendedor
           <>
             <div className="flex items-center gap-3">
-              <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-10 h-10 object-contain" />
+              <img src="/logo.svg" alt="UpZy Logo" className="w-10 h-10 object-contain" />
               <div>
                 <span className="text-zinc-500 text-[10px] font-semibold tracking-widest uppercase">
                   Bem-vindo
