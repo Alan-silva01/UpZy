@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Check,
   Menu,
@@ -31,6 +32,9 @@ export const UpzyLogo = ({ className = "w-10 h-10" }: { className?: string }) =>
 );
 
 const LandingPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const userEmail = searchParams.get('email') || ''; // Get email from URL
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [viewers, setViewers] = useState(124);
@@ -96,7 +100,7 @@ const LandingPage: React.FC = () => {
 
   // Show checkout page if a plan is selected
   if (showCheckout && selectedPlan) {
-    return <Checkout selectedPlan={selectedPlan} onBack={handleBackToLanding} />;
+    return <Checkout selectedPlan={selectedPlan} onBack={handleBackToLanding} userEmail={userEmail} />;
   }
 
   return (

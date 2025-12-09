@@ -20,11 +20,12 @@ import {
 interface CheckoutProps {
   selectedPlan: PricingPlan;
   onBack: () => void;
+  userEmail?: string; // Optional email from logged user
 }
 
 type PaymentMethod = 'CREDIT_CARD' | 'BOLETO';
 
-const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack }) => {
+const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CREDIT_CARD');
@@ -33,11 +34,11 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack }) => {
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Form data
+  // Form data - Pre-fill email if userEmail is provided
   const [formData, setFormData] = useState({
     // Dados pessoais
     name: '',
-    email: '',
+    email: userEmail || '', // Pre-fill with user email if available
     whatsapp: '',
     cpf: '',
     // Endereço
@@ -589,18 +590,22 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Email
+                        Email {userEmail && <span className="text-xs text-emerald-400">(da sua conta)</span>}
                       </label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                        disabled={!!userEmail}
+                        className={`w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary ${userEmail ? 'opacity-75 cursor-not-allowed' : ''}`}
                         placeholder="seu@email.com"
                       />
                       {errors.email && (
                         <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+                      )}
+                      {userEmail && (
+                        <p className="text-emerald-400 text-xs mt-1">✓ Email verificado da sua conta</p>
                       )}
                     </div>
 

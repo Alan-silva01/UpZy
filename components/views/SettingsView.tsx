@@ -331,7 +331,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
                    : '**** **** **** ****'}
                </div>
                <button
-                 onClick={() => navigate('/vendas#precos')}
+                 onClick={() => navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`)}
                  className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors"
                >
                   Upgrade
