@@ -13,9 +13,9 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
     nome: '',
     email: '',
     senha: '',
-    meta: 50000
+    meta: 0
   });
-  const [displayMeta, setDisplayMeta] = useState('R$ 50.000,00');
+  const [displayMeta, setDisplayMeta] = useState('R$ 0,00');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -43,8 +43,8 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
     setLoading(true);
     try {
       await onAdd(formData);
-      setFormData({ nome: '', email: '', senha: '', meta: 50000 });
-      setDisplayMeta('R$ 50.000,00');
+      setFormData({ nome: '', email: '', senha: '', meta: 0 });
+      setDisplayMeta('R$ 0,00');
       onClose();
     } catch (error: any) {
       setErro(error.message || 'Erro ao cadastrar vendedor');
@@ -55,8 +55,8 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
 
   const handleClose = () => {
     if (!loading) {
-      setFormData({ nome: '', email: '', senha: '', meta: 50000 });
-      setDisplayMeta('R$ 50.000,00');
+      setFormData({ nome: '', email: '', senha: '', meta: 0 });
+      setDisplayMeta('R$ 0,00');
       setErro('');
       onClose();
     }

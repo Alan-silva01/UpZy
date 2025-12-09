@@ -3,6 +3,7 @@ import { Target, Calendar, DollarSign, TrendingUp, Users, Edit2, Trash2, Check, 
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters';
 
 interface Meta {
   id: string;
@@ -48,6 +49,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
   // Form state
   const [valorTotal, setValorTotal] = useState('');
+  const [displayValor, setDisplayValor] = useState('R$ 0,00');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -219,7 +221,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       return;
     }
 
-    const valor = parseFloat(valorTotal);
+    const valor = parseCurrencyInput(displayValor);
     if (valor <= 0) {
       alert('O valor da meta deve ser maior que zero!');
       return;
@@ -273,6 +275,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
       // Limpar formulário
       setValorTotal('');
+      setDisplayValor('R$ 0,00');
       setDataInicio('');
       setDataFim('');
       setShowForm(false);
@@ -420,6 +423,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
     setEditandoMeta(meta.id);
     setValorTotal(meta.valor_total.toString());
+    setDisplayValor(formatCurrencyInput(meta.valor_total.toString()));
     setDataInicio(meta.data_inicio.split('T')[0]);
     setDataFim(meta.data_fim.split('T')[0]);
     setShowForm(true);
@@ -428,9 +432,17 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const cancelarEdicao = () => {
     setEditandoMeta(null);
     setValorTotal('');
+    setDisplayValor('R$ 0,00');
     setDataInicio('');
     setDataFim('');
     setShowForm(false);
+  };
+
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setDisplayValor(formatted);
+    const numeric = parseCurrencyInput(formatted);
+    setValorTotal(numeric.toString());
   };
 
   const formatarData = (dataISO: string) => {
@@ -501,10 +513,11 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
               <div className="relative">
                 <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <input
-                  type="number"
-                  value={valorTotal}
-                  onChange={(e) => setValorTotal(e.target.value)}
-                  placeholder="0.00"
+                  type="text"
+                  inputMode="numeric"
+                  value={displayValor}
+                  onChange={handleValorChange}
+                  placeholder="R$ 0,00"
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 transition-colors text-sm"
                 />
               </div>
