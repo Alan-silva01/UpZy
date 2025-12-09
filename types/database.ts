@@ -44,7 +44,6 @@ export interface VendaDB {
   vendedor_id: string;
   numero_pedido: string | null;
   valor: number;
-  quantidade_itens: number;
   nome_cliente: string | null;
   metodo_pagamento: 'pix' | 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'boleto' | 'promissoria' | null;
   tipo_pagamento: 'avista' | 'parcelado' | null;

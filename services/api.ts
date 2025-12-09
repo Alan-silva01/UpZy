@@ -214,7 +214,7 @@ export async function buscarVendas(lojaId: string, limite: number = 50): Promise
   return data.map((venda: VendaDB) => ({
     id: venda.id,
     amount: venda.valor,
-    itemsCount: venda.quantidade_itens,
+    itemsCount: 1, // Removido quantidade_itens do banco
     timestamp: venda.data_venda,
     sellerId: venda.vendedor_id,
     customerName: venda.nome_cliente || 'Cliente não informado',
