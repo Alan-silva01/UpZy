@@ -93,20 +93,6 @@ export async function buscarVendedores(lojaId: string): Promise<Seller[]> {
   return vendedoresComVendas;
 }
 
-export async function atualizarMetaVendedor(vendedorId: string, novaMeta: number): Promise<boolean> {
-  const { error } = await supabase
-    .from('vendedores')
-    .update({ meta: novaMeta })
-    .eq('id', vendedorId);
-
-  if (error) {
-    console.error('Erro ao atualizar meta:', error);
-    return false;
-  }
-
-  return true;
-}
-
 export async function cadastrarVendedor(dados: {
   lojaId: string;
   nome: string;
@@ -570,57 +556,6 @@ export async function buscarMetaAtiva(lojaId: string) {
 
   console.log('✅ Meta ativa encontrada:', data);
   return data;
-}
-
-/**
- * Calcula a meta individual de cada vendedor
- * Divide o valor total da meta pelo número de vendedores
- */
-export async function calcularMetaIndividual(lojaId: string, valorTotalMeta: number): Promise<number> {
-  const vendedores = await buscarVendedores(lojaId);
-  const numVendedores = vendedores.length;
-
-  if (numVendedores === 0) return valorTotalMeta;
-
-  const metaIndividual = valorTotalMeta / numVendedores;
-  console.log(`📊 Meta individual: R$ ${metaIndividual} para ${numVendedores} vendedores`);
-
-  return metaIndividual;
-}
-
-/**
- * Busca vendas dentro do período da meta ativa
- */
-export async function buscarVendasDaMeta(lojaId: string, dataInicio: string, dataFim: string): Promise<Sale[]> {
-  console.log(`📅 Buscando vendas de ${dataInicio} a ${dataFim}`);
-
-  const { data, error } = await supabase
-    .from('vendas')
-    .select('*')
-    .eq('loja_id', lojaId)
-    .gte('data_venda', dataInicio)
-    .lte('data_venda', dataFim)
-    .order('data_venda', { ascending: false });
-
-  if (error) {
-    console.error('❌ Erro ao buscar vendas da meta:', error);
-    return [];
-  }
-
-  console.log(`✅ ${data?.length || 0} vendas encontradas no período`);
-
-  return (data || []).map((venda: VendaDB) => ({
-    id: venda.id,
-    sellerId: venda.vendedor_id,
-    customerName: venda.nome_cliente,
-    amount: venda.valor,
-    timestamp: venda.data_venda,
-    itemsCount: venda.quantidade_itens,
-    orderId: venda.numero_pedido,
-    paymentMethod: venda.metodo_pagamento,
-    paymentType: venda.tipo_pagamento,
-    installments: venda.parcelas
-  }));
 }
 
 /**

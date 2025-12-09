@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, store
             </div>
           </>
         ) : (
-          // Layout para Vendedor - Bem-vindo
+          // Layout para Vendedor
           <>
             <div className="flex items-center gap-3">
               <img src="/favicon_pwa.png" alt="UpZy Logo" className="w-10 h-10 object-contain" />
@@ -67,6 +67,14 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, store
                 <h1 className="text-lg font-bold text-white tracking-tight">{getFirstName(user.name)}</h1>
               </div>
             </div>
+
+            {storeName && (
+              <div className="absolute left-1/2 -translate-x-1/2">
+                <p className="text-[10px] text-zinc-600 font-medium tracking-wide">
+                  {storeName}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               {onOpenSettings && (
