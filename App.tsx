@@ -4,6 +4,7 @@ import { BottomNav } from './components/BottomNav';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { useStoreStatus } from './hooks/useStoreStatus';
+import { startCacheCleanup } from './hooks/useOptimizedQuery';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loading de componentes com preloading
@@ -75,6 +76,12 @@ const App: React.FC = () => {
     }, 3000);
 
     return () => clearTimeout(timeout);
+  }, []);
+
+  // Iniciar limpeza automática de cache (executa a cada 60 segundos)
+  useEffect(() => {
+    console.log('🗑️ Iniciando limpeza automática de cache');
+    startCacheCleanup(60000); // Limpa cache expirado a cada 60 segundos
   }, []);
 
   // PREFETCH AGRESSIVO: Carregar TODOS os componentes assim que o app inicializar
