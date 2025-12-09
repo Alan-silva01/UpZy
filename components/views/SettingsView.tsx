@@ -19,6 +19,7 @@ interface StoreData {
   avatar_url?: string;
   data_renovacao?: string;
   final_card?: string;
+  parcelas?: string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
@@ -82,6 +83,38 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays;
+  };
+
+  const getTextoRenovacaoOuExpiracao = () => {
+    if (storeData?.plano === 'FREE') {
+      return 'Você não tem um plano ativo';
+    }
+
+    if (!storeData?.parcelas || !storeData?.data_renovacao) {
+      return calcularDiasRestantes() !== null && calcularDiasRestantes()! > 0
+        ? `Plano expira em ${calcularDiasRestantes()} ${calcularDiasRestantes() === 1 ? 'dia' : 'dias'}`
+        : storeData?.data_renovacao
+        ? `Plano expirado em: ${new Date(storeData.data_renovacao).toLocaleDateString('pt-BR')}`
+        : 'Plano expirado';
+    }
+
+    // Parse das parcelas (formato: "1/12" ou "12/12")
+    const [parcelaAtual, totalParcelas] = storeData.parcelas.split('/').map(Number);
+    const diasRestantes = calcularDiasRestantes();
+
+    if (!diasRestantes || diasRestantes <= 0) {
+      return storeData.data_renovacao
+        ? `Plano expirado em: ${new Date(storeData.data_renovacao).toLocaleDateString('pt-BR')}`
+        : 'Plano expirado';
+    }
+
+    // Se for a última parcela (ex: 12/12, 6/6), mostra "Expira em"
+    if (parcelaAtual === totalParcelas) {
+      return `Expira em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}`;
+    }
+
+    // Caso contrário, mostra "Renova em"
+    return `Renova em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}`;
   };
 
   const handleAvatarUpload = async (file: File, croppedDataUrl: string) => {
@@ -314,22 +347,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
                  )}
                </div>
                <div className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1">
-                  {storeData?.plano === 'FREE'
-                    ? 'Você não tem um plano ativo'
-                    : calcularDiasRestantes() !== null && calcularDiasRestantes()! > 0
-                    ? `Plano expira em ${calcularDiasRestantes()} ${calcularDiasRestantes() === 1 ? 'dia' : 'dias'}`
-                    : storeData?.data_renovacao
-                    ? `Plano expirado em: ${new Date(storeData.data_renovacao).toLocaleDateString('pt-BR')}`
-                    : 'Plano expirado'}
+                  {getTextoRenovacaoOuExpiracao()}
                </div>
             </div>
 
             <div className="flex justify-between items-end">
-               <div className="text-[10px] text-zinc-400 font-mono">
-                 {storeData?.final_card
-                   ? `**** **** **** ${storeData.final_card}`
-                   : '**** **** **** ****'}
-               </div>
+               {storeData?.final_card && storeData?.plano !== 'FREE' && (
+                 <div className="text-[10px] text-zinc-400 font-mono">
+                   **** **** **** {storeData.final_card}
+                 </div>
+               )}
+               {(!storeData?.final_card || storeData?.plano === 'FREE') && (
+                 <div className="text-[10px] text-zinc-400 font-mono opacity-30">
+                   **** **** **** ****
+                 </div>
+               )}
                <button
                  onClick={() => navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`)}
                  className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors"

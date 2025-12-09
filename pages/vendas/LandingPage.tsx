@@ -187,20 +187,20 @@ const LandingPage: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <button 
+                <button
                   onClick={() => scrollToSection('precos')}
                   className="w-full sm:w-auto bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(124,58,237,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.6)] hover:scale-105 flex items-center justify-center gap-2 group"
                 >
-                  Começar 14 Dias Grátis
+                  Ver Planos
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button 
-                  onClick={() => setIsVideoOpen(true)}
+                <a
+                  href="/"
                   className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2"
                 >
-                  <Play size={18} fill="currentColor" />
-                  Ver Funcionando
-                </button>
+                  <ArrowRight size={18} />
+                  Ir para o App
+                </a>
               </div>
 
               <div className="mt-8 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-500">
@@ -588,11 +588,11 @@ const LandingPage: React.FC = () => {
         className={`fixed bottom-0 left-0 w-full bg-brand-darker/95 backdrop-blur border-t border-white/10 p-4 z-50 md:hidden transition-transform duration-300 ${showStickyCTA ? 'translate-y-0' : 'translate-y-full'}`}
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
-        <button 
+        <button
           onClick={() => scrollToSection('precos')}
           className="w-full bg-brand-success hover:bg-brand-success/90 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 active:scale-95 transition-transform"
         >
-          Começar Grátis Agora
+          Ver Planos e Assinar
           <ArrowRight size={18} />
         </button>
       </div>

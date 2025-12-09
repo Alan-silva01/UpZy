@@ -420,7 +420,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30 flex justify-center">
-      <main className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
+      <main role="main" className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
          {/* Premium Ambient Background */}
          <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
             <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>

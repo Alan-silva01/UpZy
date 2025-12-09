@@ -155,8 +155,8 @@ export const PLANS: PricingPlan[] = [
 
 export const FAQS: FAQItem[] = [
   {
-    question: "Preciso cadastrar cartão de crédito para testar?",
-    answer: "Não! Você tem 14 dias de acesso total gratuito sem precisar informar cartão. Só paga se gostar e quiser continuar."
+    question: "Como funciona o cadastro?",
+    answer: "Você pode criar uma conta gratuitamente para conhecer o sistema. Para usar todas as funcionalidades, basta escolher um dos nossos planos."
   },
   {
     question: "Funciona em quais celulares?",

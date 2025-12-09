@@ -106,7 +106,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-black">
+    <main role="main" className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-black">
        {/* Background Effects */}
        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-800/20 via-black to-black opacity-60"></div>
@@ -304,6 +304,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
