@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import AppRouter from './Router';
 import { CacheProvider } from './contexts/CacheContext';
 import { registerSW } from 'virtual:pwa-register';
 
@@ -31,7 +31,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <CacheProvider>
-      <App />
+      <AppRouter />
     </CacheProvider>
   </React.StrictMode>
 );

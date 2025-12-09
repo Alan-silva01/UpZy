@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ImageCropUpload } from '../ui/ImageCropUpload';
@@ -21,6 +22,7 @@ interface StoreData {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
+  const navigate = useNavigate();
   const [storeName, setStoreName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
@@ -328,7 +330,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
                    ? `**** **** **** ${storeData.final_card}`
                    : '**** **** **** ****'}
                </div>
-               <button className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors">
+               <button
+                 onClick={() => navigate('/vendas#precos')}
+                 className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+               >
                   Upgrade
                </button>
             </div>

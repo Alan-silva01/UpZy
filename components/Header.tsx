@@ -1,6 +1,7 @@
 import React from 'react';
 import { LogOut, Settings } from 'lucide-react';
 import { User } from '../types';
+import { StoreAvatar } from './ui/StoreAvatar';
 
 interface HeaderProps {
   user: User;
@@ -48,10 +49,10 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, storeName, store
                 </button>
               )}
 
-              <img
-                src={storeAvatar || user.avatar}
-                alt="Store Avatar"
-                className="w-10 h-10 rounded-full border-2 border-zinc-800 object-cover"
+              <StoreAvatar
+                storeName={storeName || 'Minha Loja'}
+                avatarUrl={storeAvatar}
+                size="md"
               />
             </div>
           </>
