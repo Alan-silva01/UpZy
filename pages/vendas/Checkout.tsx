@@ -341,8 +341,16 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack }) => {
 
   // Success screen - Redirect to Thank You Page
   if (success) {
-    // Redirect to thank you page with payment method
-    navigate(`/obrigado?method=${paymentMethod}`, { replace: true });
+    // Redirect to thank you page with payment method and boleto URL if available
+    const params = new URLSearchParams({
+      method: paymentMethod,
+    });
+
+    if (boletoUrl) {
+      params.append('boleto', boletoUrl);
+    }
+
+    navigate(`/obrigado?${params.toString()}`, { replace: true });
     return null;
   }
 

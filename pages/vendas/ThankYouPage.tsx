@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Check, ArrowRight, Loader2, FileText, Download } from 'lucide-react';
 
 const ThankYouPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(5);
 
-  // Get payment method from URL params
+  // Get payment method and boleto URL from URL params
   const paymentMethod = searchParams.get('method') || 'CREDIT_CARD';
+  const boletoUrl = searchParams.get('boleto') || null;
   const isBoleto = paymentMethod === 'BOLETO';
 
   useEffect(() => {
-    // Countdown timer
+    // Only auto-redirect if NOT boleto
+    if (isBoleto) {
+      return; // Don't auto-redirect for boleto
+    }
+
+    // Countdown timer for credit card
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -26,7 +32,7 @@ const ThankYouPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, [navigate, isBoleto]);
 
   const handleGoToApp = () => {
     navigate('/', { replace: true });
@@ -62,36 +68,83 @@ const ThankYouPage: React.FC = () => {
           <div className="bg-black/30 rounded-2xl p-6 mb-8">
             <h2 className="text-white font-bold mb-4 text-lg">O que acontece agora?</h2>
             <ul className="space-y-3 text-left text-gray-300 text-sm">
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={14} className="text-emerald-400" />
-                </div>
-                <span>Você será redirecionado automaticamente para o app</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={14} className="text-emerald-400" />
-                </div>
-                <span>Faça login com o email cadastrado para acessar</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={14} className="text-emerald-400" />
-                </div>
-                <span>Comece a usar todas as funcionalidades imediatamente</span>
-              </li>
+              {isBoleto ? (
+                <>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Visualize ou baixe seu boleto usando o botão abaixo</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Pague o boleto até a data de vencimento</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Após a confirmação do pagamento, sua conta será ativada</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Você receberá um email de confirmação com os detalhes</span>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Você será redirecionado automaticamente para o app</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Faça login com o email cadastrado para acessar</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} className="text-emerald-400" />
+                    </div>
+                    <span>Comece a usar todas as funcionalidades imediatamente</span>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
-          {/* Countdown */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 bg-gray-800/50 border border-white/10 rounded-full px-4 py-2">
-              <Loader2 size={16} className="text-emerald-400 animate-spin" />
-              <span className="text-gray-300 text-sm">
-                Redirecionando em <span className="text-emerald-400 font-bold">{countdown}</span> segundos...
-              </span>
+          {/* Boleto Button - Only show for boleto */}
+          {isBoleto && boletoUrl && (
+            <a
+              href={boletoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] hover:scale-105 flex items-center justify-center gap-2 mx-auto mb-4"
+            >
+              <FileText size={20} />
+              Visualizar Boleto
+              <Download size={20} />
+            </a>
+          )}
+
+          {/* Countdown - Only show for credit card */}
+          {!isBoleto && (
+            <div className="mb-6">
+              <div className="inline-flex items-center gap-2 bg-gray-800/50 border border-white/10 rounded-full px-4 py-2">
+                <Loader2 size={16} className="text-emerald-400 animate-spin" />
+                <span className="text-gray-300 text-sm">
+                  Redirecionando em <span className="text-emerald-400 font-bold">{countdown}</span> segundos...
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* CTA Button */}
           <button
