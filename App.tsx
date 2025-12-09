@@ -68,11 +68,11 @@ const App: React.FC = () => {
   useEffect(() => {
     verificarSessaoAtual();
 
-    // Timeout de segurança: se após 10 segundos ainda estiver carregando, força o fim do loading
+    // Timeout de segurança: se após 3 segundos ainda estiver carregando, força o fim do loading
     const timeout = setTimeout(() => {
       console.log('⏰ Timeout de segurança atingido');
       setLoadingSessao(false);
-    }, 10000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -80,7 +80,7 @@ const App: React.FC = () => {
   // PREFETCH AGRESSIVO: Carregar TODOS os componentes assim que o app inicializar
   useEffect(() => {
     if (user && lojaId) {
-      // Aguardar 500ms após login para começar prefetch (garante UI responsiva)
+      // Aguardar 100ms após login para começar prefetch (garante UI responsiva)
       const timer = setTimeout(() => {
         console.log('🚀 Iniciando prefetch agressivo de todos os componentes e dados...');
 
@@ -105,7 +105,7 @@ const App: React.FC = () => {
             preloadNewSaleModal()
           ]).then(() => console.log('✅ Componentes do Vendedor pré-carregados'));
         }
-      }, 500);
+      }, 100);
 
       return () => clearTimeout(timer);
     }
