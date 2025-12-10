@@ -84,8 +84,9 @@ Deno.serve(async (req) => {
             }
           }
         }
-        // Se não passou da data e está PAST_DUE ou INACTIVE, mas tem plano pago, mudar para ACTIVE
-        else if (dataRenovacao >= agora && (loja.status === 'PAST_DUE' || loja.status === 'INACTIVE')) {
+        // IMPORTANTE: Apenas mudar PAST_DUE para ACTIVE se a data de renovação foi atualizada
+        // NUNCA mudar de INACTIVE para ACTIVE automaticamente - isso só deve acontecer via pagamento
+        else if (dataRenovacao >= agora && loja.status === 'PAST_DUE') {
           if (loja.plano && loja.plano !== 'FREE') {
             novoStatus = 'ACTIVE';
             precisaAtualizar = true;

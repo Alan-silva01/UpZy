@@ -606,14 +606,23 @@ export async function verificarEAtualizarStatusLoja(lojaId: string): Promise<{
 
     // Verificar se a data de renovação já passou
     if (dataRenovacao < agora) {
-      // Se está ACTIVE ou PAST_DUE e passou da data, mudar direto para INACTIVE
-      if (loja.status === 'ACTIVE' || loja.status === 'PAST_DUE') {
-        novoStatus = 'INACTIVE';
+      // Se está ACTIVE e passou da data, mudar para PAST_DUE
+      if (loja.status === 'ACTIVE') {
+        novoStatus = 'PAST_DUE';
         precisaAtualizar = true;
       }
+      // Se está PAST_DUE há mais de 7 dias, mudar para INACTIVE
+      else if (loja.status === 'PAST_DUE') {
+        const diasVencido = Math.floor((agora.getTime() - dataRenovacao.getTime()) / (1000 * 60 * 60 * 24));
+        if (diasVencido > 7) {
+          novoStatus = 'INACTIVE';
+          precisaAtualizar = true;
+        }
+      }
     }
-    // Se não passou da data e está PAST_DUE ou INACTIVE, mas tem plano pago, mudar para ACTIVE
-    else if (dataRenovacao >= agora && (loja.status === 'PAST_DUE' || loja.status === 'INACTIVE')) {
+    // IMPORTANTE: Apenas mudar PAST_DUE para ACTIVE se a data de renovação foi atualizada
+    // NUNCA mudar de INACTIVE para ACTIVE automaticamente - isso só deve acontecer via pagamento
+    else if (dataRenovacao >= agora && loja.status === 'PAST_DUE') {
       if (loja.plano && loja.plano !== 'FREE') {
         novoStatus = 'ACTIVE';
         precisaAtualizar = true;
