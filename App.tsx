@@ -514,6 +514,7 @@ const App: React.FC = () => {
             onClose={() => setInactiveModalOpen(false)}
             actionAttempted={blockedAction}
             userEmail={user?.email}
+            isAdmin={user?.role === 'ADMIN'}
           />
         </Suspense>
       </main>

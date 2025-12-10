@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
@@ -565,6 +565,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
          )}
       </div>
 
+      {/* Suporte WhatsApp */}
+      <div className="glass-card rounded-[2rem] p-6">
+         <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+               <MessageCircle size={20} />
+            </div>
+            <div>
+               <h3 className="text-white font-bold text-sm">Suporte UpZy</h3>
+               <p className="text-[10px] text-zinc-500">Precisa de ajuda?</p>
+            </div>
+         </div>
+
+         <a
+           href="https://wa.me/5599984253218"
+           target="_blank"
+           rel="noopener noreferrer"
+           className="w-full py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
+         >
+            <MessageCircle size={14} />
+            Falar no WhatsApp
+         </a>
+         <p className="text-center text-[10px] text-zinc-500 mt-2">99 98425-3218</p>
+      </div>
+
       {/* Account Info */}
       <div className="glass-card rounded-[2rem] p-6 space-y-4">
          <div className="flex items-center gap-3 mb-2">
@@ -577,7 +601,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
             </div>
          </div>
 
-         <button 
+         <button
            onClick={onLogout}
            className="w-full py-3 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
          >

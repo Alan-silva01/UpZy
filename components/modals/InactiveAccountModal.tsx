@@ -7,13 +7,15 @@ interface InactiveAccountModalProps {
   onClose: () => void;
   actionAttempted: string; // Ex: "cadastrar vendedor", "registrar venda"
   userEmail?: string;
+  isAdmin?: boolean;
 }
 
 export const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
   isOpen,
   onClose,
   actionAttempted,
-  userEmail
+  userEmail,
+  isAdmin = false
 }) => {
   const navigate = useNavigate();
 
@@ -80,31 +82,50 @@ export const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
             </p>
           </div>
 
-          {/* CTA para ativação */}
-          <div className="relative bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-indigo-500/10 border border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl" />
+          {/* CTA para ativação (apenas para admin) */}
+          {isAdmin ? (
+            <div className="relative bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-indigo-500/10 border border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl" />
 
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <CreditCard size={16} className="text-emerald-400" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <CreditCard size={16} className="text-emerald-400" />
+                  </div>
+                  <h4 className="text-base font-bold text-white">Ative seu plano agora</h4>
                 </div>
-                <h4 className="text-base font-bold text-white">Ative seu plano agora</h4>
+
+                <p className="text-xs text-zinc-300 mb-4 leading-relaxed">
+                  Para desbloquear todas as funcionalidades e começar a usar o UpZy sem limitações, efetue o pagamento do seu plano.
+                </p>
+
+                <button
+                  onClick={handlePaymentClick}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                >
+                  <CreditCard size={18} />
+                  Efetuar Pagamento
+                </button>
               </div>
-
-              <p className="text-xs text-zinc-300 mb-4 leading-relaxed">
-                Para desbloquear todas as funcionalidades e começar a usar o UpZy sem limitações, efetue o pagamento do seu plano.
-              </p>
-
-              <button
-                onClick={handlePaymentClick}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
-              >
-                <CreditCard size={18} />
-                Efetuar Pagamento
-              </button>
             </div>
-          </div>
+          ) : (
+            <div className="relative bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-orange-500/10 border border-amber-500/30 rounded-2xl p-5 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl" />
+
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Lock size={16} className="text-amber-400" />
+                  </div>
+                  <h4 className="text-base font-bold text-white">Entre em contato com o administrador</h4>
+                </div>
+
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Apenas o administrador da loja pode ativar o plano. Solicite ao responsável que efetue o pagamento para desbloquear todas as funcionalidades.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Botão fechar */}
           <button
