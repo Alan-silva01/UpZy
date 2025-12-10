@@ -316,6 +316,13 @@ export async function buscarLojaIdUsuario(userId: string): Promise<string | null
       return null;
     }
 
+    // Verificar e atualizar status da loja automaticamente
+    if (data.loja_id) {
+      verificarEAtualizarStatusLoja(data.loja_id).catch(err => {
+        console.error('Erro ao verificar status da loja em background:', err);
+      });
+    }
+
     return data.loja_id;
   } catch (error) {
     console.error('Erro ao buscar loja_id:', error);
@@ -565,5 +572,81 @@ export async function buscarPlanoUsuario(userId: string): Promise<{
   } catch (error) {
     console.error('Erro ao buscar plano do usuário:', error);
     return null;
+  }
+}
+
+// Verificar e atualizar status da loja baseado na data de renovação
+export async function verificarEAtualizarStatusLoja(lojaId: string): Promise<{
+  sucesso: boolean;
+  statusAtual: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE' | null;
+  atualizado: boolean;
+}> {
+  try {
+    // Buscar dados da loja
+    const { data: loja, error } = await supabase
+      .from('lojas')
+      .select('id, status, data_renovacao, plano')
+      .eq('id', lojaId)
+      .single();
+
+    if (error || !loja) {
+      console.error('Erro ao buscar loja:', error);
+      return { sucesso: false, statusAtual: null, atualizado: false };
+    }
+
+    // Se não tem data de renovação, não fazer nada
+    if (!loja.data_renovacao) {
+      return { sucesso: true, statusAtual: loja.status, atualizado: false };
+    }
+
+    const dataRenovacao = new Date(loja.data_renovacao);
+    const agora = new Date();
+    let novoStatus: 'ACTIVE' | 'INACTIVE' | 'PAST_DUE' = loja.status;
+    let precisaAtualizar = false;
+
+    // Verificar se a data de renovação já passou
+    if (dataRenovacao < agora) {
+      // Se está ACTIVE e passou da data, mudar para PAST_DUE
+      if (loja.status === 'ACTIVE') {
+        novoStatus = 'PAST_DUE';
+        precisaAtualizar = true;
+      }
+      // Se está PAST_DUE há mais de 7 dias, mudar para INACTIVE
+      else if (loja.status === 'PAST_DUE') {
+        const diasVencido = Math.floor((agora.getTime() - dataRenovacao.getTime()) / (1000 * 60 * 60 * 24));
+        if (diasVencido > 7) {
+          novoStatus = 'INACTIVE';
+          precisaAtualizar = true;
+        }
+      }
+    }
+    // Se não passou da data e está PAST_DUE ou INACTIVE, mas tem plano pago, mudar para ACTIVE
+    else if (dataRenovacao >= agora && (loja.status === 'PAST_DUE' || loja.status === 'INACTIVE')) {
+      if (loja.plano && loja.plano !== 'FREE') {
+        novoStatus = 'ACTIVE';
+        precisaAtualizar = true;
+      }
+    }
+
+    // Atualizar se necessário
+    if (precisaAtualizar) {
+      const { error: updateError } = await supabase
+        .from('lojas')
+        .update({ status: novoStatus })
+        .eq('id', lojaId);
+
+      if (updateError) {
+        console.error('Erro ao atualizar status da loja:', updateError);
+        return { sucesso: false, statusAtual: loja.status, atualizado: false };
+      }
+
+      console.log(`✅ Status da loja ${lojaId} atualizado de ${loja.status} para ${novoStatus}`);
+      return { sucesso: true, statusAtual: novoStatus, atualizado: true };
+    }
+
+    return { sucesso: true, statusAtual: loja.status, atualizado: false };
+  } catch (error) {
+    console.error('Erro ao verificar e atualizar status da loja:', error);
+    return { sucesso: false, statusAtual: null, atualizado: false };
   }
 }
