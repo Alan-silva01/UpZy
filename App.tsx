@@ -504,6 +504,7 @@ const App: React.FC = () => {
             <InactiveAccountToast
               isAdmin={user.role === 'ADMIN'}
               onClose={() => setShowInactiveToast(false)}
+              userEmail={user.email}
             />
           )}
 
@@ -512,6 +513,7 @@ const App: React.FC = () => {
             isOpen={inactiveModalOpen}
             onClose={() => setInactiveModalOpen(false)}
             actionAttempted={blockedAction}
+            userEmail={user?.email}
           />
         </Suspense>
       </main>

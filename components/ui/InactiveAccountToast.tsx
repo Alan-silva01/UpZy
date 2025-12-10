@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Lock, X, CreditCard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface InactiveAccountToastProps {
   isAdmin?: boolean;
   onClose?: () => void;
+  userEmail?: string;
 }
 
-export const InactiveAccountToast: React.FC<InactiveAccountToastProps> = ({ isAdmin = false, onClose }) => {
+export const InactiveAccountToast: React.FC<InactiveAccountToastProps> = ({ isAdmin = false, onClose, userEmail }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -23,6 +26,13 @@ export const InactiveAccountToast: React.FC<InactiveAccountToastProps> = ({ isAd
     setTimeout(() => {
       onClose?.();
     }, 300); // Aguarda animação terminar
+  };
+
+  const handlePaymentClick = () => {
+    if (userEmail) {
+      navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`);
+    }
+    handleClose();
   };
 
   if (!isVisible) return null;
@@ -55,10 +65,7 @@ export const InactiveAccountToast: React.FC<InactiveAccountToastProps> = ({ isAd
             {/* Botão CTA (apenas para admin) */}
             {isAdmin && (
               <button
-                onClick={() => {
-                  console.log('Redirecionar para pagamento');
-                  handleClose();
-                }}
+                onClick={handlePaymentClick}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-xs font-bold rounded-lg transition-all active:scale-95 shadow-md shadow-emerald-500/25"
               >
                 <CreditCard size={14} />

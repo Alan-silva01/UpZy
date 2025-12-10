@@ -1,18 +1,30 @@
 import React from 'react';
 import { X, Lock, CreditCard, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface InactiveAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
   actionAttempted: string; // Ex: "cadastrar vendedor", "registrar venda"
+  userEmail?: string;
 }
 
 export const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
   isOpen,
   onClose,
-  actionAttempted
+  actionAttempted,
+  userEmail
 }) => {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handlePaymentClick = () => {
+    if (userEmail) {
+      navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`);
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4">
@@ -85,11 +97,7 @@ export const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
               </p>
 
               <button
-                onClick={() => {
-                  // Aqui você pode adicionar navegação para página de pagamento
-                  console.log('Redirecionar para pagamento');
-                  onClose();
-                }}
+                onClick={handlePaymentClick}
                 className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
               >
                 <CreditCard size={18} />

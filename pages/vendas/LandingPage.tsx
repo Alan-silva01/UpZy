@@ -110,8 +110,8 @@ const LandingPage: React.FC = () => {
       <div className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs sm:text-sm py-2 px-4 text-center font-medium sticky top-0 z-50 shadow-lg shadow-purple-900/20">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-center items-center gap-2">
           <span className="flex items-center gap-2">
-            <span className="bg-white text-brand-primary px-1.5 rounded font-bold uppercase text-[10px] tracking-wider">Oferta</span>
-             Preço de lançamento com 50% OFF encerra em:
+            <span className="bg-purple-600 text-white px-2 py-1 rounded font-bold uppercase text-xs">Oferta</span>
+             Preço promocional encerra em:
           </span>
           <CountdownTimer />
         </div>
@@ -123,21 +123,21 @@ const LandingPage: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
               <UpzyLogo className="w-10 h-10 text-white" />
-              <span className="font-bold text-xl tracking-tight text-white hidden sm:block">UPZY</span>
+              <span className="font-bold text-xl tracking-tight text-white hidden sm:block">UpZy</span>
             </div>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <button onClick={() => scrollToSection('beneficios')} className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Benefícios</button>
-              <button onClick={() => scrollToSection('como-funciona')} className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Como Funciona</button>
-              <button onClick={() => scrollToSection('depoimentos')} className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Depoimentos</button>
-              <button onClick={() => scrollToSection('precos')} className="text-gray-300 hover:text-white transition-colors text-sm font-medium">Planos</button>
-              <button 
-                onClick={() => scrollToSection('precos')}
-                className="bg-white text-brand-darker hover:bg-gray-100 px-5 py-2 rounded-full font-bold text-sm transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] transform hover:-translate-y-0.5"
+              <button onClick={() => scrollToSection('beneficios')} className="text-white hover:text-emerald-400 transition-colors text-sm font-medium">Benefícios</button>
+              <button onClick={() => scrollToSection('como-funciona')} className="text-white hover:text-emerald-400 transition-colors text-sm font-medium">Como Funciona</button>
+              <button onClick={() => scrollToSection('depoimentos')} className="text-white hover:text-emerald-400 transition-colors text-sm font-medium">Depoimentos</button>
+              <button onClick={() => scrollToSection('precos')} className="text-white hover:text-emerald-400 transition-colors text-sm font-medium">Planos</button>
+              <a
+                href="/"
+                className="bg-white text-black hover:bg-gray-100 px-5 py-2 rounded-full font-bold text-sm transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] transform hover:-translate-y-0.5"
               >
                 Entrar
-              </button>
+              </a>
             </div>
 
             {/* Mobile Menu Button */}
@@ -179,7 +179,7 @@ const LandingPage: React.FC = () => {
               </div>
               
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-                Sua loja <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">batendo meta</span> todo mês — direto do celular.
+                Sua loja <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500">batendo meta todo mês</span> direto do celular.
               </h1>
               
               <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
