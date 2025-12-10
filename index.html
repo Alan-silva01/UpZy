@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
     <!-- Primary Meta Tags -->
     <title>UpZy - Melhor App de Metas para Lojas e Vendedores | Sistema de Gestão de Vendas e Comissões</title>
@@ -265,6 +265,21 @@
       img, svg {
         max-width: 100%;
         height: auto;
+      }
+
+      /* Fix iOS keyboard/input issues in PWA */
+      input, textarea, select {
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      /* Ensure inputs are not covered by keyboard */
+      @supports (-webkit-touch-callout: none) {
+        input:focus, textarea:focus, select:focus {
+          font-size: 16px !important;
+        }
       }
     </style>
   <script type="importmap">

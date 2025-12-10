@@ -159,6 +159,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     value={formData.nomeLoja}
                     onChange={(e) => setFormData({...formData, nomeLoja: e.target.value})}
                     required={isRegistering}
+                    autoComplete="organization"
+                    autoCapitalize="words"
+                    autoCorrect="off"
                     className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
                   />
                 </div>
@@ -172,6 +175,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     value={formData.nome}
                     onChange={(e) => setFormData({...formData, nome: e.target.value})}
                     required={isRegistering}
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    autoCorrect="off"
                     className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
                   />
                 </div>
@@ -188,6 +194,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 required
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                inputMode="email"
                 className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-zinc-900/80 transition-all"
               />
             </div>
@@ -204,6 +214,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                   onChange={(e) => setFormData({...formData, senha: e.target.value})}
                   required
                   minLength={6}
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-zinc-900/80 transition-all"
                 />
               </div>
@@ -221,6 +234,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                   onChange={(e) => setFormData({...formData, senha: e.target.value})}
                   required
                   minLength={6}
+                  autoComplete="new-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
                 />
               </div>
