@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, CreditCard, FileText, Check, Loader } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CreditCard, FileText, Check, Loader, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PricingPlan } from './types';
 import CheckoutStepper from '../../components/vendas/CheckoutStepper';
@@ -33,6 +33,14 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
   const [success, setSuccess] = useState(false);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Coupon states
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [discountedMonthlyPrice, setDiscountedMonthlyPrice] = useState<number | null>(null);
 
   // Form data - Pre-fill email if userEmail is provided
   const [formData, setFormData] = useState({
@@ -252,6 +260,117 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
     }
   };
 
+  // Validate and apply coupon
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Digite um código de cupom');
+      return;
+    }
+
+    setCouponValidating(true);
+    setCouponError('');
+
+    try {
+      console.log('🔍 Buscando cupom:', couponCode.trim());
+
+      // Query ALL cupons from table
+      const { data: allCoupons, error: couponFetchError } = await supabase
+        .from('cupons')
+        .select('cupom, status, tipo_desconto, valor_desconto');
+
+      console.log('📦 Todos os cupons:', { allCoupons, couponFetchError });
+
+      if (couponFetchError) {
+        console.error('❌ Erro ao buscar cupons:', couponFetchError);
+        setCouponError('Erro ao validar cupom: ' + couponFetchError.message);
+        setCouponValidating(false);
+        return;
+      }
+
+      if (!allCoupons || allCoupons.length === 0) {
+        console.log('❌ Nenhum cupom cadastrado no sistema');
+        setCouponError('Cupom inválido');
+        setCouponValidating(false);
+        return;
+      }
+
+      // Find coupon with case-insensitive match
+      const coupon = allCoupons.find(c =>
+        c.cupom && c.cupom.toLowerCase() === couponCode.trim().toLowerCase()
+      );
+
+      console.log('🔎 Cupom encontrado:', coupon);
+
+      if (!coupon) {
+        console.log('❌ Cupom não existe');
+        setCouponError('Cupom inválido');
+        setCouponValidating(false);
+        return;
+      }
+
+      // Check if coupon is active
+      if (!coupon.status) {
+        console.log('❌ Cupom inativo');
+        setCouponError('Este cupom não está mais ativo');
+        setCouponValidating(false);
+        return;
+      }
+
+      // Calculate discounted price based on coupon type
+      // Get the monthly price (extract from plan price string: "R$ 119,90" -> 119.90)
+      const monthlyPrice = parseFloat(selectedPlan.price.replace('R$', '').replace(',', '.').trim());
+      const installments = selectedPlan.installments || 1;
+
+      let newMonthlyPrice = monthlyPrice;
+      let newTotalPrice = selectedPlan.totalValue;
+
+      if (coupon.tipo_desconto === 'PERCENTUAL') {
+        // Desconto percentual: aplica em TODAS as parcelas (no valor mensal)
+        const descontoPercentual = coupon.valor_desconto; // Ex: 20 para 20%
+        newMonthlyPrice = monthlyPrice - (monthlyPrice * descontoPercentual / 100);
+        newTotalPrice = newMonthlyPrice * installments;
+      } else if (coupon.tipo_desconto === 'FIXO') {
+        // Desconto fixo: aplica apenas na PRIMEIRA parcela
+        const descontoFixo = coupon.valor_desconto; // Ex: 20 para R$ 20,00
+        newTotalPrice = selectedPlan.totalValue - descontoFixo;
+        // O valor mensal permanece o mesmo, só o total que muda
+        newMonthlyPrice = monthlyPrice;
+      }
+
+      // Garantir que os preços não fiquem negativos
+      if (newMonthlyPrice < 0) newMonthlyPrice = 0;
+      if (newTotalPrice < 0) newTotalPrice = 0;
+
+      console.log('💰 Cálculo do desconto:', {
+        precoMensalOriginal: monthlyPrice,
+        precoTotalOriginal: selectedPlan.totalValue,
+        tipDesconto: coupon.tipo_desconto,
+        valorDesconto: coupon.valor_desconto,
+        parcelas: installments,
+        novoPrecoMensal: newMonthlyPrice,
+        novoPrecoTotal: newTotalPrice
+      });
+
+      // Apply discount
+      setDiscountedMonthlyPrice(newMonthlyPrice);
+      setDiscountedPrice(newTotalPrice);
+      setCouponApplied(true);
+      setCouponValidating(false);
+    } catch (err) {
+      console.error('Erro ao validar cupom:', err);
+      setCouponError('Erro ao validar cupom. Tente novamente.');
+      setCouponValidating(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setCouponApplied(false);
+    setCouponError('');
+    setDiscountedPrice(null);
+    setDiscountedMonthlyPrice(null);
+  };
+
   const handleConfirmPayment = async () => {
     setIsProcessing(true);
     setError(null);
@@ -281,7 +400,8 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
           complemento: formData.complemento,
           bairro: formData.bairro,
           cidade: formData.cidade,
-          estado: formData.estado
+          estado: formData.estado,
+          cupom: couponApplied ? couponCode.trim() : null
         },
         cardData
       };
@@ -815,7 +935,121 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
                     Parcelado em {selectedPlan.installments}x sem juros
                   </p>
                 )}
+                {couponApplied && discountedPrice !== null && discountedMonthlyPrice !== null && (
+                  <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                    <div className="flex items-center gap-2 text-green-400">
+                      <Tag size={18} />
+                      <span className="font-bold text-base">Cupom "{couponCode}" aplicado!</span>
+                    </div>
+
+                    {/* Preço mensal com desconto */}
+                    <div className="bg-black/30 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-sm">De:</span>
+                        <span className="text-gray-400 line-through text-sm">
+                          {selectedPlan.price}/mês
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white font-bold">Por:</span>
+                        <span className="text-green-400 font-bold text-2xl">
+                          R$ {discountedMonthlyPrice.toFixed(2).replace('.', ',')}<span className="text-sm">/mês</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Total com desconto */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Total original:</span>
+                        <span className="text-gray-400 line-through">
+                          R$ {selectedPlan.totalValue.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white font-bold text-base">Total final:</span>
+                        <span className="text-white font-bold text-2xl">
+                          R$ {discountedPrice.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-green-500/30">
+                        <span className="text-green-400 text-sm font-medium">Você economiza:</span>
+                        <span className="text-green-400 font-bold text-lg">
+                          R$ {(selectedPlan.totalValue - discountedPrice).toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Coupon Section */}
+              {!couponApplied ? (
+                <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-xl p-6 mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Tag size={20} className="text-indigo-400" />
+                    <h3 className="text-lg font-bold text-white">Tem um cupom de desconto?</h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setCouponError('');
+                        }}
+                        placeholder="Digite seu cupom"
+                        className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors uppercase"
+                        disabled={couponValidating}
+                      />
+                      {couponError && (
+                        <p className="text-red-400 text-sm mt-2">{couponError}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponValidating || !couponCode.trim()}
+                      className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                    >
+                      {couponValidating ? (
+                        <>
+                          <Loader size={18} className="animate-spin" />
+                          Validando...
+                        </>
+                      ) : (
+                        'Aplicar'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Check size={20} className="text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold">Cupom "{couponCode}" aplicado!</p>
+                        <p className="text-sm text-gray-400">
+                          {discountedPrice !== null && discountedMonthlyPrice !== null && (
+                            <>
+                              Economia de R$ {(selectedPlan.totalValue - discountedPrice).toFixed(2).replace('.', ',')} no total
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-red-400 hover:text-red-300 text-sm font-semibold transition-colors flex-shrink-0"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Payment Method */}
               <div className="bg-black/20 rounded-xl p-6 mb-6">

@@ -21,6 +21,7 @@ interface PaymentRequest {
     bairro: string
     cidade: string
     estado: string
+    cupom?: string | null
   }
   cardData?: {
     holderName: string
@@ -160,6 +161,7 @@ serve(async (req) => {
         cidade: paymentRequest.userData.cidade,
         estado: paymentRequest.userData.estado,
         asaas_customer_id: customerId,
+        cupom: paymentRequest.userData.cupom || null,
         status: 'pending'
       })
 

@@ -98,7 +98,7 @@ export const TESTIMONIALS: Testimonial[] = [
 export const PLANS: PricingPlan[] = [
   {
     name: "Mensal",
-    price: "R$ 99,90",
+    price: "R$ 119,90",
     originalPrice: null,
     period: "/mês",
     billingInfo: "Cobrado mensalmente",
@@ -111,15 +111,15 @@ export const PLANS: PricingPlan[] = [
     ctaText: "Assinar Agora",
     recommended: false,
     planType: "monthly",
-    totalValue: 99.90
+    totalValue: 119.90
   },
   {
     name: "Anual",
-    price: "R$ 84,90",
-    originalPrice: "R$ 99,90",
+    price: "R$ 104,90",
+    originalPrice: "R$ 119,90",
     period: "/mês",
     billingInfo: "Cobrado em 12x sem juros",
-    savings: "Economize 15%",
+    savings: "Economize 13%",
     features: [
       "Acesso a todas as funcionalidades",
       "Até 20 usuários",
@@ -130,15 +130,15 @@ export const PLANS: PricingPlan[] = [
     recommended: true,
     planType: "annual",
     installments: 12,
-    totalValue: 1018.80
+    totalValue: 1258.80
   },
   {
     name: "Semestral",
-    price: "R$ 89,90",
-    originalPrice: "R$ 99,90",
+    price: "R$ 109,90",
+    originalPrice: "R$ 119,90",
     period: "/mês",
     billingInfo: "Cobrado em 6x sem juros",
-    savings: "Economize 10%",
+    savings: "Economize 8%",
     features: [
       "Acesso a todas as funcionalidades",
       "Até 10 usuários",
@@ -149,7 +149,7 @@ export const PLANS: PricingPlan[] = [
     recommended: false,
     planType: "semester",
     installments: 6,
-    totalValue: 534.00
+    totalValue: 659.40
   }
 ];
 

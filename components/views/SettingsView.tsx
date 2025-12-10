@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight, MessageCircle } from 'lucide-react';
+import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight, MessageCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +20,7 @@ interface StoreData {
   data_renovacao?: string;
   final_card?: string;
   parcelas?: string;
+  metodo_pagamento?: string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
@@ -39,6 +40,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
   const [editandoNome, setEditandoNome] = useState(false);
   const [editandoSenha, setEditandoSenha] = useState(false);
   const [editandoAvatar, setEditandoAvatar] = useState(false);
+  const [buscandoBoleto, setBuscandoBoleto] = useState(false);
+  const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     carregarDados();
@@ -274,6 +277,46 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     }
   };
 
+  const handleBuscarBoletos = async () => {
+    setBuscandoBoleto(true);
+    setBoletoUrl(null);
+    setMensagemErro('');
+
+    try {
+      const response = await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/buscar_boletos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar boletos');
+      }
+
+      const data = await response.json();
+
+      if (data.link || data.url || data.boleto_url) {
+        const url = data.link || data.url || data.boleto_url;
+        setBoletoUrl(url);
+        setMensagemSucesso('Boleto encontrado!');
+        setTimeout(() => setMensagemSucesso(''), 3000);
+      } else {
+        setMensagemErro('Nenhum boleto encontrado');
+        setTimeout(() => setMensagemErro(''), 3000);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar boletos:', error);
+      setMensagemErro('Erro ao buscar boletos. Tente novamente.');
+      setTimeout(() => setMensagemErro(''), 3000);
+    } finally {
+      setBuscandoBoleto(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
@@ -352,16 +395,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
             </div>
 
             <div className="flex justify-between items-end">
-               {storeData?.final_card && storeData?.plano !== 'FREE' && (
-                 <div className="text-[10px] text-zinc-400 font-mono">
-                   **** **** **** {storeData.final_card}
-                 </div>
-               )}
-               {(!storeData?.final_card || storeData?.plano === 'FREE') && (
-                 <div className="text-[10px] text-zinc-400 font-mono opacity-30">
-                   **** **** **** ****
-                 </div>
-               )}
+               <div>
+                 {storeData?.metodo_pagamento === 'BOLETO' && storeData?.plano !== 'FREE' ? (
+                   <>
+                     <div className="text-[10px] text-zinc-500 mb-1">Boleto</div>
+                     <div className="text-[10px] text-zinc-400 font-mono">
+                       ▌▐ ▌ ▐ ▌▐▌ ▐ ▌ ▐▌▐ ▌ ▐ ▌▐▌ ▐ ▌
+                     </div>
+                   </>
+                 ) : storeData?.final_card && storeData?.plano !== 'FREE' ? (
+                   <>
+                     <div className="text-[10px] text-zinc-500 mb-1">Cartão de Crédito</div>
+                     <div className="text-[10px] text-zinc-400 font-mono">
+                       **** **** **** {storeData.final_card}
+                     </div>
+                   </>
+                 ) : (
+                   <>
+                     <div className="text-[10px] text-zinc-500 mb-1 opacity-30">Método de Pagamento</div>
+                     <div className="text-[10px] text-zinc-400 font-mono opacity-30">
+                       **** **** **** ****
+                     </div>
+                   </>
+                 )}
+               </div>
                <button
                  onClick={() => navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`)}
                  className="px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors"
@@ -372,7 +429,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
          </div>
       </div>
 
-      {/* Avatar da Loja Card */}
+      {/* Logo da Loja Card */}
       <div className="glass-card rounded-[2rem] overflow-hidden">
          <button
             onClick={() => setEditandoAvatar(!editandoAvatar)}
@@ -383,7 +440,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
                   <User size={20} />
                </div>
                <div className="text-left">
-                  <h3 className="text-white font-bold text-sm">Avatar da Loja</h3>
+                  <h3 className="text-white font-bold text-sm">Logo da Loja</h3>
                   <p className="text-[10px] text-zinc-500">Alterar imagem de perfil</p>
                </div>
             </div>
@@ -588,6 +645,59 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
          </a>
          <p className="text-center text-[10px] text-zinc-500 mt-2">99 98425-3218</p>
       </div>
+
+      {/* Buscar Boletos - Apenas para pagamento via boleto */}
+      {storeData?.metodo_pagamento === 'BOLETO' && (
+        <div className="glass-card rounded-[2rem] p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <FileText size={20} />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm">Meus Boletos</h3>
+              <p className="text-[10px] text-zinc-500">Buscar boletos de pagamento</p>
+            </div>
+          </div>
+
+          {!boletoUrl ? (
+            <button
+              onClick={handleBuscarBoletos}
+              disabled={buscandoBoleto}
+              className="w-full py-3 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {buscandoBoleto ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <FileText size={14} />
+                  Buscar Boletos
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <a
+                href={boletoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-xl border border-green-500/20 bg-green-500/10 text-green-400 text-xs font-bold hover:bg-green-500/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <FileText size={14} />
+                Ver Boleto
+              </a>
+              <button
+                onClick={() => setBoletoUrl(null)}
+                className="w-full py-2 text-zinc-500 text-[10px] hover:text-zinc-400 transition-colors"
+              >
+                Buscar novamente
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Account Info */}
       <div className="glass-card rounded-[2rem] p-6 space-y-4">
