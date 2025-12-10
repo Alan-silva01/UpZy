@@ -45,7 +45,7 @@ const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep, steps })
 
             {/* Connector Line */}
             {index < steps.length - 1 && (
-              <div className="flex-1 h-0.5 mx-2 sm:mx-4 relative top-[-20px] sm:top-[-24px]">
+              <div className="flex-1 h-0.5 mx-2 sm:mx-4 relative -top-5 sm:-top-6">
                 <div
                   className={`h-full transition-all duration-300 ${
                     currentStep > step.number ? 'bg-teal-500' : 'bg-gray-700'

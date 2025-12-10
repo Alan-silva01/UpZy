@@ -23,6 +23,7 @@ const SaleSuccessModal = lazy(() => import('./components/modals/SaleSuccessModal
 const SellerSettingsModal = lazy(() => import('./components/modals/SellerSettingsModal').then(m => ({ default: m.SellerSettingsModal })));
 const InactiveAccountToast = lazy(() => import('./components/ui/InactiveAccountToast').then(m => ({ default: m.InactiveAccountToast })));
 const InactiveAccountModal = lazy(() => import('./components/modals/InactiveAccountModal').then(m => ({ default: m.InactiveAccountModal })));
+const InstallPWAPrompt = lazy(() => import('./components/ui/InstallPWAPrompt').then(m => ({ default: m.InstallPWAPrompt })));
 
 // Funções de preload para carregar componentes antecipadamente
 const preloadDashboard = () => import('./components/views/DashboardView');
@@ -516,6 +517,9 @@ const App: React.FC = () => {
             userEmail={user?.email}
             isAdmin={user?.role === 'ADMIN'}
           />
+
+          {/* Prompt para instalar PWA (apenas no navegador) */}
+          <InstallPWAPrompt />
         </Suspense>
       </main>
     </div>

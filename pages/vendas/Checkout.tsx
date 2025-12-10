@@ -573,7 +573,7 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
 
             <button
               onClick={handleNext}
-              className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2"
+              className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 border-2 border-green-500"
             >
               Avançar
               <ArrowRight size={20} />
@@ -672,7 +672,7 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
               </button>
               <button
                 onClick={handleNext}
-                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 border-green-500"
               >
                 Avançar
                 <ArrowRight size={20} />
@@ -908,7 +908,7 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
               </button>
               <button
                 onClick={handleNext}
-                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-2 border-green-500"
               >
                 Avançar
                 <ArrowRight size={20} />
