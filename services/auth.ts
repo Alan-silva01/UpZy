@@ -386,7 +386,18 @@ export async function verificarStatusLoja(lojaId: string): Promise<StatusLoja | 
   }
 }
 
-// Ativar loja (apenas admin pode fazer isso manualmente ou via sistema de pagamento)
+/**
+ * FUNÇÃO CRÍTICA DE SEGURANÇA
+ * Ativar loja - SOMENTE deve ser chamada após confirmação de pagamento
+ *
+ * IMPORTANTE:
+ * - Esta função NÃO deve ser chamada pelo frontend diretamente
+ * - Deve ser chamada APENAS via webhook de pagamento ou Edge Function autorizada
+ * - Usuários NÃO podem ativar suas próprias lojas clicando em botões
+ *
+ * @param lojaId - ID da loja a ser ativada
+ * @returns Resultado da operação
+ */
 export async function ativarLoja(lojaId: string): Promise<{ sucesso: boolean; mensagem: string }> {
   try {
     const { error } = await supabase
