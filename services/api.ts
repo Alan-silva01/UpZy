@@ -570,10 +570,11 @@ export async function buscarDadosPerformance(
     }
   });
 
-  // Ordenar as datas
+  // Ordenar as datas (mais antiga primeiro para mais recente)
   const datasOrdenadas = Object.keys(vendasPorDia).sort();
 
   // Gerar dados diários (não acumulativos)
+  // Ordem cronológica: passado (esquerda) → presente (direita)
   const dadosDiarios: { name: string; sales: number }[] = [];
 
   datasOrdenadas.forEach((chave) => {
@@ -589,7 +590,7 @@ export async function buscarDadosPerformance(
   });
 
   const totalGeral = datasOrdenadas.reduce((acc, chave) => acc + vendasPorDia[chave], 0);
-  console.log(`📈 [PERFORMANCE] Gráfico diário gerado com ${dadosDiarios.length} pontos`);
+  console.log(`📈 [PERFORMANCE] Gráfico diário gerado com ${dadosDiarios.length} pontos (cronológico: passado→presente)`);
   console.log(`💰 [PERFORMANCE] Total geral do período: R$ ${totalGeral.toFixed(2)}`);
 
   return dadosDiarios;

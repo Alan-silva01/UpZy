@@ -19,7 +19,10 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
     tipoPagamento: sale.tipo_pagamento || 'avista',
     parcelas: sale.parcelas || 1
   });
-  const [displayAmount, setDisplayAmount] = useState(formatCurrency(sale.amount));
+  // Formatar valor inicial sem o prefixo R$ (o prefixo é mostrado separadamente no campo)
+  const [displayAmount, setDisplayAmount] = useState(
+    formatCurrency(sale.amount).replace('R$', '').trim()
+  );
 
   if (!isOpen) return null;
 
@@ -28,7 +31,9 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({ isOpen, onClose, o
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrencyInput(e.target.value);
-    setDisplayAmount(formatted);
+    // Remove o prefixo R$ da formatação pois ele é mostrado separadamente
+    const displayValue = formatted.replace('R$', '').trim();
+    setDisplayAmount(displayValue);
     const numeric = parseCurrencyInput(formatted);
     setFormData({...formData, valor: numeric.toString()});
   };
