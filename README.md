@@ -1,20 +1,63 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# UpZy - Sistema de Gestão de Vendas
 
-# Run and deploy your AI Studio app
+Sistema completo de gestão de vendas e comissões para equipes comerciais.
 
-This contains everything you need to run your app locally.
+## 🚀 Tecnologias
 
-View your app in AI Studio: https://ai.studio/apps/drive/151RQWjNeWN3-oJUxWIgJeM_zW00GzJbj
+- **Frontend**: React 19 + TypeScript + Vite
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **Estilo**: Tailwind CSS
+- **Gráficos**: Recharts
+- **PWA**: Vite PWA Plugin
 
-## Run Locally
+## 📦 Instalação
 
-**Prerequisites:**  Node.js
+```bash
+# Instalar dependências
+npm install
 
+# Configurar variáveis de ambiente
+# Crie um arquivo .env na raiz com:
+VITE_SUPABASE_URL=sua_url_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_supabase
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# Rodar em desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+```
+
+## 🏗️ Estrutura do Projeto
+
+```
+UpZy/
+├── components/        # Componentes React
+├── pages/            # Páginas do sistema
+├── services/         # Serviços e APIs
+├── hooks/            # React Hooks customizados
+├── utils/            # Funções utilitárias
+├── lib/              # Configurações (Supabase)
+├── supabase/         # Migrações e functions
+└── types/            # Tipos TypeScript
+```
+
+## 🎯 Funcionalidades
+
+- Dashboard administrativo com métricas em tempo real
+- Gestão de vendedores e comissões
+- Registro e histórico de vendas
+- Sistema de metas e rankings
+- PWA (Progressive Web App)
+- Realtime updates via Supabase
+- Sistema de autenticação
+
+## 📱 PWA
+
+O aplicativo funciona como PWA e pode ser instalado em dispositivos móveis e desktop.
+
+## 🔒 Segurança
+
+- Autenticação via Supabase Auth
+- Row Level Security (RLS) no banco de dados
+- Variáveis de ambiente para dados sensíveis
