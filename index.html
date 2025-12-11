@@ -109,8 +109,11 @@
             },
             animation: {
               'float': 'float 6s ease-in-out infinite',
-              'page-enter': 'pageEnter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
-              'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'page-enter': 'pageEnter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+              'slide-up': 'slideInFromRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+              'fade-in': 'fadeIn 0.2s ease-out forwards',
+              'slide-in-left': 'slideInFromLeft 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+              'slide-in-right': 'slideInFromRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
             },
             keyframes: {
               float: {
@@ -118,12 +121,20 @@
                 '50%': { transform: 'translateY(-6px)' },
               },
               pageEnter: {
-                '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
+                '0%': { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
                 '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
               },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
+              slideInFromLeft: {
+                '0%': { opacity: '0', transform: 'translateX(-20px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              slideInFromRight: {
+                '0%': { opacity: '0', transform: 'translateX(20px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
               }
             }
           }

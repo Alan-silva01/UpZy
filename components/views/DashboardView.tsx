@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
 import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon, Loader2 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sector } from 'recharts';
-import { buscarVendedores, calcularEstatisticasLoja, buscarDadosPerformance } from '../../services/api';
+import { buscarDadosPerformance } from '../../services/api';
 import { Seller, StoreStats } from '../../types';
 import { supabase } from '../../lib/supabase';
-import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import { formatCurrency } from '../../utils/formatters';
 
 const PIE_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'];
@@ -41,11 +41,10 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, onNavigateToGoals }) => {
+  // Usar cache global
+  const { cache, loading: cacheLoading, getVendedores, getStats } = useDataCache();
+
   const [activeIndex, setActiveIndex] = useState(0);
-  const [stats, setStats] = useState<StoreStats | null>(null);
-  const [vendedores, setVendedores] = useState<Seller[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [chartData, setChartData] = useState<{ name: string; sales: number }[]>([]);
   const [periodoGrafico, setPeriodoGrafico] = useState<'meta' | 'semana' | 'mes'>('meta');
   const [nomeLoja, setNomeLoja] = useState<string>('');
@@ -53,12 +52,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
   const [avatarLoja, setAvatarLoja] = useState<string>('');
 
+  // Dados vêm do cache agora
+  const stats = getStats();
+  const vendedores = getVendedores() || [];
+
   useEffect(() => {
-    if (lojaId) {
-      carregarDados();
+    if (lojaId && stats) {
+      carregarDadosLoja();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lojaId]);
+  }, [lojaId, stats]);
 
   useEffect(() => {
     if (lojaId) {
@@ -67,68 +70,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, periodoGrafico]);
 
-  // Real-time subscriptions (atualizações silenciosas - sem loader)
-  useRealtimeSubscription({
-    table: 'vendas',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova venda detectada! Recarregando dados...');
-      carregarDados(true); // silencioso
-      carregarDadosGrafico();
-    },
-    onUpdate: () => {
-      console.log('🔴 Venda atualizada! Recarregando dados...');
-      carregarDados(true); // silencioso
-      carregarDadosGrafico();
-    },
-    onDelete: () => {
-      console.log('🔴 Venda deletada! Recarregando dados...');
-      carregarDados(true); // silencioso
-      carregarDadosGrafico();
-    }
-  });
-
-  useRealtimeSubscription({
-    table: 'vendedores',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Novo vendedor detectado! Recarregando dados...');
-      carregarDados(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Vendedor atualizado! Recarregando dados...');
-      carregarDados(true); // silencioso
-    },
-    onDelete: () => {
-      console.log('🔴 Vendedor deletado! Recarregando dados...');
-      carregarDados(true); // silencioso
-    }
-  });
-
-  useRealtimeSubscription({
-    table: 'metas',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova meta detectada! Recarregando dados...');
-      carregarDados(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Meta atualizada! Recarregando dados...');
-      carregarDados(true); // silencioso
-    },
-    onDelete: () => {
-      console.log('🔴 Meta deletada! Recarregando dados...');
-      carregarDados(true); // silencioso
-    }
-  });
-
-  const carregarDados = async (silencioso = false) => {
-    // Só mostra loading se não carregou ainda e não é silencioso
-    if (!silencioso && !hasLoadedOnce) {
-      setLoading(true);
-    }
+  const carregarDadosLoja = async () => {
     try {
-      // Buscar meta ativa primeiro
+      // Buscar meta ativa
       const { data: metaAtivaData } = await supabase
         .from('metas')
         .select('*')
@@ -147,13 +91,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
         setMetaAtiva(null);
       }
 
-      const [estatisticas, listaVendedores] = await Promise.all([
-        calcularEstatisticasLoja(lojaId),
-        buscarVendedores(lojaId)
-      ]);
-      setStats(estatisticas);
-      setVendedores(listaVendedores);
-
       // Buscar nome e avatar da loja
       const { data: loja, error: lojaError } = await supabase
         .from('lojas')
@@ -169,27 +106,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
       }
 
       // Calcular variação vs mês anterior
-      try {
-        const now = new Date();
-        const mesAnteriorInicio = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const mesAnteriorFim = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      if (stats) {
+        try {
+          const now = new Date();
+          const mesAnteriorInicio = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const mesAnteriorFim = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-        // Vendas do mês anterior
-        const { data: vendasMesAnterior, error: vendasError } = await supabase
-          .from('vendas')
-          .select('valor')
-          .eq('loja_id', lojaId)
-          .gte('data_venda', mesAnteriorInicio.toISOString())
-          .lte('data_venda', mesAnteriorFim.toISOString());
+          const { data: vendasMesAnterior } = await supabase
+            .from('vendas')
+            .select('valor')
+            .eq('loja_id', lojaId)
+            .gte('data_venda', mesAnteriorInicio.toISOString())
+            .lte('data_venda', mesAnteriorFim.toISOString());
 
-        if (vendasError) {
-          console.error('Erro ao buscar vendas do mês anterior:', vendasError);
-          setVariacaoMesAnterior(0);
-        } else {
           const totalMesAnterior = vendasMesAnterior?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
+          let totalAtualParaComparacao = stats.totalSales;
 
-          // Se houver meta ativa, calcular vendas do período da meta
-          let totalAtualParaComparacao = estatisticas.totalSales;
           if (metaAtivaData) {
             const { data: vendasMeta } = await supabase
               .from('vendas')
@@ -201,23 +133,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
             totalAtualParaComparacao = vendasMeta?.reduce((acc, venda) => acc + venda.valor, 0) || 0;
           }
 
-          // Calcular variação percentual
           if (totalMesAnterior > 0) {
             const variacao = ((totalAtualParaComparacao - totalMesAnterior) / totalMesAnterior) * 100;
             setVariacaoMesAnterior(variacao);
           } else {
             setVariacaoMesAnterior(totalAtualParaComparacao > 0 ? 100 : 0);
           }
+        } catch (error) {
+          console.error('Erro ao calcular variação:', error);
+          setVariacaoMesAnterior(0);
         }
-      } catch (error) {
-        console.error('Erro ao calcular variação:', error);
-        setVariacaoMesAnterior(0);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    } finally {
-      setLoading(false);
-      setHasLoadedOnce(true);
+      console.error('Erro ao carregar dados da loja:', error);
     }
   };
 
@@ -226,8 +154,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
     setChartData(dados);
   };
 
-  // Só mostra loading se for a primeira vez e não tiver dados ainda
-  if (loading && !hasLoadedOnce && !stats) {
+  // Mostrar loader apenas na primeira vez
+  if (cacheLoading && !stats) {
     return (
       <div className="pb-28 space-y-4 animate-slide-up flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
@@ -235,13 +163,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
     );
   }
 
-  // Se não tem stats ainda mas já carregou uma vez, mostra conteúdo vazio
+  // Se não tem stats, não renderizar nada
   if (!stats) {
-    return (
-      <div className="pb-28 space-y-4 animate-slide-up flex items-center justify-center h-96">
-        <p className="text-zinc-500">Carregando dados...</p>
-      </div>
-    );
+    return null;
   }
 
   const percentage = (stats.totalSales / stats.monthlyTarget) * 100;
@@ -432,6 +356,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorSales)"
+                isAnimationActive={true}
+                animationBegin={100}
+                animationDuration={1200}
+                animationEasing="ease-in-out"
               />
             </AreaChart>
           </ResponsiveContainer>

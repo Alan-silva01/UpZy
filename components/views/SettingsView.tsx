@@ -25,10 +25,11 @@ interface StoreData {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
   const navigate = useNavigate();
+
   const [storeName, setStoreName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [storeAvatar, setStoreAvatar] = useState<string>('');
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -43,12 +44,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
   const [buscandoBoleto, setBuscandoBoleto] = useState(false);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
 
+  // Carregar dados imediatamente, sem aguardar cache
   useEffect(() => {
     carregarDados();
   }, []);
 
   const carregarDados = async () => {
-    setLoading(true);
+    setLoadingData(true);
     try {
       const user = await verificarSessao();
       if (user) {
@@ -73,7 +75,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   };
 
@@ -317,7 +319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     }
   };
 
-  if (loading) {
+  if (loadingData) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

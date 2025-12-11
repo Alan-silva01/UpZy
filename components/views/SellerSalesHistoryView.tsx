@@ -5,6 +5,7 @@ import { buscarLojaIdUsuario } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 interface SellerSalesHistoryViewProps {
   user: User;
@@ -14,9 +15,12 @@ interface SellerSalesHistoryViewProps {
 }
 
 export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ user, onBack, initialEditSaleId, onBlockedAction }) => {
+  // Usar cache global
+  const { loading: cacheLoading, getVendas, refreshData } = useDataCache();
+
   const [vendas, setVendas] = useState<Sale[]>([]);
   const [vendasFiltradas, setVendasFiltradas] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Sale>>({});
   const [lojaId, setLojaId] = useState<string>('');
@@ -38,15 +42,35 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const vendasPorPagina = 20;
 
+  // Carregar vendas do cache ao iniciar
   useEffect(() => {
     const init = async () => {
       const loja = await buscarLojaIdUsuario(user.id);
       if (loja) {
         setLojaId(loja);
       }
-      carregarVendas();
     };
     init();
+
+    // Carregar vendas do cache
+    const todasVendas = getVendas() || [];
+    const vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
+
+    // Converter Sale[] para o formato esperado (com campos do banco)
+    const vendasConvertidas = vendasVendedor.map(v => ({
+      ...v,
+      nome_cliente: v.customerName,
+      numero_pedido: v.orderId,
+      valor: v.amount,
+      data_venda: v.timestamp,
+      metodo_pagamento: v.paymentMethod,
+      tipo_pagamento: v.paymentType,
+      parcelas: v.installments,
+      quantidade_itens: v.itemsCount
+    })) as any;
+
+    setVendas(vendasConvertidas);
+    setVendasFiltradas(vendasConvertidas);
 
     // Limpar filtros ao desmontar o componente
     return () => {
@@ -58,17 +82,63 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
   useRealtimeSubscription({
     table: 'vendas',
     lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova venda no histórico! Recarregando...');
-      carregarVendas(true); // silencioso
+    onInsert: async () => {
+      console.log('🔴 Nova venda no histórico! Atualizando cache...');
+      await refreshData(true); // silencioso
+
+      // Recarregar vendas do cache
+      const todasVendas = getVendas() || [];
+      const vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
+      const vendasConvertidas = vendasVendedor.map(v => ({
+        ...v,
+        nome_cliente: v.customerName,
+        numero_pedido: v.orderId,
+        valor: v.amount,
+        data_venda: v.timestamp,
+        metodo_pagamento: v.paymentMethod,
+        tipo_pagamento: v.paymentType,
+        parcelas: v.installments,
+        quantidade_itens: v.itemsCount
+      })) as any;
+      setVendas(vendasConvertidas);
     },
-    onUpdate: () => {
-      console.log('🔴 Venda atualizada no histórico! Recarregando...');
-      carregarVendas(true); // silencioso
+    onUpdate: async () => {
+      console.log('🔴 Venda atualizada no histórico! Atualizando cache...');
+      await refreshData(true);
+
+      const todasVendas = getVendas() || [];
+      const vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
+      const vendasConvertidas = vendasVendedor.map(v => ({
+        ...v,
+        nome_cliente: v.customerName,
+        numero_pedido: v.orderId,
+        valor: v.amount,
+        data_venda: v.timestamp,
+        metodo_pagamento: v.paymentMethod,
+        tipo_pagamento: v.paymentType,
+        parcelas: v.installments,
+        quantidade_itens: v.itemsCount
+      })) as any;
+      setVendas(vendasConvertidas);
     },
-    onDelete: () => {
-      console.log('🔴 Venda deletada do histórico! Recarregando...');
-      carregarVendas(true); // silencioso
+    onDelete: async () => {
+      console.log('🔴 Venda deletada do histórico! Atualizando cache...');
+      await refreshData(true);
+
+      const todasVendas = getVendas() || [];
+      const vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
+      const vendasConvertidas = vendasVendedor.map(v => ({
+        ...v,
+        nome_cliente: v.customerName,
+        numero_pedido: v.orderId,
+        valor: v.amount,
+        data_venda: v.timestamp,
+        metodo_pagamento: v.paymentMethod,
+        tipo_pagamento: v.paymentType,
+        parcelas: v.installments,
+        quantidade_itens: v.itemsCount
+      })) as any;
+      setVendas(vendasConvertidas);
     }
   });
 
@@ -93,27 +163,37 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     }
   }, [initialEditSaleId, vendas]);
 
+  // Função mantida para compatibilidade, mas agora usa cache
   const carregarVendas = async (silencioso = false) => {
     if (!user.sellerId) return;
 
     if (!silencioso) {
       setLoading(true);
     }
+
     try {
-      const loja = await buscarLojaIdUsuario(user.id);
-      if (!loja) return;
+      // Recarregar cache
+      await refreshData(silencioso);
 
-      const { data, error } = await supabase
-        .from('vendas')
-        .select('*')
-        .eq('vendedor_id', user.sellerId)
-        .eq('loja_id', loja)
-        .order('data_venda', { ascending: false });
+      // Pegar vendas do cache
+      const todasVendas = getVendas() || [];
+      const vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
 
-      if (error) throw error;
+      // Converter Sale[] para o formato esperado
+      const vendasConvertidas = vendasVendedor.map(v => ({
+        ...v,
+        nome_cliente: v.customerName,
+        numero_pedido: v.orderId,
+        valor: v.amount,
+        data_venda: v.timestamp,
+        metodo_pagamento: v.paymentMethod,
+        tipo_pagamento: v.paymentType,
+        parcelas: v.installments,
+        quantidade_itens: v.itemsCount
+      })) as any;
 
-      setVendas(data as Sale[]);
-      setVendasFiltradas(data as Sale[]);
+      setVendas(vendasConvertidas);
+      setVendasFiltradas(vendasConvertidas);
     } catch (error) {
       console.error('Erro ao carregar vendas:', error);
       alert('Erro ao carregar vendas');
@@ -263,7 +343,12 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
       setEditingId(null);
       setEditData({});
-      await carregarVendas();
+
+      // Atualizar cache silenciosamente
+      await refreshData(true);
+
+      // Recarregar vendas do cache
+      await carregarVendas(true);
     } catch (error) {
       console.error('Erro ao atualizar venda:', error);
       alert('Erro ao atualizar venda');
@@ -289,7 +374,11 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
 
       if (error) throw error;
 
-      await carregarVendas();
+      // Atualizar cache silenciosamente
+      await refreshData(true);
+
+      // Recarregar vendas do cache
+      await carregarVendas(true);
     } catch (error) {
       console.error('Erro ao excluir venda:', error);
       alert('Erro ao excluir venda');
@@ -319,7 +408,8 @@ export const SellerSalesHistoryView: React.FC<SellerSalesHistoryViewProps> = ({ 
     setPaginaAtual(1);
   }, [filtroNome, filtroPedido, filtroDataInicio, filtroDataFim, filtroValorMin, filtroValorMax]);
 
-  if (loading) {
+  // Mostrar loader apenas na primeira carga quando não tem dados do cache
+  if ((loading || cacheLoading) && vendas.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

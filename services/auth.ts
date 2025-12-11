@@ -622,10 +622,10 @@ export async function verificarEAtualizarStatusLoja(lojaId: string): Promise<{
         novoStatus = 'PAST_DUE';
         precisaAtualizar = true;
       }
-      // Se está PAST_DUE há mais de 7 dias, mudar para INACTIVE
+      // Se está PAST_DUE há mais de 2 dias, mudar para INACTIVE
       else if (loja.status === 'PAST_DUE') {
         const diasVencido = Math.floor((agora.getTime() - dataRenovacao.getTime()) / (1000 * 60 * 60 * 24));
-        if (diasVencido > 7) {
+        if (diasVencido > 2) {
           novoStatus = 'INACTIVE';
           precisaAtualizar = true;
         }

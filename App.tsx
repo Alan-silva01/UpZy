@@ -4,6 +4,7 @@ import { BottomNav } from './components/BottomNav';
 import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { useStoreStatus } from './hooks/useStoreStatus';
+import { DataCacheProvider } from './contexts/DataCacheContext';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loading de componentes com preloading
@@ -421,32 +422,33 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30 flex justify-center">
-      <main role="main" className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
-         {/* Premium Ambient Background */}
-         <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-            <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
-            <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
-         </div>
+    <DataCacheProvider lojaId={lojaId}>
+      <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30 flex justify-center">
+        <main role="main" className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
+           {/* Premium Ambient Background */}
+           <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+              <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
+              <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
+           </div>
 
-        {/* Header Global */}
-        <Header
-          user={user}
-          onLogout={handleLogout}
-          storeName={nomeLoja}
-          storeAvatar={avatarLoja}
-          onOpenSettings={user.role === 'SELLER' ? () => setIsSettingsModalOpen(true) : undefined}
-        />
+          {/* Header Global */}
+          <Header
+            user={user}
+            onLogout={handleLogout}
+            storeName={nomeLoja}
+            storeAvatar={avatarLoja}
+            onOpenSettings={user.role === 'SELLER' ? () => setIsSettingsModalOpen(true) : undefined}
+          />
 
-        {/* Container scrollável */}
-        <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
-          {/* Page Transition Wrapper com Suspense */}
-          <div className="px-4">
-            <Suspense fallback={<LoadingFallback />}>
-              {renderContent()}
-            </Suspense>
+          {/* Container scrollável */}
+          <div className="relative z-10 min-h-screen flex flex-col overflow-y-auto">
+            {/* Page Transition Wrapper com Suspense */}
+            <div className="px-4">
+              <Suspense fallback={<LoadingFallback />}>
+                {renderContent()}
+              </Suspense>
+            </div>
           </div>
-        </div>
 
         <BottomNav
           activeTab={activeTab}
@@ -515,8 +517,9 @@ const App: React.FC = () => {
           {/* Prompt para instalar PWA (apenas no navegador) */}
           <InstallPWAPrompt />
         </Suspense>
-      </main>
-    </div>
+        </main>
+      </div>
+    </DataCacheProvider>
   );
 };
 

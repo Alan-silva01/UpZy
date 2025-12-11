@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Seller } from '../../types';
 import { Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { buscarVendedores, cadastrarVendedor, atualizarVendedor, deletarVendedor } from '../../services/api';
+import { cadastrarVendedor, atualizarVendedor, deletarVendedor } from '../../services/api';
 import { AddSellerModal } from '../modals/AddSellerModal';
 import { EditSellerModal } from '../modals/EditSellerModal';
 import { ConfirmModal } from '../modals/ConfirmModal';
-import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 interface AdminSellersViewProps {
   lojaId: string;
@@ -14,64 +14,17 @@ interface AdminSellersViewProps {
 }
 
 export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBlockedAction }) => {
-  const [localSellers, setLocalSellers] = useState<Seller[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Usar cache global
+  const { loading: cacheLoading, getVendedores, refreshData } = useDataCache();
+
   const [modalAberto, setModalAberto] = useState(false);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [vendedorSelecionado, setVendedorSelecionado] = useState<Seller | null>(null);
   const [modalConfirmarAberto, setModalConfirmarAberto] = useState(false);
   const [vendedorParaDeletar, setVendedorParaDeletar] = useState<Seller | null>(null);
 
-  useEffect(() => {
-    carregarVendedores();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lojaId]);
-
-  // Real-time subscriptions (atualizações silenciosas - sem loader)
-  useRealtimeSubscription({
-    table: 'vendedores',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Novo vendedor detectado! Recarregando lista...');
-      carregarVendedores(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Vendedor atualizado! Recarregando lista...');
-      carregarVendedores(true); // silencioso
-    },
-    onDelete: () => {
-      console.log('🔴 Vendedor deletado! Recarregando lista...');
-      carregarVendedores(true); // silencioso
-    }
-  });
-
-  useRealtimeSubscription({
-    table: 'vendas',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova venda detectada! Atualizando vendedores...');
-      carregarVendedores(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Venda atualizada! Atualizando vendedores...');
-      carregarVendedores(true); // silencioso
-    },
-    onDelete: () => {
-      console.log('🔴 Venda deletada! Atualizando vendedores...');
-      carregarVendedores(true); // silencioso
-    }
-  });
-
-  const carregarVendedores = async (silencioso = false) => {
-    if (!silencioso) {
-      setLoading(true);
-    }
-    const vendedores = await buscarVendedores(lojaId);
-    setLocalSellers(vendedores);
-    if (!silencioso) {
-      setLoading(false);
-    }
-  };
+  // Dados vêm do cache
+  const localSellers = getVendedores() || [];
 
   const handleAdicionarVendedor = async (dados: { nome: string; email: string; senha: string }) => {
     const resultado = await cadastrarVendedor({
@@ -80,7 +33,7 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBl
     });
 
     if (resultado.sucesso) {
-      await carregarVendedores();
+      await refreshData(true);
     } else {
       throw new Error(resultado.mensagem);
     }
@@ -94,7 +47,7 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBl
     });
 
     if (resultado.sucesso) {
-      await carregarVendedores();
+      await refreshData(true);
     } else {
       throw new Error(resultado.mensagem);
     }
@@ -106,7 +59,7 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBl
     const resultado = await deletarVendedor(vendedorParaDeletar.id);
 
     if (resultado.sucesso) {
-      await carregarVendedores();
+      await refreshData(true);
     } else {
       alert(resultado.mensagem);
     }
@@ -183,7 +136,7 @@ export const AdminSellersView: React.FC<AdminSellersViewProps> = ({ lojaId, onBl
     return 'masculino';
   };
 
-  if (loading) {
+  if (cacheLoading && localSellers.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-5 animate-slide-up flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

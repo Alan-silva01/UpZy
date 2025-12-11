@@ -3,9 +3,8 @@ import { User, Seller, Sale } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Target, TrendingUp, AlertCircle, Loader2, Receipt, ArrowRight } from 'lucide-react';
 import { buscarLojaIdUsuario } from '../../services/auth';
-import { buscarVendedores } from '../../services/api';
 import { supabase } from '../../lib/supabase';
-import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import { EditSaleModal } from '../modals/EditSaleModal';
 import { SellerSettingsModal } from '../modals/SellerSettingsModal';
 import { formatCurrency } from '../../utils/formatters';
@@ -17,14 +16,21 @@ interface SellerDashboardProps {
 }
 
 export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLogout, onViewAllSales }) => {
+  // Usar cache global
+  const { loading: cacheLoading, getVendedores, getVendas } = useDataCache();
+
   const [sellerProfile, setSellerProfile] = useState<Seller | null>(null);
-  const [loading, setLoading] = useState(true);
   const [ultimasVendas, setUltimasVendas] = useState<Sale[]>([]);
   const [lojaId, setLojaId] = useState<string>('');
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userName, setUserName] = useState(user.name);
   const [metaAtiva, setMetaAtiva] = useState<{ dataInicio: string; dataFim: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Dados vêm do cache
+  const vendedores = getVendedores() || [];
+  const todasVendas = getVendas() || [];
 
   useEffect(() => {
     const inicializar = async () => {
@@ -32,163 +38,36 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       if (loja) {
         setLojaId(loja);
       }
-      carregarDadosVendedor();
-      carregarUltimasVendas();
     };
     inicializar();
+  }, [user.id]);
 
-    // Listener para forçar atualização silenciosa
-    const handleForceRefresh = () => {
-      console.log('🔄 [Dashboard Vendedor] Atualização forçada disparada!');
-      carregarDadosVendedor(true); // silencioso
-      carregarUltimasVendas();
-    };
-
-    window.addEventListener('forceRefreshDashboard', handleForceRefresh);
-
-    return () => {
-      window.removeEventListener('forceRefreshDashboard', handleForceRefresh);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Executa apenas uma vez na montagem
-
-  // Real-time subscriptions (atualizações silenciosas - sem loader)
-  // IMPORTANTE: SEM filtro de vendedor_id para receber TODAS as vendas da loja
-  useRealtimeSubscription({
-    table: 'vendas',
-    lojaId,
-    // Removido filter para receber eventos de TODOS os vendedores da loja
-    onInsert: () => {
-      console.log('🔴 Nova venda detectada! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
-      carregarUltimasVendas();
-    },
-    onUpdate: () => {
-      console.log('🔴 Venda atualizada! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
-      carregarUltimasVendas();
-    },
-    onDelete: () => {
-      console.log('🔴 Venda deletada! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
-      carregarUltimasVendas();
+  // Atualizar dados do vendedor quando o cache mudar
+  useEffect(() => {
+    if (!cacheLoading && vendedores.length > 0 && user.sellerId && lojaId) {
+      carregarDadosVendedor();
     }
-  });
+  }, [cacheLoading, vendedores, todasVendas, user.sellerId, lojaId]);
 
-  useRealtimeSubscription({
-    table: 'vendedores',
-    lojaId,
-    filter: `id=eq.${user.sellerId}`,
-    onUpdate: () => {
-      console.log('🔴 Perfil do vendedor atualizado! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
+  // Carregar últimas vendas do vendedor
+  useEffect(() => {
+    if (todasVendas.length > 0 && user.sellerId) {
+      const vendasVendedor = todasVendas
+        .filter(v => v.sellerId === user.sellerId)
+        .slice(0, 5);
+      setUltimasVendas(vendasVendedor);
     }
-  });
+  }, [todasVendas, user.sellerId]);
 
-  useRealtimeSubscription({
-    table: 'metas',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova meta detectada! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Meta atualizada! Recarregando dados...');
-      carregarDadosVendedor(true); // silencioso
+  const carregarDadosVendedor = async () => {
+    console.log('📊 [Dashboard Vendedor] Carregando dados do vendedor...', { sellerId: user.sellerId });
+
+    if (!lojaId) {
+      console.warn('⚠️ [Dashboard Vendedor] lojaId não disponível ainda');
+      return;
     }
-  });
 
-  const carregarDadosVendedor = async (silencioso = false) => {
-    console.log('📊 [Dashboard Vendedor] Carregando dados do vendedor...', { silencioso, sellerId: user.sellerId });
-    if (!silencioso) {
-      setLoading(true);
-    }
-    const lojaId = await buscarLojaIdUsuario(user.id);
-    if (lojaId) {
-      // Buscar meta ativa primeiro
-      const { data: metaAtivaData } = await supabase
-        .from('metas')
-        .select('*')
-        .eq('loja_id', lojaId)
-        .eq('status', 'ACTIVE')
-        .maybeSingle();
-
-      if (metaAtivaData) {
-        setMetaAtiva({
-          dataInicio: metaAtivaData.data_inicio,
-          dataFim: metaAtivaData.data_fim
-        });
-      } else {
-        setMetaAtiva(null);
-      }
-
-      const vendedores = await buscarVendedores(lojaId);
-      const vendedor = vendedores.find(v => v.id === user.sellerId);
-      if (vendedor) {
-        console.log('📊 [Dashboard Vendedor] Vendedor encontrado:', vendedor);
-        setSellerProfile(vendedor);
-
-        // Buscar estatísticas reais do vendedor
-        // Se houver meta ativa, filtrar apenas vendas dentro do período da meta
-        let query = supabase
-          .from('vendas')
-          .select('valor')
-          .eq('vendedor_id', user.sellerId);
-
-        if (metaAtivaData) {
-          query = query
-            .gte('data_venda', metaAtivaData.data_inicio)
-            .lte('data_venda', metaAtivaData.data_fim);
-        }
-
-        const { data: vendas } = await query;
-
-        const totalVendas = vendas?.length || 0;
-        const valorTotal = vendas?.reduce((acc, v) => acc + v.valor, 0) || 0;
-        const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
-
-        console.log('📊 [Dashboard Vendedor] Estatísticas calculadas:', {
-          totalVendas,
-          valorTotal,
-          ticketMedio,
-          currentSales: vendedor.currentSales,
-          target: vendedor.target,
-          metaAtiva: metaAtivaData ? 'SIM' : 'NÃO'
-        });
-
-        setSellerProfile(prev => ({
-          ...vendedor,
-          totalVendas,
-          ticketMedio,
-          currentSales: metaAtivaData ? valorTotal : vendedor.currentSales
-        } as any));
-      } else {
-        console.warn('⚠️ [Dashboard Vendedor] Vendedor não encontrado na lista!');
-        // Fallback se não encontrar
-        setSellerProfile({
-          id: user.sellerId || '0',
-          name: user.name,
-          currentSales: 0,
-          target: 10000,
-          avatar: user.avatar,
-          totalVendas: 0,
-          ticketMedio: 0
-        } as any);
-      }
-    }
-    if (!silencioso) {
-      setLoading(false);
-    }
-  };
-
-  const carregarUltimasVendas = async () => {
-    console.log('📋 [Dashboard Vendedor] Carregando últimas vendas...', { sellerId: user.sellerId });
-    if (!user.sellerId) return;
-
-    const lojaId = await buscarLojaIdUsuario(user.id);
-    if (!lojaId) return;
-
-    // Buscar meta ativa
+    // Buscar meta ativa primeiro
     const { data: metaAtivaData } = await supabase
       .from('metas')
       .select('*')
@@ -196,30 +75,64 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
       .eq('status', 'ACTIVE')
       .maybeSingle();
 
-    // Se houver meta ativa, filtrar apenas vendas dentro do período da meta
-    let query = supabase
-      .from('vendas')
-      .select('*')
-      .eq('vendedor_id', user.sellerId)
-      .eq('loja_id', lojaId);
-
     if (metaAtivaData) {
-      query = query
-        .gte('data_venda', metaAtivaData.data_inicio)
-        .lte('data_venda', metaAtivaData.data_fim);
+      setMetaAtiva({
+        dataInicio: metaAtivaData.data_inicio,
+        dataFim: metaAtivaData.data_fim
+      });
+    } else {
+      setMetaAtiva(null);
     }
 
-    const { data: vendas, error } = await query
-      .order('data_venda', { ascending: false })
-      .limit(5);
+    const vendedor = vendedores.find(v => v.id === user.sellerId);
+    if (vendedor) {
+      console.log('📊 [Dashboard Vendedor] Vendedor encontrado:', vendedor);
 
-    if (error) {
-      console.error('❌ [Dashboard Vendedor] Erro ao carregar vendas:', error);
-      return;
+      // Filtrar vendas do vendedor
+      let vendasVendedor = todasVendas.filter(v => v.sellerId === user.sellerId);
+
+      // Se houver meta ativa, filtrar apenas vendas dentro do período da meta
+      if (metaAtivaData) {
+        const dataInicio = new Date(metaAtivaData.data_inicio);
+        const dataFim = new Date(metaAtivaData.data_fim);
+        vendasVendedor = vendasVendedor.filter(v => {
+          const dataVenda = new Date(v.timestamp);
+          return dataVenda >= dataInicio && dataVenda <= dataFim;
+        });
+      }
+
+      const totalVendas = vendasVendedor.length;
+      const valorTotal = vendasVendedor.reduce((acc, v) => acc + (v.amount || 0), 0);
+      const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+
+      console.log('📊 [Dashboard Vendedor] Estatísticas calculadas:', {
+        totalVendas,
+        valorTotal,
+        ticketMedio,
+        currentSales: vendedor.currentSales,
+        target: vendedor.target,
+        metaAtiva: metaAtivaData ? 'SIM' : 'NÃO'
+      });
+
+      setSellerProfile({
+        ...vendedor,
+        totalVendas,
+        ticketMedio,
+        currentSales: metaAtivaData ? valorTotal : vendedor.currentSales
+      } as any);
+    } else {
+      console.warn('⚠️ [Dashboard Vendedor] Vendedor não encontrado na lista!');
+      // Fallback se não encontrar
+      setSellerProfile({
+        id: user.sellerId || '0',
+        name: user.name,
+        currentSales: 0,
+        target: 10000,
+        avatar: user.avatar,
+        totalVendas: 0,
+        ticketMedio: 0
+      } as any);
     }
-
-    console.log('📋 [Dashboard Vendedor] Últimas vendas carregadas:', vendas?.length || 0, 'vendas', metaAtivaData ? '(filtrado por meta)' : '(todas)');
-    setUltimasVendas((vendas as Sale[]) || []);
   };
 
   const handleSaveSale = async (vendaId: string, dadosAtualizados: Partial<Sale>) => {
@@ -237,19 +150,21 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
     }
 
     console.log('✅ Venda atualizada com sucesso!');
-    // Recarregar dados
-    carregarDadosVendedor(true);
-    carregarUltimasVendas();
   };
 
   const percentage = sellerProfile ? (sellerProfile.currentSales / sellerProfile.target) * 100 : 0;
 
-  if (loading || !sellerProfile) {
+  // Mostrar loader apenas na primeira carga quando não tem dados do cache
+  if ((loading || cacheLoading) && vendedores.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
+  }
+
+  if (!sellerProfile) {
+    return null;
   }
 
   return (
@@ -385,9 +300,9 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
                 'cartao_credito': 'Crédito',
                 'boleto': 'Boleto',
                 'promissoria': 'Promissória'
-              }[venda.metodo_pagamento] || venda.metodo_pagamento;
+              }[venda.paymentMethod || ''] || venda.paymentMethod;
 
-              const tipoPagamento = venda.tipo_pagamento === 'avista' ? 'À vista' : `${venda.parcelas}x`;
+              const tipoPagamento = venda.paymentType === 'avista' ? 'À vista' : `${venda.installments}x`;
 
               return (
                 <div
@@ -397,28 +312,28 @@ export const SellerDashboardView: React.FC<SellerDashboardProps> = ({ user, onLo
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
-                      <p className="text-white font-bold text-sm">{venda.nome_cliente || 'Cliente'}</p>
+                      <p className="text-white font-bold text-sm">{venda.customerName || 'Cliente'}</p>
                       <p className="text-[10px] text-zinc-500">
-                        {new Date(venda.data_venda).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {new Date(venda.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-white font-bold text-sm">
-                        {formatCurrency(venda.valor)}
+                        {formatCurrency(venda.amount)}
                       </p>
-                      <p className="text-[10px] text-zinc-500">Pedido: {venda.numero_pedido}</p>
+                      <p className="text-[10px] text-zinc-500">Pedido: {venda.orderId}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
                       {metodoPagamento}
                     </span>
-                    {venda.tipo_pagamento === 'parcelado' && (
+                    {venda.paymentType === 'parcelado' && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
                         {tipoPagamento}
                       </span>
                     )}
-                    {venda.tipo_pagamento === 'avista' && (
+                    {venda.paymentType === 'avista' && (
                       <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
                         À vista
                       </span>

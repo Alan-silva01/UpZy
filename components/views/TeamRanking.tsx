@@ -2,47 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Crown, ChevronDown, ShoppingBag, Loader2, Trophy, Calendar, Filter } from 'lucide-react';
 import { Seller, Sale } from '../../types';
-import { buscarVendedores, buscarVendas, buscarRankingClientes, ClienteRanking } from '../../services/api';
+import { buscarRankingClientes, ClienteRanking } from '../../services/api';
 import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 export const TeamRanking: React.FC = () => {
+  // Usar cache global
+  const { cache, loading: cacheLoading, getVendedores, getVendas, getClientes } = useDataCache();
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sellers, setSellers] = useState<Seller[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
   const [clientes, setClientes] = useState<ClienteRanking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [lojaId, setLojaId] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [topLimit, setTopLimit] = useState(10);
 
+  // Dados vêm do cache
+  const sellers = getVendedores() || [];
+  const sales = getVendas() || [];
+
   useEffect(() => {
-    carregarDados();
+    carregarDadosIniciais();
   }, []);
 
-  const carregarDados = async () => {
-    if (!hasLoadedOnce) {
-      setLoading(true);
+  // Usar clientes do cache quando disponível
+  useEffect(() => {
+    const clientesCache = getClientes();
+    if (clientesCache && clientes.length === 0) {
+      setClientes(clientesCache);
     }
+  }, [cache.clientes]);
+
+  const carregarDadosIniciais = async () => {
     const user = await verificarSessao();
     if (user) {
       const loja = await buscarLojaIdUsuario(user.id);
       if (loja) {
         setLojaId(loja);
-        const [vendedores, vendas, rankingClientes] = await Promise.all([
-          buscarVendedores(loja),
-          buscarVendas(loja),
-          buscarRankingClientes(loja, topLimit)
-        ]);
-        setSellers(vendedores);
-        setSales(vendas);
-        setClientes(rankingClientes);
       }
     }
-    setLoading(false);
-    setHasLoadedOnce(true);
   };
 
   const aplicarFiltroData = async () => {
@@ -111,7 +111,8 @@ export const TeamRanking: React.FC = () => {
     return null;
   };
 
-  if (loading) {
+  // Mostrar loader apenas durante filtro ou primeira carga
+  if ((loading || cacheLoading) && sellers.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-5 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

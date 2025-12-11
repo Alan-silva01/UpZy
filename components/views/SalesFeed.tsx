@@ -1,71 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Loader2 } from 'lucide-react';
 import { Sale, Seller } from '../../types';
-import { buscarVendas, buscarVendedores } from '../../services/api';
 import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
-import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import { formatarTempoRelativo } from '../../utils/formatters';
 
 export const SalesFeed: React.FC = () => {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [sellers, setSellers] = useState<Seller[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  // Usar cache global
+  const { cache, loading: cacheLoading, getVendas, getVendedores } = useDataCache();
+
   const [lojaId, setLojaId] = useState<string>('');
 
+  // Dados vêm do cache
+  const sales = getVendas() || [];
+  const sellers = getVendedores() || [];
+
   useEffect(() => {
-    carregarDados();
-
-    // Listener para forçar atualização silenciosa
-    const handleForceRefresh = () => {
-      console.log('🔄 [Timeline Vendas] Atualização forçada disparada!');
-      carregarDados(true); // silencioso
-    };
-
-    window.addEventListener('forceRefreshDashboard', handleForceRefresh);
-
-    return () => {
-      window.removeEventListener('forceRefreshDashboard', handleForceRefresh);
-    };
+    carregarDadosIniciais();
   }, []);
 
-  // Real-time subscriptions para vendas
-  useRealtimeSubscription({
-    table: 'vendas',
-    lojaId,
-    onInsert: () => {
-      console.log('🔴 Nova venda na timeline! Recarregando...');
-      carregarDados(true); // silencioso
-    },
-    onUpdate: () => {
-      console.log('🔴 Venda atualizada na timeline! Recarregando...');
-      carregarDados(true); // silencioso
-    },
-    onDelete: () => {
-      console.log('🔴 Venda deletada da timeline! Recarregando...');
-      carregarDados(true); // silencioso
-    }
-  });
-
-  const carregarDados = async (silencioso = false) => {
-    if (!silencioso && !hasLoadedOnce) {
-      setLoading(true);
-    }
+  const carregarDadosIniciais = async () => {
     const user = await verificarSessao();
     if (user) {
       const loja = await buscarLojaIdUsuario(user.id);
       if (loja) {
         setLojaId(loja);
-        const [vendas, vendedores] = await Promise.all([
-          buscarVendas(loja),
-          buscarVendedores(loja)
-        ]);
-        setSales(vendas);
-        setSellers(vendedores);
       }
     }
-    setLoading(false);
-    setHasLoadedOnce(true);
   };
 
   const getSellerAvatar = (id: string) => {
@@ -77,7 +38,7 @@ export const SalesFeed: React.FC = () => {
   };
 
 
-  if (loading) {
+  if (cacheLoading && sales.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-4 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
