@@ -119,14 +119,14 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
       console.error('❌ Erro ao criar usuário na auth:', authError);
 
       // Tratamento específico de erros
-      if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
-        return { sucesso: false, mensagem: 'Este email já está cadastrado. Tente fazer login.' };
-      } else if (authError.message?.includes('invalid_email')) {
-        return { sucesso: false, mensagem: 'Email inválido. Verifique o endereço digitado.' };
-      } else if (authError.message?.includes('weak_password')) {
-        return { sucesso: false, mensagem: 'Senha muito fraca. Use no mínimo 6 caracteres.' };
-      } else if (authError.message?.includes('rate_limit')) {
-        return { sucesso: false, mensagem: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' };
+      if (authError.message?.includes('already registered') || authError.message?.includes('already exists') || authError.message?.includes('User already registered')) {
+        return { sucesso: false, mensagem: 'Este email já está cadastrado. Faça login ou use outro email.' };
+      } else if (authError.message?.includes('invalid_email') || authError.message?.includes('Invalid email')) {
+        return { sucesso: false, mensagem: 'Email inválido. Verifique se digitou corretamente.' };
+      } else if (authError.message?.includes('weak_password') || authError.message?.includes('Password should be at least')) {
+        return { sucesso: false, mensagem: 'A senha deve ter no mínimo 6 caracteres.' };
+      } else if (authError.message?.includes('rate_limit') || authError.message?.includes('Email rate limit exceeded')) {
+        return { sucesso: false, mensagem: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' };
       }
 
       return { sucesso: false, mensagem: authError.message };
@@ -237,17 +237,17 @@ export async function fazerLogin(credenciais: CredenciaisLogin): Promise<{ suces
       console.error('Erro no login:', authError);
 
       // Tratamento específico de erros
-      if (authError.message?.includes('Invalid login credentials')) {
-        return { sucesso: false, mensagem: 'Email ou senha incorretos.' };
-      } else if (authError.message?.includes('Email not confirmed')) {
-        return { sucesso: false, mensagem: 'Confirme seu email antes de fazer login. Verifique sua caixa de entrada.' };
-      } else if (authError.message?.includes('rate_limit')) {
-        return { sucesso: false, mensagem: 'Muitas tentativas de login. Aguarde alguns minutos.' };
-      } else if (authError.message?.includes('invalid_email')) {
-        return { sucesso: false, mensagem: 'Email inválido.' };
+      if (authError.message?.includes('Invalid login credentials') || authError.message?.includes('invalid_grant')) {
+        return { sucesso: false, mensagem: 'Email ou senha incorretos. Verifique seus dados e tente novamente.' };
+      } else if (authError.message?.includes('Email not confirmed') || authError.message?.includes('email_not_confirmed')) {
+        return { sucesso: false, mensagem: 'Email não confirmado. Verifique sua caixa de entrada e clique no link de confirmação.' };
+      } else if (authError.message?.includes('rate_limit') || authError.message?.includes('Email rate limit exceeded')) {
+        return { sucesso: false, mensagem: 'Muitas tentativas de login. Aguarde alguns minutos antes de tentar novamente.' };
+      } else if (authError.message?.includes('invalid_email') || authError.message?.includes('Invalid email')) {
+        return { sucesso: false, mensagem: 'Email inválido. Verifique se digitou corretamente.' };
       }
 
-      return { sucesso: false, mensagem: 'Email ou senha incorretos.' };
+      return { sucesso: false, mensagem: 'Email ou senha incorretos. Verifique seus dados e tente novamente.' };
     }
 
     if (!authData.user) {

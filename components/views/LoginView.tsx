@@ -31,7 +31,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     if (!formData.email) {
-      setErro('Digite seu email');
+      setErro('Digite seu email para continuar.');
       setIsLoading(false);
       return;
     }
@@ -49,12 +49,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
       setShowForgotPassword(false);
     } catch (error: any) {
       // Tratamento específico de erros
-      if (error.message?.includes('rate_limit')) {
-        setErro('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-      } else if (error.message?.includes('invalid_email')) {
-        setErro('Email inválido. Verifique o endereço digitado.');
+      if (error.message?.includes('rate_limit') || error.message?.includes('Email rate limit exceeded')) {
+        setErro('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
+      } else if (error.message?.includes('invalid_email') || error.message?.includes('Invalid email')) {
+        setErro('Email inválido. Verifique se digitou corretamente.');
       } else {
-        setErro(error.message || 'Erro ao enviar email de recuperação. Tente novamente.');
+        setErro(error.message || 'Erro ao enviar email de recuperação. Tente novamente mais tarde.');
       }
     } finally {
       setIsLoading(false);
@@ -71,13 +71,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
       if (isRegistering) {
         // Registro de novo admin
         if (!formData.nomeLoja || !formData.nome || !formData.email || !formData.senha) {
-          setErro('Preencha todos os campos');
+          setErro('Preencha todos os campos para continuar.');
           setIsLoading(false);
           return;
         }
 
         if (formData.senha.length < 6) {
-          setErro('A senha deve ter no mínimo 6 caracteres');
+          setErro('A senha deve ter no mínimo 6 caracteres.');
           setIsLoading(false);
           return;
         }
@@ -101,7 +101,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
       } else {
         // Login
         if (!formData.email || !formData.senha) {
-          setErro('Preencha email e senha');
+          setErro('Preencha email e senha para continuar.');
           setIsLoading(false);
           return;
         }
@@ -119,12 +119,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
       }
     } catch (error: any) {
       // Tratamento específico de erros
-      if (error.message?.includes('rate_limit')) {
-        setErro('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-      } else if (error.message?.includes('invalid_credentials')) {
-        setErro('Email ou senha incorretos.');
+      if (error.message?.includes('rate_limit') || error.message?.includes('Email rate limit exceeded')) {
+        setErro('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
+      } else if (error.message?.includes('invalid_credentials') || error.message?.includes('Invalid login credentials')) {
+        setErro('Email ou senha incorretos. Verifique seus dados e tente novamente.');
       } else {
-        setErro(error.message || 'Erro ao processar requisição. Tente novamente.');
+        setErro(error.message || 'Erro ao processar requisição. Tente novamente mais tarde.');
       }
     } finally {
       setIsLoading(false);

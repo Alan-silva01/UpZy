@@ -29,7 +29,7 @@ export const ResetPasswordPage: React.FC = () => {
         if (accessToken && type === 'recovery') {
           setTemToken(true);
         } else {
-          setErro('Link inválido ou expirado. Solicite um novo link de recuperação.');
+          setErro('Link de recuperação inválido ou expirado. Solicite um novo link.');
         }
       }
     };
@@ -44,19 +44,19 @@ export const ResetPasswordPage: React.FC = () => {
 
     // Validações
     if (!novaSenha || !confirmarSenha) {
-      setErro('Preencha todos os campos');
+      setErro('Preencha todos os campos para continuar.');
       setIsLoading(false);
       return;
     }
 
     if (novaSenha.length < 6) {
-      setErro('A senha deve ter no mínimo 6 caracteres');
+      setErro('A senha deve ter no mínimo 6 caracteres.');
       setIsLoading(false);
       return;
     }
 
     if (novaSenha !== confirmarSenha) {
-      setErro('As senhas não coincidem');
+      setErro('As senhas digitadas não coincidem. Verifique e tente novamente.');
       setIsLoading(false);
       return;
     }
@@ -79,14 +79,14 @@ export const ResetPasswordPage: React.FC = () => {
       console.error('Erro ao redefinir senha:', error);
 
       // Tratamento de erros específicos
-      if (error.message?.includes('same as the old password')) {
-        setErro('A nova senha deve ser diferente da senha atual.');
-      } else if (error.message?.includes('Password should be at least')) {
-        setErro('Senha muito fraca. Use no mínimo 6 caracteres.');
-      } else if (error.message?.includes('invalid') || error.message?.includes('expired')) {
-        setErro('Link inválido ou expirado. Solicite um novo link de recuperação.');
+      if (error.message?.includes('same as the old password') || error.message?.includes('New password should be different')) {
+        setErro('A nova senha deve ser diferente da senha anterior. Escolha outra senha.');
+      } else if (error.message?.includes('Password should be at least') || error.message?.includes('weak_password')) {
+        setErro('A senha deve ter no mínimo 6 caracteres.');
+      } else if (error.message?.includes('invalid') || error.message?.includes('expired') || error.message?.includes('Token has expired')) {
+        setErro('Link de recuperação inválido ou expirado. Solicite um novo link.');
       } else {
-        setErro(error.message || 'Erro ao redefinir senha. Tente novamente.');
+        setErro(error.message || 'Erro ao redefinir senha. Tente novamente mais tarde.');
       }
     } finally {
       setIsLoading(false);
