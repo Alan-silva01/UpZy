@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 const App = lazy(() => import('./App'));
 const LandingPage = lazy(() => import('./pages/vendas/LandingPage'));
 const ThankYouPage = lazy(() => import('./pages/vendas/ThankYouPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 
 // Loading component
 const LoadingScreen = () => (
@@ -25,6 +26,9 @@ const AppRouter: React.FC = () => {
 
           {/* Thank You Page - Redirects back to app after success */}
           <Route path="/obrigado" element={<ThankYouPage />} />
+
+          {/* Reset Password Page - Auth */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Main App - Default Route */}
           <Route path="/*" element={<App />} />

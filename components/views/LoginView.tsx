@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User } from '../../types';
 import { Fingerprint, Lock, ArrowRight, Store, Mail, Loader2, AlertCircle } from 'lucide-react';
 import { fazerLogin, registrarAdmin } from '../../services/auth';
+import { EmailConfirmationModal } from '../modals/EmailConfirmationModal';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -20,6 +21,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailModalType, setEmailModalType] = useState<'signup' | 'reset-password'>('signup');
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +43,19 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
       if (error) throw error;
 
-      setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.');
-      setTimeout(() => {
-        setShowForgotPassword(false);
-        setSuccessMessage('');
-      }, 3000);
+      // Mostrar modal de confirmação
+      setEmailModalType('reset-password');
+      setShowEmailModal(true);
+      setShowForgotPassword(false);
     } catch (error: any) {
-      setErro(error.message || 'Erro ao enviar email de recuperação');
+      // Tratamento específico de erros
+      if (error.message?.includes('rate_limit')) {
+        setErro('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      } else if (error.message?.includes('invalid_email')) {
+        setErro('Email inválido. Verifique o endereço digitado.');
+      } else {
+        setErro(error.message || 'Erro ao enviar email de recuperação. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +76,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           return;
         }
 
+        if (formData.senha.length < 6) {
+          setErro('A senha deve ter no mínimo 6 caracteres');
+          setIsLoading(false);
+          return;
+        }
+
         const resultado = await registrarAdmin({
           nome: formData.nome,
           email: formData.email,
@@ -74,8 +89,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           nomeLoja: formData.nomeLoja
         });
 
-        if (resultado.sucesso && resultado.user) {
-          onLogin(resultado.user);
+        if (resultado.sucesso) {
+          // Mostrar modal de confirmação de email ao invés de fazer login direto
+          setEmailModalType('signup');
+          setShowEmailModal(true);
+          setIsRegistering(false);
+          setFormData({ nome: '', email: '', senha: '', nomeLoja: '' });
         } else {
           setErro(resultado.mensagem);
         }
@@ -99,7 +118,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         }
       }
     } catch (error: any) {
-      setErro(error.message || 'Erro ao processar requisição');
+      // Tratamento específico de erros
+      if (error.message?.includes('rate_limit')) {
+        setErro('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      } else if (error.message?.includes('invalid_credentials')) {
+        setErro('Email ou senha incorretos.');
+      } else {
+        setErro(error.message || 'Erro ao processar requisição. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -320,6 +346,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Email */}
+      <EmailConfirmationModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        email={formData.email}
+        type={emailModalType}
+      />
     </main>
   );
 };

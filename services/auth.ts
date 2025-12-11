@@ -117,6 +117,18 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     if (authError) {
       console.error('❌ Erro ao criar usuário na auth:', authError);
+
+      // Tratamento específico de erros
+      if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
+        return { sucesso: false, mensagem: 'Este email já está cadastrado. Tente fazer login.' };
+      } else if (authError.message?.includes('invalid_email')) {
+        return { sucesso: false, mensagem: 'Email inválido. Verifique o endereço digitado.' };
+      } else if (authError.message?.includes('weak_password')) {
+        return { sucesso: false, mensagem: 'Senha muito fraca. Use no mínimo 6 caracteres.' };
+      } else if (authError.message?.includes('rate_limit')) {
+        return { sucesso: false, mensagem: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' };
+      }
+
       return { sucesso: false, mensagem: authError.message };
     }
 
@@ -147,7 +159,15 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     if (lojaError || !loja) {
       console.error('❌ Erro ao criar loja:', lojaError);
-      return { sucesso: false, mensagem: `Erro ao criar loja: ${lojaError?.message || 'desconhecido'}` };
+
+      // Rollback: excluir usuário criado na auth se a loja falhar
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (deleteError) {
+        console.error('❌ Erro ao fazer rollback do usuário:', deleteError);
+      }
+
+      return { sucesso: false, mensagem: `Erro ao criar loja. Tente novamente.` };
     }
 
     console.log('✅ Loja criada:', loja.id);
@@ -168,7 +188,16 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     if (usuarioError) {
       console.error('❌ Erro ao criar registro de usuário:', usuarioError);
-      return { sucesso: false, mensagem: `Erro ao criar perfil: ${usuarioError.message}` };
+
+      // Rollback: excluir loja criada
+      try {
+        await supabase.from('lojas').delete().eq('id', loja.id);
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (deleteError) {
+        console.error('❌ Erro ao fazer rollback:', deleteError);
+      }
+
+      return { sucesso: false, mensagem: `Erro ao criar perfil. Tente novamente.` };
     }
 
     console.log('✅ Registro de usuário criado');
@@ -206,7 +235,19 @@ export async function fazerLogin(credenciais: CredenciaisLogin): Promise<{ suces
 
     if (authError) {
       console.error('Erro no login:', authError);
-      return { sucesso: false, mensagem: 'Email ou senha incorretos' };
+
+      // Tratamento específico de erros
+      if (authError.message?.includes('Invalid login credentials')) {
+        return { sucesso: false, mensagem: 'Email ou senha incorretos.' };
+      } else if (authError.message?.includes('Email not confirmed')) {
+        return { sucesso: false, mensagem: 'Confirme seu email antes de fazer login. Verifique sua caixa de entrada.' };
+      } else if (authError.message?.includes('rate_limit')) {
+        return { sucesso: false, mensagem: 'Muitas tentativas de login. Aguarde alguns minutos.' };
+      } else if (authError.message?.includes('invalid_email')) {
+        return { sucesso: false, mensagem: 'Email inválido.' };
+      }
+
+      return { sucesso: false, mensagem: 'Email ou senha incorretos.' };
     }
 
     if (!authData.user) {
