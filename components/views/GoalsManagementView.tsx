@@ -39,7 +39,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const { loading: cacheLoading, getVendedores, getVendas, refreshData } = useDataCache();
 
   const [metas, setMetas] = useState<MetaComDados[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [metaExpandida, setMetaExpandida] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -75,9 +75,6 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   }, [vendas.length]);
 
   const carregarMetas = async (silencioso = false) => {
-    if (!silencioso) {
-      setLoading(true);
-    }
     try {
       // Buscar metas
       const { data: metasData, error: metasError } = await supabase
@@ -153,9 +150,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     } catch (error) {
       console.error('Erro ao carregar metas:', error);
     } finally {
-      if (!silencioso) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -530,7 +525,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       )}
 
       {/* Lista de Metas */}
-      {(cacheLoading && !hasLoadedOnce) ? (
+      {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         </div>
