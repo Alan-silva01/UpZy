@@ -18,14 +18,10 @@ const renderActiveShape = (props: any) => {
       cx={cx}
       cy={cy}
       innerRadius={innerRadius}
-      outerRadius={outerRadius + 4}
+      outerRadius={outerRadius + 3}
       startAngle={startAngle}
       endAngle={endAngle}
       fill={fill}
-      style={{
-        outline: 'none',
-        cursor: 'pointer'
-      }}
     />
   );
 };
@@ -47,7 +43,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
   const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
   const [avatarLoja, setAvatarLoja] = useState<string>('');
-  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
 
   // Dados vêm do cache agora
   const stats = getStats();
@@ -56,7 +51,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   useEffect(() => {
     if (lojaId && stats) {
       carregarDadosLoja();
-      setHasRenderedOnce(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, stats]);
@@ -355,8 +349,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                 fillOpacity={1}
                 fill="url(#colorSales)"
                 isAnimationActive={true}
-                animationBegin={100}
-                animationDuration={800}
+                animationBegin={0}
+                animationDuration={400}
                 animationEasing="ease-in-out"
               />
             </AreaChart>
@@ -393,9 +387,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                         onMouseEnter={onPieEnter}
                         onClick={onPieEnter}
                         isAnimationActive={true}
-                        animationBegin={150}
-                        animationDuration={500}
-                        animationEasing="ease-out"
+                        animationBegin={0}
+                        animationDuration={350}
+                        animationEasing="ease-in-out"
                         className="outline-none focus:outline-none cursor-pointer"
                      >
                         {sellerData.map((entry, index) => (
