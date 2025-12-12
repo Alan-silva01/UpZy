@@ -36,11 +36,9 @@ interface GoalsManagementViewProps {
 
 export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId, userId, onBack, onBlockedAction }) => {
   // Usar cache global
-  const { loading: cacheLoading, getVendedores, getVendas, refreshData } = useDataCache();
+  const { loading: cacheLoading, getVendedores, getVendas, getMetas, refreshData } = useDataCache();
 
   const [metas, setMetas] = useState<MetaComDados[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [metaExpandida, setMetaExpandida] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editandoMeta, setEditandoMeta] = useState<string | null>(null);
@@ -61,101 +59,69 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   // Dados vêm do cache
   const vendedores = getVendedores() || [];
   const vendas = getVendas() || [];
+  const metasCache = getMetas() || [];
 
-  // Carregar imediatamente ao montar
+  // Processar metas do cache sempre que mudarem
   useEffect(() => {
-    carregarMetas();
-  }, [lojaId]);
-
-  // Recarregar silenciosamente quando dados mudarem
-  useEffect(() => {
-    if (hasLoadedOnce && (vendedores.length > 0 || vendas.length > 0)) {
-      carregarMetas(true);
+    if (metasCache.length > 0 || vendedores.length > 0 || vendas.length > 0) {
+      processarMetas(metasCache);
     }
-  }, [vendas.length]);
+  }, [metasCache, vendedores.length, vendas.length]);
 
-  const carregarMetas = async (silencioso = false) => {
-    try {
-      if (!silencioso) {
-        setLoading(true);
-      }
+  const processarMetas = (metasData: Meta[]) => {
+    const numeroVendedores = vendedores.length;
+    console.log('📊 Número de vendedores do cache:', numeroVendedores);
 
-      // Buscar metas
-      const { data: metasData, error: metasError } = await supabase
-        .from('metas')
-        .select('*')
-        .eq('loja_id', lojaId)
-        .order('criado_em', { ascending: false });
+    // Para cada meta, calcular estatísticas usando dados do cache
+    const metasComDados = (metasData || []).map((meta) => {
+      console.log(`🔍 Calculando vendas para meta ${meta.id} de ${meta.data_inicio} até ${meta.data_fim}`);
 
-      if (metasError) {
-        console.error('Erro ao carregar metas:', metasError);
-        return;
-      }
-
-      // Usar vendedores do cache
-      const vendedoresCache = getVendedores() || [];
-      const numeroVendedores = vendedoresCache.length;
-      console.log('📊 Número de vendedores do cache:', numeroVendedores);
-
-      // Usar vendas do cache
-      const todasVendas = getVendas() || [];
-
-      // Para cada meta, calcular estatísticas usando dados do cache
-      const metasComDados = (metasData || []).map((meta) => {
-        console.log(`🔍 Calculando vendas para meta ${meta.id} de ${meta.data_inicio} até ${meta.data_fim}`);
-
-        // Filtrar vendas dentro do período da meta
-        const vendasMeta = todasVendas.filter(v => {
-          const dataVenda = new Date(v.timestamp);
-          const dataInicio = new Date(meta.data_inicio);
-          const dataFim = new Date(meta.data_fim);
-          return dataVenda >= dataInicio && dataVenda <= dataFim;
-        });
-
-        console.log(`✅ Encontradas ${vendasMeta.length} vendas para a meta`);
-
-        const vendasTotal = vendasMeta.reduce((acc, v) => acc + v.amount, 0);
-        const percentualAtingido = meta.valor_total > 0 ? (vendasTotal / meta.valor_total) * 100 : 0;
-        const metaPorVendedor = numeroVendedores > 0 ? meta.valor_total / numeroVendedores : meta.valor_total;
-
-        console.log(`🎯 Meta ${meta.id}:`, {
-          valor_total: meta.valor_total,
-          numeroVendedores,
-          metaPorVendedor,
-          vendasTotal
-        });
-
-        // Calcular vendas por vendedor usando cache
-        const vendedoresStats = vendedoresCache.map(vendedor => {
-          const vendasVendedor = vendasMeta.filter(v => v.sellerId === vendedor.id);
-          const totalVendedor = vendasVendedor.reduce((acc, v) => acc + v.amount, 0);
-          const percentualVendedor = metaPorVendedor > 0 ? (totalVendedor / metaPorVendedor) * 100 : 0;
-
-          return {
-            id: vendedor.id,
-            nome: vendedor.name,
-            vendas: totalVendedor,
-            percentual: percentualVendedor
-          };
-        }).sort((a, b) => b.vendas - a.vendas); // Ordenar por vendas (maior primeiro)
-
-        return {
-          ...meta,
-          vendas_total: vendasTotal,
-          percentual_atingido: percentualAtingido,
-          numero_vendedores: numeroVendedores,
-          meta_por_vendedor: metaPorVendedor,
-          vendedores_stats: vendedoresStats
-        };
+      // Filtrar vendas dentro do período da meta
+      const vendasMeta = vendas.filter(v => {
+        const dataVenda = new Date(v.timestamp);
+        const dataInicio = new Date(meta.data_inicio);
+        const dataFim = new Date(meta.data_fim);
+        return dataVenda >= dataInicio && dataVenda <= dataFim;
       });
 
-      setMetas(metasComDados);
-      setHasLoadedOnce(true);
-    } catch (error) {
-      console.error('Erro ao carregar metas:', error);
-    } finally {
-      setLoading(false);
-    }
+      console.log(`✅ Encontradas ${vendasMeta.length} vendas para a meta`);
+
+      const vendasTotal = vendasMeta.reduce((acc, v) => acc + v.amount, 0);
+      const percentualAtingido = meta.valor_total > 0 ? (vendasTotal / meta.valor_total) * 100 : 0;
+      const metaPorVendedor = numeroVendedores > 0 ? meta.valor_total / numeroVendedores : meta.valor_total;
+
+      console.log(`🎯 Meta ${meta.id}:`, {
+        valor_total: meta.valor_total,
+        numeroVendedores,
+        metaPorVendedor,
+        vendasTotal
+      });
+
+      // Calcular vendas por vendedor usando cache
+      const vendedoresStats = vendedores.map(vendedor => {
+        const vendasVendedor = vendasMeta.filter(v => v.sellerId === vendedor.id);
+        const totalVendedor = vendasVendedor.reduce((acc, v) => acc + v.amount, 0);
+        const percentualVendedor = metaPorVendedor > 0 ? (totalVendedor / metaPorVendedor) * 100 : 0;
+
+        return {
+          id: vendedor.id,
+          nome: vendedor.name,
+          vendas: totalVendedor,
+          percentual: percentualVendedor
+        };
+      }).sort((a, b) => b.vendas - a.vendas); // Ordenar por vendas (maior primeiro)
+
+      return {
+        ...meta,
+        vendas_total: vendasTotal,
+        percentual_atingido: percentualAtingido,
+        numero_vendedores: numeroVendedores,
+        meta_por_vendedor: metaPorVendedor,
+        vendedores_stats: vendedoresStats
+      };
+    });
+
+    setMetas(metasComDados);
   };
 
   const criarOuEditarMeta = async () => {
@@ -228,7 +194,9 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       setDataInicio('');
       setDataFim('');
       setShowForm(false);
-      carregarMetas();
+
+      // Atualizar cache
+      await refreshData(true);
     } catch (error) {
       console.error('Erro ao salvar meta:', error);
       alert('Erro ao salvar meta. Tente novamente.');
@@ -268,7 +236,8 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
         console.error('Erro ao excluir meta:', error);
         alert('Erro ao excluir meta. Tente novamente.');
       } else {
-        carregarMetas();
+        // Atualizar cache
+        await refreshData(true);
       }
     } catch (error) {
       console.error('Erro ao excluir meta:', error);
@@ -324,7 +293,8 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       }
 
       console.log('✅ Meta ativada com sucesso!');
-      carregarMetas();
+      // Atualizar cache
+      await refreshData(true);
     } catch (error) {
       console.error('Erro ao ativar meta:', error);
       alert('Erro ao ativar meta');
@@ -356,7 +326,8 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       }
 
       console.log('✅ Meta desativada!');
-      carregarMetas();
+      // Atualizar cache
+      await refreshData(true);
     } catch (error) {
       console.error('Erro ao desativar meta:', error);
       alert('Erro ao desativar meta');
@@ -529,7 +500,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       )}
 
       {/* Lista de Metas */}
-      {loading && metas.length === 0 ? (
+      {cacheLoading && metas.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         </div>

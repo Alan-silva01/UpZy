@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Store as StoreIcon, CreditCard, LogOut, CheckCircle, Shield, User, Loader2, Lock, AlertCircle, ArrowUpRight, MessageCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { verificarSessao, buscarLojaIdUsuario } from '../../services/auth';
+import { verificarSessao } from '../../services/auth';
 import { supabase } from '../../lib/supabase';
 import { ImageCropUpload } from '../ui/ImageCropUpload';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 interface SettingsViewProps {
   onLogout: () => void;
@@ -25,11 +26,11 @@ interface StoreData {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNameUpdate, onStoreAvatarUpdate }) => {
   const navigate = useNavigate();
+  const { getStoreData, loading: cacheLoading, refreshData } = useDataCache();
 
   const [storeName, setStoreName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
-  const [loadingData, setLoadingData] = useState(false);
   const [storeAvatar, setStoreAvatar] = useState<string>('');
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -44,40 +45,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
   const [buscandoBoleto, setBuscandoBoleto] = useState(false);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
 
-  // Carregar dados imediatamente, sem aguardar cache
+  // Carregar dados do cache e email do usuário
   useEffect(() => {
-    carregarDados();
-  }, []);
-
-  const carregarDados = async () => {
-    setLoadingData(true);
-    try {
-      const user = await verificarSessao();
-      if (user) {
-        setUserEmail(user.email);
-        const lojaId = await buscarLojaIdUsuario(user.id);
-
-        if (lojaId) {
-          // Buscar dados da loja
-          const { data: loja } = await supabase
-            .from('lojas')
-            .select('*')
-            .eq('id', lojaId)
-            .single();
-
-          if (loja) {
-            setStoreData(loja);
-            setStoreName(loja.nome);
-            setStoreAvatar(loja.avatar_url || '');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    } finally {
-      setLoadingData(false);
+    const cachedStoreData = getStoreData();
+    if (cachedStoreData) {
+      setStoreData(cachedStoreData);
+      setStoreName(cachedStoreData.nome);
+      setStoreAvatar(cachedStoreData.avatar_url || '');
     }
-  };
+  }, [getStoreData]);
+
+  // Carregar email do usuário
+  useEffect(() => {
+    const loadUserEmail = async () => {
+      try {
+        const user = await verificarSessao();
+        if (user) {
+          setUserEmail(user.email);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar email do usuário:', error);
+      }
+    };
+    loadUserEmail();
+  }, []);
 
   const calcularDiasRestantes = () => {
     if (!storeData?.data_renovacao) return null;
@@ -176,6 +167,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
         onStoreAvatarUpdate(publicUrl);
       }
 
+      // Atualizar cache
+      await refreshData(true);
+
       setMensagemSucesso('Avatar atualizado com sucesso!');
       setTimeout(() => setMensagemSucesso(''), 3000);
     } catch (error: any) {
@@ -210,6 +204,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
       if (onStoreNameUpdate) {
         onStoreNameUpdate(storeName.trim());
       }
+
+      // Atualizar cache
+      await refreshData(true);
 
       setMensagemSucesso('Nome da loja atualizado com sucesso!');
       setTimeout(() => setMensagemSucesso(''), 3000);
@@ -319,7 +316,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     }
   };
 
-  if (loadingData && !storeData) {
+  if (cacheLoading && !storeData) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

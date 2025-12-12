@@ -2,12 +2,37 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { Seller, Sale, StoreStats, ClienteRanking } from '../types';
 import { buscarVendedores, buscarVendas, calcularEstatisticasLoja, buscarRankingClientes } from '../services/api';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
+import { supabase } from '../lib/supabase';
+
+interface StoreData {
+  id: string;
+  nome: string;
+  plano: string;
+  status: string;
+  avatar_url?: string;
+  data_renovacao?: string;
+  final_card?: string;
+  parcelas?: string;
+  metodo_pagamento?: string;
+}
+
+interface Meta {
+  id: string;
+  valor_total: number;
+  data_inicio: string;
+  data_fim: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  criado_em: string;
+  loja_id: string;
+}
 
 interface DataCache {
   vendedores: Seller[] | null;
   vendas: Sale[] | null;
   stats: StoreStats | null;
   clientes: ClienteRanking[] | null;
+  storeData: StoreData | null;
+  metas: Meta[] | null;
   lastUpdate: number;
 }
 
@@ -19,6 +44,8 @@ interface DataCacheContextType {
   getVendas: () => Sale[] | null;
   getStats: () => StoreStats | null;
   getClientes: () => ClienteRanking[] | null;
+  getStoreData: () => StoreData | null;
+  getMetas: () => Meta[] | null;
 }
 
 const DataCacheContext = createContext<DataCacheContextType | undefined>(undefined);
@@ -34,6 +61,8 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
     vendas: null,
     stats: null,
     clientes: null,
+    storeData: null,
+    metas: null,
     lastUpdate: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -50,11 +79,13 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
     try {
       console.log('🔄 [Cache] Carregando dados...', { silent, hasLoadedOnce });
 
-      const [vendedores, vendas, stats, clientes] = await Promise.all([
+      const [vendedores, vendas, stats, clientes, storeDataResult, metasResult] = await Promise.all([
         buscarVendedores(lojaId),
         buscarVendas(lojaId),
         calcularEstatisticasLoja(lojaId),
         buscarRankingClientes(lojaId, 10),
+        supabase.from('lojas').select('*').eq('id', lojaId).single(),
+        supabase.from('metas').select('*').eq('loja_id', lojaId).order('criado_em', { ascending: false }),
       ]);
 
       setCache({
@@ -62,6 +93,8 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
         vendas,
         stats,
         clientes,
+        storeData: storeDataResult.data || null,
+        metas: metasResult.data || null,
         lastUpdate: Date.now(),
       });
 
@@ -118,11 +151,39 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
     },
   });
 
+  useRealtimeSubscription({
+    table: 'lojas',
+    lojaId: lojaId || undefined,
+    onUpdate: () => {
+      console.log('🔴 [Cache] Loja atualizada! Atualizando cache...');
+      refreshData(true);
+    },
+  });
+
+  useRealtimeSubscription({
+    table: 'metas',
+    lojaId: lojaId || undefined,
+    onInsert: () => {
+      console.log('🔴 [Cache] Nova meta criada! Atualizando cache...');
+      refreshData(true);
+    },
+    onUpdate: () => {
+      console.log('🔴 [Cache] Meta atualizada! Atualizando cache...');
+      refreshData(true);
+    },
+    onDelete: () => {
+      console.log('🔴 [Cache] Meta deletada! Atualizando cache...');
+      refreshData(true);
+    },
+  });
+
   // Getters para acessar dados do cache
   const getVendedores = useCallback(() => cache.vendedores, [cache.vendedores]);
   const getVendas = useCallback(() => cache.vendas, [cache.vendas]);
   const getStats = useCallback(() => cache.stats, [cache.stats]);
   const getClientes = useCallback(() => cache.clientes, [cache.clientes]);
+  const getStoreData = useCallback(() => cache.storeData, [cache.storeData]);
+  const getMetas = useCallback(() => cache.metas, [cache.metas]);
 
   return (
     <DataCacheContext.Provider
@@ -134,6 +195,8 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
         getVendas,
         getStats,
         getClientes,
+        getStoreData,
+        getMetas,
       }}
     >
       {children}
