@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ArrowRight, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { PasswordInput } from '../../components/ui/PasswordInput';
 
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -216,38 +217,24 @@ export const ResetPasswordPage: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Nova Senha */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <Lock size={20} />
-              </div>
-              <input
-                type="password"
-                placeholder="Nova Senha"
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                minLength={6}
-                required
-                autoComplete="new-password"
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
-              />
-            </div>
+            <PasswordInput
+              placeholder="Nova Senha"
+              value={novaSenha}
+              onChange={setNovaSenha}
+              minLength={6}
+              required
+              autoComplete="new-password"
+            />
 
             {/* Confirmar Senha */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <Lock size={20} />
-              </div>
-              <input
-                type="password"
-                placeholder="Confirmar Nova Senha"
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                minLength={6}
-                required
-                autoComplete="new-password"
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
-              />
-            </div>
+            <PasswordInput
+              placeholder="Confirmar Nova Senha"
+              value={confirmarSenha}
+              onChange={setConfirmarSenha}
+              minLength={6}
+              required
+              autoComplete="new-password"
+            />
 
             {/* Password Requirements */}
             <div className="bg-zinc-900/30 border border-white/5 rounded-xl p-3">

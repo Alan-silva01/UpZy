@@ -228,13 +228,17 @@ export async function fazerLogin(credenciais: CredenciaisLogin): Promise<{ suces
   try {
     const emailNormalizado = normalizarEmail(credenciais.email);
 
+    console.log('🔐 Tentando fazer login com email:', emailNormalizado);
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: emailNormalizado,
       password: credenciais.senha
     });
 
     if (authError) {
-      console.error('Erro no login:', authError);
+      console.error('❌ Erro no login:', authError);
+      console.error('❌ Código de erro:', authError.status);
+      console.error('❌ Mensagem:', authError.message);
 
       // Tratamento específico de erros
       if (authError.message?.includes('Invalid login credentials') || authError.message?.includes('invalid_grant')) {
@@ -263,7 +267,15 @@ export async function fazerLogin(credenciais: CredenciaisLogin): Promise<{ suces
 
     if (usuarioError || !usuarioDB) {
       console.error('Erro ao buscar usuário:', usuarioError);
-      return { sucesso: false, mensagem: 'Erro ao buscar dados do usuário' };
+      console.error('User ID:', authData.user.id);
+      console.error('Email confirmed:', authData.user.email_confirmed_at);
+
+      // Se o erro é que não encontrou o usuário
+      if (usuarioError?.code === 'PGRST116') {
+        return { sucesso: false, mensagem: 'Usuário não encontrado no sistema. Entre em contato com o suporte.' };
+      }
+
+      return { sucesso: false, mensagem: 'Erro ao buscar dados do usuário. Tente novamente.' };
     }
 
     // Se for vendedor, buscar o ID do vendedor

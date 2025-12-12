@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { capitalizeName } from '../../utils/formatters';
+import { PasswordInput } from '../ui/PasswordInput';
 
 interface AddSellerModalProps {
   isOpen: boolean;
@@ -120,20 +121,14 @@ export const AddSellerModal: React.FC<AddSellerModalProps> = ({ isOpen, onClose,
             </div>
 
             {/* Senha */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <Lock size={18} />
-              </div>
-              <input
-                type="password"
-                placeholder="Senha (mín. 6 caracteres)"
-                value={formData.senha}
-                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                disabled={loading}
-                minLength={6}
-                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all disabled:opacity-50"
-              />
-            </div>
+            <PasswordInput
+              placeholder="Senha (mín. 6 caracteres)"
+              value={formData.senha}
+              onChange={(value) => setFormData({ ...formData, senha: value })}
+              minLength={6}
+              autoComplete="new-password"
+              className="emerald"
+            />
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">

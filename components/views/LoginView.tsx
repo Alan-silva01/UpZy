@@ -3,6 +3,7 @@ import { User } from '../../types';
 import { Fingerprint, Lock, ArrowRight, Store, Mail, Loader2, AlertCircle } from 'lucide-react';
 import { fazerLogin, registrarAdmin } from '../../services/auth';
 import { EmailConfirmationModal } from '../modals/EmailConfirmationModal';
+import { PasswordInput } from '../ui/PasswordInput';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -229,43 +230,26 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             </div>
 
             {!showForgotPassword && !isRegistering && (
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
-                  <Lock size={20} />
-                </div>
-                <input
-                  type="password"
-                  placeholder="Senha"
-                  value={formData.senha}
-                  onChange={(e) => setFormData({...formData, senha: e.target.value})}
-                  required
-                  minLength={6}
-                  autoComplete="current-password"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-white/20 focus:bg-zinc-900/80 transition-all"
-                />
-              </div>
+              <PasswordInput
+                placeholder="Senha"
+                value={formData.senha}
+                onChange={(value) => setFormData({...formData, senha: value})}
+                required
+                minLength={6}
+                autoComplete="current-password"
+              />
             )}
 
             {isRegistering && !showForgotPassword && (
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors">
-                  <Lock size={20} />
-                </div>
-                <input
-                  type="password"
-                  placeholder="Senha"
-                  value={formData.senha}
-                  onChange={(e) => setFormData({...formData, senha: e.target.value})}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:bg-zinc-900/80 transition-all"
-                />
-              </div>
+              <PasswordInput
+                placeholder="Senha"
+                value={formData.senha}
+                onChange={(value) => setFormData({...formData, senha: value})}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="focus-within:border-emerald-500/50"
+              />
             )}
 
             {!isRegistering && !showForgotPassword && (
