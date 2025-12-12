@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Mail, X, ArrowRight } from 'lucide-react';
+import { Mail, X, ArrowRight, AlertTriangle, Inbox } from 'lucide-react';
 
 interface EmailConfirmationModalProps {
   isOpen: boolean;
@@ -76,8 +76,11 @@ export const EmailConfirmationModal: React.FC<EmailConfirmationModalProps> = ({
           </div>
 
           {/* Instructions */}
-          <div className="bg-zinc-900/30 border border-white/5 rounded-xl p-4 mb-6 text-left">
-            <p className="text-xs text-zinc-400 mb-3 font-semibold">Próximos passos:</p>
+          <div className="bg-zinc-900/30 border border-white/5 rounded-xl p-4 mb-4 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <Inbox size={16} className="text-emerald-400" />
+              <p className="text-xs text-zinc-400 font-semibold">Próximos passos:</p>
+            </div>
             <ol className="space-y-2 text-xs text-zinc-500">
               <li className="flex items-start gap-2">
                 <span className="text-emerald-400 font-bold mt-0.5">1.</span>
@@ -94,16 +97,28 @@ export const EmailConfirmationModal: React.FC<EmailConfirmationModalProps> = ({
               {type === 'signup' && (
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 font-bold mt-0.5">4.</span>
-                  <span>Faça login para começar a usar sua loja</span>
+                  <span>Você será redirecionado automaticamente e já estará logado</span>
                 </li>
               )}
             </ol>
           </div>
 
-          {/* Warning */}
-          <p className="text-xs text-zinc-600 mb-6">
-            Não recebeu o email? Verifique sua pasta de spam ou lixo eletrônico.
-          </p>
+          {/* Spam Warning - DESTAQUE */}
+          <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="text-amber-200 font-bold text-sm mb-1">
+                  ⚠️ Não recebeu o email?
+                </p>
+                <p className="text-amber-200/80 text-xs leading-relaxed">
+                  <strong className="text-amber-100">Verifique sua caixa de SPAM ou Lixo Eletrônico!</strong>
+                  <br />
+                  Às vezes nossos emails podem cair nessas pastas. Marque o email como "Não é spam" para receber futuros emails na caixa de entrada.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Action Button */}
           <button
