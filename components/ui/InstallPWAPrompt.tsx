@@ -8,7 +8,6 @@ interface InstallPWAPromptProps {
 export const InstallPWAPrompt: React.FC<InstallPWAPromptProps> = ({ onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [step, setStep] = useState(1);
 
   useEffect(() => {
     // Check if app is already installed (running as PWA)
@@ -54,9 +53,6 @@ export const InstallPWAPrompt: React.FC<InstallPWAPromptProps> = ({ onClose }) =
       }
 
       setDeferredPrompt(null);
-    } else {
-      // Safari/iOS - show manual instructions
-      setStep(1);
     }
   };
 
@@ -135,14 +131,12 @@ export const InstallPWAPrompt: React.FC<InstallPWAPromptProps> = ({ onClose }) =
             </div>
 
             {/* Step 1 - Share button */}
-            <div className={`w-full bg-zinc-800/50 rounded-2xl p-4 border-2 transition-all duration-300 ${
-              step === 1 ? 'border-emerald-500 scale-105' : 'border-white/10'
-            }`}>
+            <div className="w-full bg-zinc-800/50 rounded-2xl p-4 border-2 border-white/10">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
                     <svg
-                      className="w-7 h-7 text-blue-400 animate-bounce"
+                      className="w-7 h-7 text-emerald-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -166,22 +160,19 @@ export const InstallPWAPrompt: React.FC<InstallPWAPromptProps> = ({ onClose }) =
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-white font-bold text-sm">Passo 1</p>
-                  <p className="text-zinc-400 text-xs">Toque no botão de compartilhar</p>
+                  <p className="text-white font-bold text-sm">1. Clique em Compartilhar</p>
+                  <p className="text-zinc-400 text-xs">Toque no botão de compartilhar do navegador</p>
                 </div>
-                <div className="text-emerald-400 font-bold">1</div>
               </div>
             </div>
 
             {/* Step 2 - Add to Home Screen */}
-            <div className={`w-full bg-zinc-800/50 rounded-2xl p-4 border-2 transition-all duration-300 ${
-              step === 2 ? 'border-emerald-500 scale-105' : 'border-white/10'
-            }`}>
+            <div className="w-full bg-zinc-800/50 rounded-2xl p-4 border-2 border-white/10">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
                     <svg
-                      className="w-6 h-6 text-emerald-400 animate-pulse"
+                      className="w-6 h-6 text-emerald-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -196,37 +187,10 @@ export const InstallPWAPrompt: React.FC<InstallPWAPromptProps> = ({ onClose }) =
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-white font-bold text-sm">Passo 2</p>
-                  <p className="text-zinc-400 text-xs">Toque em "Adicionar à Tela de Início"</p>
+                  <p className="text-white font-bold text-sm">2. Adicionar à Tela de Início</p>
+                  <p className="text-zinc-400 text-xs">Selecione a opção "Adicionar à Tela de Início"</p>
                 </div>
-                <div className="text-emerald-400 font-bold">2</div>
               </div>
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={() => setStep(1)}
-                disabled={step === 1}
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${
-                  step === 1
-                    ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Passo 1
-              </button>
-              <button
-                onClick={() => setStep(2)}
-                disabled={step === 2}
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${
-                  step === 2
-                    ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Passo 2
-              </button>
             </div>
 
             <button
