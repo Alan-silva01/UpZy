@@ -93,7 +93,7 @@ export interface DadosRegistro extends CredenciaisLogin {
   nomeLoja: string;
 }
 
-// Registrar novo admin (cria loja e usuário)
+// Registrar novo admin (cria loja e usuário automaticamente via trigger)
 export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: boolean; mensagem: string; user?: User }> {
   try {
     console.log('📝 Iniciando registro de admin:', { email: dados.email, nomeLoja: dados.nomeLoja });
@@ -103,13 +103,17 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
     const lojaFormatada = formatarNomeProprio(dados.nomeLoja);
     const emailNormalizado = normalizarEmail(dados.email);
 
-    // 1. Criar usuário na autenticação do Supabase
+    // Criar usuário na autenticação do Supabase
+    // O trigger handle_new_user() criará automaticamente:
+    // 1. A loja (lojas table) - usando o campo 'nomeLoja'
+    // 2. O registro de usuário (usuarios table) - usando o campo 'nome'
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: emailNormalizado,
       password: dados.senha,
       options: {
         data: {
           nome: nomeFormatado,
+          nomeLoja: lojaFormatada,
           papel: 'ADMIN'
         }
       }
@@ -117,6 +121,7 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
 
     if (authError) {
       console.error('❌ Erro ao criar usuário na auth:', authError);
+      console.error('❌ Status do erro:', authError.status);
 
       // Tratamento específico de erros
       if (authError.message?.includes('already registered') || authError.message?.includes('already exists') || authError.message?.includes('User already registered')) {
@@ -127,9 +132,11 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
         return { sucesso: false, mensagem: 'A senha deve ter no mínimo 6 caracteres.' };
       } else if (authError.message?.includes('rate_limit') || authError.message?.includes('Email rate limit exceeded')) {
         return { sucesso: false, mensagem: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' };
+      } else if (authError.message?.includes('unexpected_failure') || authError.status === 500) {
+        return { sucesso: false, mensagem: 'Erro ao enviar email de confirmação. Entre em contato com o suporte.' };
       }
 
-      return { sucesso: false, mensagem: authError.message };
+      return { sucesso: false, mensagem: authError.message || 'Erro ao criar conta. Tente novamente mais tarde.' };
     }
 
     if (!authData.user) {
@@ -138,69 +145,9 @@ export async function registrarAdmin(dados: DadosRegistro): Promise<{ sucesso: b
     }
 
     console.log('✅ Usuário criado na auth:', authData.user.id);
-
-    // 2. Criar loja
-    console.log('📦 Criando loja...');
-    // Gerar avatar com primeira letra do nome da loja (letra branca, fundo preto)
-    const primeiraLetra = lojaFormatada.charAt(0).toUpperCase();
-    const avatarLoja = `https://ui-avatars.com/api/?name=${encodeURIComponent(primeiraLetra)}&background=000000&color=ffffff&size=200&bold=true&format=svg`;
-
-    const { data: loja, error: lojaError } = await supabase
-      .from('lojas')
-      .insert({
-        nome: lojaFormatada,
-        avatar_url: avatarLoja,
-        plano: 'FREE',
-        status: 'INACTIVE', // Começa inativa até ativar a conta
-        data_renovacao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
-      })
-      .select()
-      .single();
-
-    if (lojaError || !loja) {
-      console.error('❌ Erro ao criar loja:', lojaError);
-
-      // Rollback: excluir usuário criado na auth se a loja falhar
-      try {
-        await supabase.auth.admin.deleteUser(authData.user.id);
-      } catch (deleteError) {
-        console.error('❌ Erro ao fazer rollback do usuário:', deleteError);
-      }
-
-      return { sucesso: false, mensagem: `Erro ao criar loja. Tente novamente.` };
-    }
-
-    console.log('✅ Loja criada:', loja.id);
-
-    // 3. Criar registro de usuário na tabela usuarios
-    console.log('👤 Criando registro de usuário...');
-    const { error: usuarioError } = await supabase
-      .from('usuarios')
-      .insert({
-        id: authData.user.id,
-        loja_id: loja.id,
-        email: emailNormalizado,
-        nome: nomeFormatado,
-        papel: 'ADMIN',
-        avatar: gerarAvatarUrl(nomeFormatado),
-        senha_hash: 'handled_by_supabase_auth'
-      });
-
-    if (usuarioError) {
-      console.error('❌ Erro ao criar registro de usuário:', usuarioError);
-
-      // Rollback: excluir loja criada
-      try {
-        await supabase.from('lojas').delete().eq('id', loja.id);
-        await supabase.auth.admin.deleteUser(authData.user.id);
-      } catch (deleteError) {
-        console.error('❌ Erro ao fazer rollback:', deleteError);
-      }
-
-      return { sucesso: false, mensagem: `Erro ao criar perfil. Tente novamente.` };
-    }
-
-    console.log('✅ Registro de usuário criado');
+    console.log('📧 Email confirmado?', authData.user.email_confirmed_at);
+    console.log('🔐 Sessão criada?', !!authData.session);
+    console.log('🤖 Loja e perfil de usuário foram criados automaticamente pelo trigger do banco de dados');
 
     const user: User = {
       id: authData.user.id,

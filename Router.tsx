@@ -9,6 +9,7 @@ const App = lazy(() => import('./App'));
 const LandingPage = lazy(() => import('./pages/vendas/LandingPage'));
 const ThankYouPage = lazy(() => import('./pages/vendas/ThankYouPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const ConfirmEmailPage = lazy(() => import('./pages/auth/ConfirmEmailPage'));
 
 // Loading component
 const LoadingScreen = () => (
@@ -29,8 +30,9 @@ const AppRouter: React.FC = () => {
           {/* Thank You Page - Redirects back to app after success */}
           <Route path="/obrigado" element={<ThankYouPage />} />
 
-          {/* Reset Password Page - Auth */}
+          {/* Auth Pages */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
 
           {/* Main App - Default Route */}
           <Route path="/*" element={<App />} />
