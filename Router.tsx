@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+// Import supabase para garantir que está inicializado
+import './lib/supabase';
 
 // Lazy load pages
 const App = lazy(() => import('./App'));

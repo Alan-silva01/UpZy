@@ -38,22 +38,38 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     }
 
     try {
-      const { error } = await import('../../lib/supabase').then(m => m.supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      }));
+      const { supabase } = await import('../../lib/supabase');
 
-      if (error) throw error;
+      // Verificar se supabase está disponível
+      if (!supabase || !supabase.auth) {
+        setErro('Erro de configuração. Por favor, tente novamente mais tarde.');
+        setIsLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        console.error('Erro ao enviar email de recuperação:', error);
+        throw error;
+      }
 
       // Mostrar modal de confirmação
       setEmailModalType('reset-password');
       setShowEmailModal(true);
       setShowForgotPassword(false);
     } catch (error: any) {
+      console.error('Erro completo:', error);
+
       // Tratamento específico de erros
       if (error.message?.includes('rate_limit') || error.message?.includes('Email rate limit exceeded')) {
         setErro('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
       } else if (error.message?.includes('invalid_email') || error.message?.includes('Invalid email')) {
         setErro('Email inválido. Verifique se digitou corretamente.');
+      } else if (error.message?.includes('unexpected_failure') || error.status === 500) {
+        setErro('Erro ao enviar email. Verifique se o email está correto e tente novamente.');
       } else {
         setErro(error.message || 'Erro ao enviar email de recuperação. Tente novamente mais tarde.');
       }

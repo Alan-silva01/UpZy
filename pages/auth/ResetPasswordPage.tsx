@@ -16,22 +16,33 @@ export const ResetPasswordPage: React.FC = () => {
   // Verificar se tem token de recuperação na URL
   useEffect(() => {
     const checkToken = async () => {
-      // Supabase processa automaticamente o hash da URL
-      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        // Verificar se supabase está disponível
+        if (!supabase || !supabase.auth) {
+          setErro('Erro de configuração. Por favor, tente novamente mais tarde.');
+          return;
+        }
 
-      if (session) {
-        setTemToken(true);
-      } else {
-        // Se não tem sessão, verificar se há hash de recovery na URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const type = hashParams.get('type');
+        // Supabase processa automaticamente o hash da URL
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (accessToken && type === 'recovery') {
+        if (session) {
           setTemToken(true);
         } else {
-          setErro('Link de recuperação inválido ou expirado. Solicite um novo link.');
+          // Se não tem sessão, verificar se há hash de recovery na URL
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const type = hashParams.get('type');
+
+          if (accessToken && type === 'recovery') {
+            setTemToken(true);
+          } else {
+            setErro('Link de recuperação inválido ou expirado. Solicite um novo link.');
+          }
         }
+      } catch (error) {
+        console.error('Erro ao verificar token:', error);
+        setErro('Erro ao verificar link de recuperação. Tente novamente.');
       }
     };
 
@@ -63,6 +74,13 @@ export const ResetPasswordPage: React.FC = () => {
     }
 
     try {
+      // Verificar se supabase está disponível
+      if (!supabase || !supabase.auth) {
+        setErro('Erro de configuração. Por favor, tente novamente mais tarde.');
+        setIsLoading(false);
+        return;
+      }
+
       // Atualizar senha usando a sessão de recovery
       const { error } = await supabase.auth.updateUser({
         password: novaSenha
