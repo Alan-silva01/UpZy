@@ -83,7 +83,7 @@ const LandingPage: React.FC = () => {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: 'instant' });
       setIsMenuOpen(false);
     }
   };
