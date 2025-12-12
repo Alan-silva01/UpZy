@@ -14,23 +14,19 @@ const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
 
   return (
-    <g style={{ outline: 'none' }}>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        className="outline-none transition-all duration-300 ease-out"
-        style={{
-          filter: `drop-shadow(0 0 12px ${fill}90)`,
-          outline: 'none',
-          cursor: 'pointer'
-        }}
-      />
-    </g>
+    <Sector
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius}
+      outerRadius={outerRadius + 4}
+      startAngle={startAngle}
+      endAngle={endAngle}
+      fill={fill}
+      style={{
+        outline: 'none',
+        cursor: 'pointer'
+      }}
+    />
   );
 };
 
@@ -51,6 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   const [variacaoMesAnterior, setVariacaoMesAnterior] = useState<number>(0);
   const [metaAtiva, setMetaAtiva] = useState<{ id: string; valor: number; dataInicio: string; dataFim: string } | null>(null);
   const [avatarLoja, setAvatarLoja] = useState<string>('');
+  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
 
   // Dados vêm do cache agora
   const stats = getStats();
@@ -59,6 +56,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
   useEffect(() => {
     if (lojaId && stats) {
       carregarDadosLoja();
+      setHasRenderedOnce(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId, stats]);
@@ -358,7 +356,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                 fill="url(#colorSales)"
                 isAnimationActive={true}
                 animationBegin={100}
-                animationDuration={1200}
+                animationDuration={800}
                 animationEasing="ease-in-out"
               />
             </AreaChart>
@@ -395,8 +393,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                         onMouseEnter={onPieEnter}
                         onClick={onPieEnter}
                         isAnimationActive={true}
-                        animationBegin={0}
-                        animationDuration={300}
+                        animationBegin={150}
+                        animationDuration={500}
+                        animationEasing="ease-out"
                         className="outline-none focus:outline-none cursor-pointer"
                      >
                         {sellerData.map((entry, index) => (
@@ -411,12 +410,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                   </PieChart>
                </ResponsiveContainer>
 
-               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-300">
+               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 font-medium">{activeItem.name}</span>
                   <span className="text-3xl font-black text-white leading-none tracking-tight">
                       {(activePercentage * 100).toFixed(0)}<span className="text-sm text-zinc-600 font-bold align-top ml-0.5">%</span>
                   </span>
-                  <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm">
+                  <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5">
                      <span className="text-[10px] text-emerald-400 font-semibold tracking-wide">
                         {formatCurrency(activeItem.value, true)}
                      </span>
@@ -429,7 +428,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
                 {sellerData.map((entry, index) => (
                   <div
                      key={index}
-                     className={`flex items-center gap-2 transition-all duration-300 cursor-pointer p-1.5 rounded-lg ${index === activeIndex ? 'bg-white/5 opacity-100 scale-105' : 'opacity-60 hover:opacity-100'}`}
+                     className={`flex items-center gap-2 cursor-pointer p-1.5 rounded-lg ${index === activeIndex ? 'bg-white/5 opacity-100' : 'opacity-60 hover:opacity-100'}`}
                      onMouseEnter={() => setActiveIndex(index)}
                      onClick={() => setActiveIndex(index)}
                   >

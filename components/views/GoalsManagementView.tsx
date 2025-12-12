@@ -39,7 +39,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const { loading: cacheLoading, getVendedores, getVendas, refreshData } = useDataCache();
 
   const [metas, setMetas] = useState<MetaComDados[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [metaExpandida, setMetaExpandida] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -76,6 +76,10 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
   const carregarMetas = async (silencioso = false) => {
     try {
+      if (!silencioso) {
+        setLoading(true);
+      }
+
       // Buscar metas
       const { data: metasData, error: metasError } = await supabase
         .from('metas')
@@ -525,7 +529,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       )}
 
       {/* Lista de Metas */}
-      {loading ? (
+      {loading && metas.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         </div>

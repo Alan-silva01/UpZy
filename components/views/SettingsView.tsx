@@ -29,7 +29,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
   const [storeName, setStoreName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [storeData, setStoreData] = useState<StoreData | null>(null);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [storeAvatar, setStoreAvatar] = useState<string>('');
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -319,7 +319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onLogout, onStoreNam
     }
   };
 
-  if (loadingData) {
+  if (loadingData && !storeData) {
     return (
       <div className="pt-header pb-28 space-y-6 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
