@@ -2,15 +2,15 @@
 -- MIGRATION COMPLETA - EXECUTAR ESTE ARQUIVO NO SUPABASE SQL EDITOR
 -- ============================================================================
 -- Este arquivo configura triggers automáticos para:
--- 1. Criar automaticamente loja e usuário quando um auth user é criado
+-- 1. Criar automaticamente loja e usuário quando um ADMIN é criado
 -- 2. Deletar automaticamente loja e usuário quando um auth user é deletado
 -- ============================================================================
 
 -- ============================================================================
--- PARTE 1: Auto-criar loja e usuário quando auth user é criado
+-- PARTE 1: Auto-criar loja e usuário quando auth user ADMIN é criado
 -- ============================================================================
 
--- Função que cria automaticamente loja e usuário
+-- Função que cria automaticamente loja e usuário (APENAS PARA ADMINS)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -26,7 +26,17 @@ DECLARE
   v_avatar_url_usuario text;
   v_primeira_letra_loja text;
   v_primeira_letra_usuario text;
+  v_papel text;
 BEGIN
+  -- Verificar o papel do usuário no metadata
+  v_papel := NEW.raw_user_meta_data->>'papel';
+
+  -- IMPORTANTE: Só criar loja e usuario automaticamente se for ADMIN
+  -- Vendedores (SELLER) são criados manualmente pelo app via api.ts
+  IF v_papel IS NULL OR v_papel != 'ADMIN' THEN
+    RETURN NEW;
+  END IF;
+
   -- Extrair dados do usuário do metadata do auth
   v_nome_usuario := COALESCE(NEW.raw_user_meta_data->>'nome', split_part(NEW.email, '@', 1));
   v_nome_loja := COALESCE(NEW.raw_user_meta_data->>'nomeLoja', v_nome_usuario);
@@ -91,7 +101,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
-COMMENT ON FUNCTION public.handle_new_user() IS 'Cria automaticamente loja e registro de usuário quando um novo auth user é criado';
+COMMENT ON FUNCTION public.handle_new_user() IS 'Cria automaticamente loja e registro de usuário quando um novo ADMIN é criado (não para SELLERS)';
 
 -- ============================================================================
 -- PARTE 2: Auto-deletar loja e usuário quando auth user é deletado
@@ -178,12 +188,14 @@ DO $$
 BEGIN
   RAISE NOTICE '✅ Migration aplicada com sucesso!';
   RAISE NOTICE '🤖 Triggers configurados:';
-  RAISE NOTICE '   - on_auth_user_created: Cria loja e usuário automaticamente';
+  RAISE NOTICE '   - on_auth_user_created: Cria loja e usuário automaticamente (APENAS ADMINS)';
   RAISE NOTICE '   - on_auth_user_deleted: Deleta loja e usuário automaticamente';
   RAISE NOTICE '';
   RAISE NOTICE '📝 Próximos passos:';
-  RAISE NOTICE '   1. Teste criando uma nova conta';
+  RAISE NOTICE '   1. Teste criando uma nova conta ADMIN';
   RAISE NOTICE '   2. Verifique se a loja e o usuário foram criados automaticamente';
-  RAISE NOTICE '   3. Teste deletando o usuário do Authentication';
-  RAISE NOTICE '   4. Verifique se a loja e dados foram deletados automaticamente';
+  RAISE NOTICE '   3. Teste criando um SELLER pelo app';
+  RAISE NOTICE '   4. Verifique que o SELLER foi criado apenas em usuarios/vendedores (NÃO em lojas)';
+  RAISE NOTICE '   5. Teste deletando o usuário do Authentication';
+  RAISE NOTICE '   6. Verifique se a loja e dados foram deletados automaticamente';
 END $$;
