@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Loader2, ChevronDown, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, ChevronDown, Target, Clock } from 'lucide-react';
 import { Sale, Seller } from '../../types';
-import { buscarLojaIdUsuario, verificarSessao } from '../../services/auth';
-import { buscarTodasVendas } from '../../services/api';
-import { supabase } from '../../lib/supabase';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { formatarTempoRelativo } from '../../utils/formatters';
 
@@ -16,66 +13,24 @@ interface Meta {
 }
 
 export const SalesFeed: React.FC = () => {
-  // Usar cache global apenas para vendedores
-  const { getVendedores } = useDataCache();
+  // Usar cache global - tudo vem pré-carregado
+  const { loading: cacheLoading, getVendedores, getTodasVendas, getMetas } = useDataCache();
 
-  const [lojaId, setLojaId] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState(20);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [metas, setMetas] = useState<Meta[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Vendedores vêm do cache
+  // Tudo vem do cache - carrega instantaneamente
   const sellers = getVendedores() || [];
+  const sales = getTodasVendas() || [];
+  const cachedMetas = getMetas() || [];
 
-  useEffect(() => {
-    carregarDadosIniciais();
-  }, []);
-
-  useEffect(() => {
-    if (lojaId) {
-      carregarTodasVendas();
-      carregarMetas();
-    }
-  }, [lojaId]);
-
-  const carregarDadosIniciais = async () => {
-    const user = await verificarSessao();
-    if (user) {
-      const loja = await buscarLojaIdUsuario(user.id);
-      if (loja) {
-        setLojaId(loja);
-      }
-    }
-  };
-
-  const carregarTodasVendas = async () => {
-    setLoading(true);
-    try {
-      const todasVendas = await buscarTodasVendas(lojaId, 500);
-      setSales(todasVendas);
-    } catch (error) {
-      console.error('Erro ao carregar vendas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const carregarMetas = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('metas')
-        .select('id, nome, data_inicio, data_fim, status')
-        .eq('loja_id', lojaId)
-        .order('data_inicio', { ascending: false });
-
-      if (!error && data) {
-        setMetas(data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar metas:', error);
-    }
-  };
+  // Converter metas do cache para formato local
+  const metas: Meta[] = cachedMetas.map(m => ({
+    id: m.id,
+    nome: (m as any).nome,
+    data_inicio: m.data_inicio,
+    data_fim: m.data_fim,
+    status: m.status
+  }));
 
   const getSellerAvatar = (id: string) => {
     return sellers.find(s => s.id === id)?.avatar || '';
@@ -119,7 +74,7 @@ export const SalesFeed: React.FC = () => {
     return null;
   };
 
-  if (loading && sales.length === 0) {
+  if (cacheLoading && sales.length === 0) {
     return (
       <div className="pt-header pb-28 space-y-4 flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />

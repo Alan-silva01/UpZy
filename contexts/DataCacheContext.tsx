@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Seller, Sale, StoreStats, ClienteRanking } from '../types';
-import { buscarVendedores, buscarVendas, calcularEstatisticasLoja, buscarRankingClientes } from '../services/api';
+import { Seller, Sale, StoreStats } from '../types';
+import { buscarVendedores, buscarVendas, buscarTodasVendas, calcularEstatisticasLoja, buscarRankingClientes } from '../services/api';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { supabase } from '../lib/supabase';
 
@@ -29,8 +29,9 @@ interface Meta {
 interface DataCache {
   vendedores: Seller[] | null;
   vendas: Sale[] | null;
+  todasVendas: Sale[] | null;  // Todas as vendas sem filtro de meta
   stats: StoreStats | null;
-  clientes: ClienteRanking[] | null;
+  clientes: any[] | null;
   storeData: StoreData | null;
   metas: Meta[] | null;
   lastUpdate: number;
@@ -42,8 +43,9 @@ interface DataCacheContextType {
   refreshData: (silent?: boolean) => Promise<void>;
   getVendedores: () => Seller[] | null;
   getVendas: () => Sale[] | null;
+  getTodasVendas: () => Sale[] | null;
   getStats: () => StoreStats | null;
-  getClientes: () => ClienteRanking[] | null;
+  getClientes: () => any[] | null;
   getStoreData: () => StoreData | null;
   getMetas: () => Meta[] | null;
 }
@@ -59,6 +61,7 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
   const [cache, setCache] = useState<DataCache>({
     vendedores: null,
     vendas: null,
+    todasVendas: null,
     stats: null,
     clientes: null,
     storeData: null,
@@ -79,9 +82,10 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
     try {
       console.log('🔄 [Cache] Carregando dados...', { silent, hasLoadedOnce });
 
-      const [vendedores, vendas, stats, clientes, storeDataResult, metasResult] = await Promise.all([
+      const [vendedores, vendas, todasVendas, stats, clientes, storeDataResult, metasResult] = await Promise.all([
         buscarVendedores(lojaId),
         buscarVendas(lojaId),
+        buscarTodasVendas(lojaId, 500),
         calcularEstatisticasLoja(lojaId),
         buscarRankingClientes(lojaId, 10),
         supabase.from('lojas').select('*').eq('id', lojaId).single(),
@@ -91,6 +95,7 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
       setCache({
         vendedores,
         vendas,
+        todasVendas,
         stats,
         clientes,
         storeData: storeDataResult.data || null,
@@ -194,6 +199,7 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
   // Getters para acessar dados do cache
   const getVendedores = useCallback(() => cache.vendedores, [cache.vendedores]);
   const getVendas = useCallback(() => cache.vendas, [cache.vendas]);
+  const getTodasVendas = useCallback(() => cache.todasVendas, [cache.todasVendas]);
   const getStats = useCallback(() => cache.stats, [cache.stats]);
   const getClientes = useCallback(() => cache.clientes, [cache.clientes]);
   const getStoreData = useCallback(() => cache.storeData, [cache.storeData]);
@@ -207,6 +213,7 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
         refreshData,
         getVendedores,
         getVendas,
+        getTodasVendas,
         getStats,
         getClientes,
         getStoreData,
