@@ -234,6 +234,43 @@ export async function buscarVendas(lojaId: string, limite: number = 50): Promise
   }));
 }
 
+/**
+ * Busca TODAS as vendas da loja SEM filtrar por meta
+ * Para uso no timeline de vendas recentes
+ */
+export async function buscarTodasVendas(lojaId: string, limite: number = 100): Promise<Sale[]> {
+  console.log('📋 Buscando TODAS as vendas para loja:', lojaId);
+
+  const { data, error } = await supabase
+    .from('vendas')
+    .select('*')
+    .eq('loja_id', lojaId)
+    .order('data_venda', { ascending: false })
+    .limit(limite);
+
+  if (error) {
+    console.error('Erro ao buscar todas as vendas:', error);
+    return [];
+  }
+
+  if (!data) return [];
+
+  console.log(`✅ ${data.length} vendas encontradas (sem filtro de meta)`);
+
+  return data.map((venda: VendaDB) => ({
+    id: venda.id,
+    amount: venda.valor,
+    itemsCount: 1,
+    timestamp: venda.data_venda,
+    sellerId: venda.vendedor_id,
+    customerName: venda.nome_cliente || 'Cliente não informado',
+    orderId: venda.numero_pedido,
+    paymentMethod: venda.metodo_pagamento,
+    paymentType: venda.tipo_pagamento,
+    installments: venda.parcelas
+  }));
+}
+
 export async function criarVenda(venda: {
   lojaId: string;
   vendedorId: string;

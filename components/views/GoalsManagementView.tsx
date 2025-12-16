@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Calendar, DollarSign, TrendingUp, Users, Edit2, Trash2, Check, X, Plus, Loader2, Trophy, ArrowLeft } from 'lucide-react';
+import { Target, Calendar, DollarSign, TrendingUp, Users, Edit2, Trash2, Check, X, Plus, Loader2, Trophy, ArrowLeft, Tag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -7,6 +7,7 @@ import { formatCurrencyInput, parseCurrencyInput } from '../../utils/formatters'
 
 interface Meta {
   id: string;
+  nome?: string;
   valor_total: number;
   data_inicio: string;
   data_fim: string;
@@ -50,6 +51,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
   const [metaSelecionada, setMetaSelecionada] = useState<MetaComDados | null>(null);
 
   // Form state
+  const [nomeMeta, setNomeMeta] = useState('');
   const [valorTotal, setValorTotal] = useState('');
   const [displayValor, setDisplayValor] = useState('R$ 0,00');
   const [dataInicio, setDataInicio] = useState('');
@@ -157,6 +159,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
         const { error } = await supabase
           .from('metas')
           .update({
+            nome: nomeMeta || null,
             valor_total: valor,
             data_inicio: inicio.toISOString(),
             data_fim: fim.toISOString()
@@ -175,6 +178,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
           .from('metas')
           .insert({
             loja_id: lojaId,
+            nome: nomeMeta || null,
             valor_total: valor,
             data_inicio: inicio.toISOString(),
             data_fim: fim.toISOString(),
@@ -189,6 +193,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
       }
 
       // Limpar formulário
+      setNomeMeta('');
       setValorTotal('');
       setDisplayValor('R$ 0,00');
       setDataInicio('');
@@ -342,8 +347,15 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
     }
 
     setEditandoMeta(meta.id);
+    setNomeMeta(meta.nome || '');
     setValorTotal(meta.valor_total.toString());
-    setDisplayValor(formatCurrencyInput(meta.valor_total.toString()));
+    // Usar formatCurrency para display, não formatCurrencyInput (que espera centavos)
+    setDisplayValor(new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(meta.valor_total));
     setDataInicio(meta.data_inicio.split('T')[0]);
     setDataFim(meta.data_fim.split('T')[0]);
     setShowForm(true);
@@ -351,6 +363,7 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
   const cancelarEdicao = () => {
     setEditandoMeta(null);
+    setNomeMeta('');
     setValorTotal('');
     setDisplayValor('R$ 0,00');
     setDataInicio('');
@@ -425,6 +438,23 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
           </h3>
 
           <div className="space-y-3">
+            {/* Nome da Meta */}
+            <div>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider font-bold mb-2 block">
+                Nome da Meta (opcional)
+              </label>
+              <div className="relative">
+                <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  value={nomeMeta}
+                  onChange={(e) => setNomeMeta(e.target.value)}
+                  placeholder="Ex: Meta de Natal, Black Friday..."
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 transition-colors text-sm"
+                />
+              </div>
+            </div>
+
             {/* Valor Total */}
             <div>
               <label className="text-xs text-zinc-500 uppercase tracking-wider font-bold mb-2 block">
@@ -519,11 +549,10 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
             return (
               <div
                 key={meta.id}
-                className={`glass-card rounded-2xl overflow-hidden transition-all ${
-                  isAtiva
-                    ? 'border-2 border-indigo-500/50 bg-indigo-500/5'
-                    : 'border border-zinc-800'
-                }`}
+                className={`glass-card rounded-2xl overflow-hidden transition-all ${isAtiva
+                  ? 'border-2 border-indigo-500/50 bg-indigo-500/5'
+                  : 'border border-zinc-800'
+                  }`}
               >
                 {/* Header da Meta */}
                 <div className="p-5 space-y-4">
@@ -540,6 +569,12 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
                           </span>
                         )}
                       </div>
+                      {meta.nome && (
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Tag size={12} className="text-zinc-500" />
+                          <span className="text-sm text-zinc-400 font-medium">{meta.nome}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 text-xs text-zinc-500 mb-3">
                         <Calendar size={12} />
                         <span>{formatarData(meta.data_inicio)} - {formatarData(meta.data_fim)}</span>
@@ -571,25 +606,23 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
                       <div className="space-y-1">
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-zinc-500">Progresso</span>
-                          <span className={`text-xs font-bold ${
-                            meta.percentual_atingido >= 100
-                              ? 'text-emerald-400'
-                              : meta.percentual_atingido >= 50
-                                ? 'text-yellow-400'
-                                : 'text-zinc-400'
-                          }`}>
+                          <span className={`text-xs font-bold ${meta.percentual_atingido >= 100
+                            ? 'text-emerald-400'
+                            : meta.percentual_atingido >= 50
+                              ? 'text-yellow-400'
+                              : 'text-zinc-400'
+                            }`}>
                             {meta.percentual_atingido.toFixed(1)}%
                           </span>
                         </div>
                         <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                           <div
-                            className={`h-full transition-all duration-500 ${
-                              meta.percentual_atingido >= 100
-                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                                : meta.percentual_atingido >= 50
-                                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
-                                  : 'bg-gradient-to-r from-indigo-400 to-indigo-500'
-                            }`}
+                            className={`h-full transition-all duration-500 ${meta.percentual_atingido >= 100
+                              ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                              : meta.percentual_atingido >= 50
+                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+                                : 'bg-gradient-to-r from-indigo-400 to-indigo-500'
+                              }`}
                             style={{ width: `${Math.min(meta.percentual_atingido, 100)}%` }}
                           />
                         </div>
@@ -657,12 +690,11 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
                             className="flex items-center gap-3 p-3 bg-zinc-900/50 rounded-xl border border-zinc-800"
                           >
                             {/* Posição */}
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                              index === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
                               index === 1 ? 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30' :
-                              index === 2 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                              'bg-zinc-800 text-zinc-500'
-                            }`}>
+                                index === 2 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                                  'bg-zinc-800 text-zinc-500'
+                              }`}>
                               {index + 1}º
                             </div>
 
@@ -681,20 +713,18 @@ export const GoalsManagementView: React.FC<GoalsManagementViewProps> = ({ lojaId
 
                             {/* Percentual */}
                             <div className="text-right">
-                              <span className={`text-sm font-bold ${
-                                vendedor.percentual >= 100 ? 'text-emerald-400' :
+                              <span className={`text-sm font-bold ${vendedor.percentual >= 100 ? 'text-emerald-400' :
                                 vendedor.percentual >= 50 ? 'text-yellow-400' :
-                                'text-zinc-400'
-                              }`}>
+                                  'text-zinc-400'
+                                }`}>
                                 {vendedor.percentual.toFixed(1)}%
                               </span>
                               <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
                                 <div
-                                  className={`h-full ${
-                                    vendedor.percentual >= 100 ? 'bg-emerald-400' :
+                                  className={`h-full ${vendedor.percentual >= 100 ? 'bg-emerald-400' :
                                     vendedor.percentual >= 50 ? 'bg-yellow-400' :
-                                    'bg-indigo-400'
-                                  }`}
+                                      'bg-indigo-400'
+                                    }`}
                                   style={{ width: `${Math.min(vendedor.percentual, 100)}%` }}
                                 />
                               </div>
