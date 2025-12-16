@@ -386,6 +386,9 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
         ccv: formData.cardCVV
       } : undefined;
 
+      const finalPrice = couponApplied && discountedPrice !== null ? discountedPrice : selectedPlan.totalValue;
+      const discountAmount = couponApplied && discountedPrice !== null ? selectedPlan.totalValue - discountedPrice : 0;
+
       const requestBody = {
         planType: selectedPlan.planType,
         paymentMethod: paymentMethod,
@@ -403,7 +406,10 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
           estado: formData.estado,
           cupom: couponApplied ? couponCode.trim() : null
         },
-        cardData
+        cardData,
+        amount: finalPrice,
+        discountAmount: discountAmount,
+        originalAmount: selectedPlan.totalValue
       };
 
       console.log('📤 Enviando dados:', JSON.stringify(requestBody, null, 2));
@@ -544,11 +550,10 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('CREDIT_CARD')}
-                  className={`p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${
-                    paymentMethod === 'CREDIT_CARD'
+                  className={`p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${paymentMethod === 'CREDIT_CARD'
                       ? 'border-brand-primary bg-brand-primary/10 scale-105'
                       : 'border-white/10 hover:border-white/20'
-                  }`}
+                    }`}
                 >
                   <CreditCard size={32} />
                   <span className="font-semibold text-lg">Cartão de Crédito</span>
@@ -558,11 +563,10 @@ const Checkout: React.FC<CheckoutProps> = ({ selectedPlan, onBack, userEmail }) 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('BOLETO')}
-                  className={`p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${
-                    paymentMethod === 'BOLETO'
+                  className={`p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-3 ${paymentMethod === 'BOLETO'
                       ? 'border-brand-primary bg-brand-primary/10 scale-105'
                       : 'border-white/10 hover:border-white/20'
-                  }`}
+                    }`}
                 >
                   <FileText size={32} />
                   <span className="font-semibold text-lg">Boleto</span>

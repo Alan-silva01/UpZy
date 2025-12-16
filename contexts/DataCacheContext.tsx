@@ -116,6 +116,20 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children, 
     }
   }, [lojaId, hasLoadedOnce, refreshData]);
 
+  // Escutar evento de atualização forçada (ex: após nova venda)
+  useEffect(() => {
+    const handleForceRefresh = () => {
+      console.log('🔄 [Cache] Evento forceRefreshDashboard detectado! Atualizando dados...');
+      refreshData(true);
+    };
+
+    window.addEventListener('forceRefreshDashboard', handleForceRefresh);
+
+    return () => {
+      window.removeEventListener('forceRefreshDashboard', handleForceRefresh);
+    };
+  }, [refreshData]);
+
   // Real-time subscriptions para atualizar cache automaticamente
   useRealtimeSubscription({
     table: 'vendas',
