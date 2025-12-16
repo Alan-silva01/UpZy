@@ -1,0 +1,65 @@
+/* Loading Screen Container */
+.loading-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Logo Container */
+.loading-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* SVG Animado - tamanho maior */
+.loading-animated-logo {
+  width: 120px;
+  height: 120px;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.15));
+}
+
+/* Caminho do SVG com animação de desenho suave */
+.loading-logo-path {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5000;
+  stroke-dashoffset: 5000;
+  animation: drawLogoLoading 2.5s ease-in-out forwards;
+}
+
+/* Animação de desenho suave e fluida */
+@keyframes drawLogoLoading {
+  0% {
+    stroke-dashoffset: 5000;
+    opacity: 0.6;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 480px) {
+  .loading-animated-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .loading-logo-path {
+    stroke-width: 3;
+  }
+}

@@ -1,6 +1,5 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 // Import supabase para garantir que está inicializado
 import './lib/supabase';
 
@@ -11,17 +10,13 @@ const ThankYouPage = lazy(() => import('./pages/vendas/ThankYouPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const ConfirmEmailPage = lazy(() => import('./pages/auth/ConfirmEmailPage'));
 
-// Loading component
-const LoadingScreen = () => (
-  <div className="min-h-screen bg-black flex items-center justify-center">
-    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-  </div>
-);
+// Fallback simples (tela preta) para não duplicar animação com App.tsx
+const SimpleFallback = () => <div className="min-h-screen bg-black" />;
 
 const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingScreen />}>
+      <Suspense fallback={<SimpleFallback />}>
         <Routes>
           {/* Landing Page - Sales Pages */}
           <Route path="/vendas" element={<LandingPage />} />

@@ -5,7 +5,7 @@ import { Tab, User } from './types';
 import { verificarSessao, fazerLogout, buscarLojaIdUsuario, buscarNomeLoja } from './services/auth';
 import { useStoreStatus } from './hooks/useStoreStatus';
 import { DataCacheProvider } from './contexts/DataCacheContext';
-import { Loader2 } from 'lucide-react';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 // Lazy loading de componentes com preloading
 const DashboardView = lazy(() => import('./components/views/DashboardView').then(m => ({ default: m.DashboardView })));
@@ -406,11 +406,7 @@ const App: React.FC = () => {
 
   // Loading da sessão
   if (loadingSessao) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
@@ -425,11 +421,11 @@ const App: React.FC = () => {
     <DataCacheProvider lojaId={lojaId}>
       <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30 flex justify-center">
         <main role="main" className="w-full max-w-md min-h-screen relative bg-zinc-950 shadow-2xl">
-           {/* Premium Ambient Background */}
-           <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-              <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
-              <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
-           </div>
+          {/* Premium Ambient Background */}
+          <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+            <div className="absolute top-[-10%] left-[20%] w-[80%] h-[40%] bg-indigo-900/10 rounded-full blur-[100px] animate-pulse"></div>
+            <div className="absolute bottom-[0%] right-[-10%] w-[60%] h-[50%] bg-emerald-900/10 rounded-full blur-[120px]"></div>
+          </div>
 
           {/* Header Global */}
           <Header
@@ -450,73 +446,73 @@ const App: React.FC = () => {
             </div>
           </div>
 
-        <BottomNav
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          userRole={user.role}
-          lojaId={lojaId}
-          onNewSale={() => {
-            // Verificar se a conta está bloqueada antes de abrir modal
-            if (checkBlocked('registrar uma venda')) {
-              return;
-            }
-            setIsSaleModalOpen(true);
-          }}
-        />
-
-        <Suspense fallback={null}>
-          <NewSaleModal
-            isOpen={isSaleModalOpen}
-            onClose={() => setIsSaleModalOpen(false)}
-            onSubmit={handleNewSale}
+          <BottomNav
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            userRole={user.role}
+            lojaId={lojaId}
+            onNewSale={() => {
+              // Verificar se a conta está bloqueada antes de abrir modal
+              if (checkBlocked('registrar uma venda')) {
+                return;
+              }
+              setIsSaleModalOpen(true);
+            }}
           />
 
-          {lastSaleData && (
-            <SaleSuccessModal
-              isOpen={isSaleSuccessModalOpen}
-              onClose={() => {
-                setIsSaleSuccessModalOpen(false);
-                setLastSaleData(null);
-              }}
-              onContinue={handleContinuarVendendo}
-              saleData={lastSaleData}
+          <Suspense fallback={null}>
+            <NewSaleModal
+              isOpen={isSaleModalOpen}
+              onClose={() => setIsSaleModalOpen(false)}
+              onSubmit={handleNewSale}
             />
-          )}
 
-          {/* Modal de Configurações do Vendedor */}
-          {user && user.role === 'SELLER' && (
-            <SellerSettingsModal
-              isOpen={isSettingsModalOpen}
-              onClose={() => setIsSettingsModalOpen(false)}
-              userId={user.id}
-              currentName={user.name}
-              onNameUpdate={(newName: string) => {
-                setUser({ ...user, name: newName });
-              }}
+            {lastSaleData && (
+              <SaleSuccessModal
+                isOpen={isSaleSuccessModalOpen}
+                onClose={() => {
+                  setIsSaleSuccessModalOpen(false);
+                  setLastSaleData(null);
+                }}
+                onContinue={handleContinuarVendendo}
+                saleData={lastSaleData}
+              />
+            )}
+
+            {/* Modal de Configurações do Vendedor */}
+            {user && user.role === 'SELLER' && (
+              <SellerSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
+                userId={user.id}
+                currentName={user.name}
+                onNameUpdate={(newName: string) => {
+                  setUser({ ...user, name: newName });
+                }}
+              />
+            )}
+
+            {/* Toast de Conta Inativa (aparece e desaparece automaticamente) */}
+            {showInactiveToast && user && (
+              <InactiveAccountToast
+                isAdmin={user.role === 'ADMIN'}
+                onClose={() => setShowInactiveToast(false)}
+                userEmail={user.email}
+              />
+            )}
+
+            {/* Modal de Conta Inativa (quando tenta fazer ação bloqueada) */}
+            <InactiveAccountModal
+              isOpen={inactiveModalOpen}
+              onClose={() => setInactiveModalOpen(false)}
+              actionAttempted={blockedAction}
+              userEmail={user?.email}
+              isAdmin={user?.role === 'ADMIN'}
             />
-          )}
 
-          {/* Toast de Conta Inativa (aparece e desaparece automaticamente) */}
-          {showInactiveToast && user && (
-            <InactiveAccountToast
-              isAdmin={user.role === 'ADMIN'}
-              onClose={() => setShowInactiveToast(false)}
-              userEmail={user.email}
-            />
-          )}
-
-          {/* Modal de Conta Inativa (quando tenta fazer ação bloqueada) */}
-          <InactiveAccountModal
-            isOpen={inactiveModalOpen}
-            onClose={() => setInactiveModalOpen(false)}
-            actionAttempted={blockedAction}
-            userEmail={user?.email}
-            isAdmin={user?.role === 'ADMIN'}
-          />
-
-          {/* Prompt para instalar PWA (apenas no navegador) */}
-          <InstallPWAPrompt />
-        </Suspense>
+            {/* Prompt para instalar PWA (apenas no navegador) */}
+            <InstallPWAPrompt />
+          </Suspense>
         </main>
       </div>
     </DataCacheProvider>

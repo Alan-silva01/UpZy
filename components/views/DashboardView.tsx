@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../ui/ProgressBar';
-import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon, Loader2 } from 'lucide-react';
+import { TrendingUp, DollarSign, Target, ArrowUpRight, PieChart as PieChartIcon } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Sector } from 'recharts';
+import LoadingScreen from '../ui/LoadingScreen';
 import { buscarDadosPerformance } from '../../services/api';
 import { Seller, StoreStats } from '../../types';
 import { supabase } from '../../lib/supabase';
@@ -148,11 +149,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ lojaId, userId, on
 
   // Mostrar loader apenas na primeira vez
   if (cacheLoading && !stats) {
-    return (
-      <div className="pb-28 space-y-4 animate-slide-up flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Se não tem stats, não renderizar nada

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Loader2, ChevronDown, Target, Clock } from 'lucide-react';
+import { ChevronDown, Target, Clock } from 'lucide-react';
 import { Sale, Seller } from '../../types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { formatarTempoRelativo } from '../../utils/formatters';
+import LoadingScreen from '../ui/LoadingScreen';
 
 interface Meta {
   id: string;
@@ -75,11 +76,7 @@ export const SalesFeed: React.FC = () => {
   };
 
   if (cacheLoading && sales.length === 0) {
-    return (
-      <div className="pt-header pb-28 space-y-4 flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
