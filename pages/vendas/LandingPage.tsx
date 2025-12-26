@@ -43,11 +43,31 @@ const LandingPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
 
-  // Scroll to section on page load (from hash)
+  // Estado para controlar animação fade-in quando vem do app
+  const [fadeIn, setFadeIn] = useState(false);
+  const comingFromApp = window.location.hash === '#precos';
+
+  // Scroll instantâneo e fade-in quando vem do app
   useEffect(() => {
-    // Check if there's a hash in the URL (e.g., #precos)
+    if (comingFromApp) {
+      // Scroll instantâneo para preços ANTES de mostrar
+      const element = document.getElementById('precos');
+      if (element) {
+        window.scrollTo(0, element.offsetTop - 50);
+      }
+      // Ativar fade-in
+      requestAnimationFrame(() => {
+        setFadeIn(true);
+      });
+    } else {
+      setFadeIn(true);
+    }
+  }, []);
+
+  // Scroll to section on page load (from hash) - para outros hashes
+  useEffect(() => {
     const hash = window.location.hash;
-    if (hash) {
+    if (hash && hash !== '#precos') {
       const element = document.getElementById(hash.replace('#', ''));
       if (element) {
         element.scrollIntoView({ behavior: 'instant', block: 'start' });
@@ -101,7 +121,7 @@ const LandingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-darker text-slate-100 font-sans selection:bg-brand-primary selection:text-white overflow-x-hidden">
+    <div className={`min-h-screen bg-brand-darker text-slate-100 font-sans selection:bg-brand-primary selection:text-white overflow-x-hidden transition-opacity duration-300 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
 
       {/* 1. Urgency Bar */}
       <div className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs sm:text-sm py-2 px-4 text-center font-medium sticky top-0 z-50 shadow-lg shadow-purple-900/20">
@@ -440,8 +460,8 @@ const LandingPage: React.FC = () => {
                 <button
                   onClick={() => handleSelectPlan(plan)}
                   className={`w-full py-3.5 rounded-xl font-bold mb-8 transition-all duration-300 ${plan.recommended
-                      ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-500/40 hover:shadow-teal-500/60 hover:scale-105'
-                      : 'bg-gray-700 hover:bg-gray-600 text-white'
+                    ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-500/40 hover:shadow-teal-500/60 hover:scale-105'
+                    : 'bg-gray-700 hover:bg-gray-600 text-white'
                     }`}
                 >
                   {plan.ctaText}
