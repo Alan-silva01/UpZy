@@ -29,18 +29,17 @@ export const InactiveAccountToast: React.FC<InactiveAccountToastProps> = ({ isAd
   };
 
   const handlePaymentClick = () => {
-    if (userEmail) {
-      navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`);
-    }
     handleClose();
+    if (userEmail) {
+      window.location.href = `/vendas?email=${encodeURIComponent(userEmail)}#precos`;
+    }
   };
 
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 px-4 transition-all duration-300 ${
-      isVisible ? 'animate-slide-down opacity-100' : 'opacity-0 -translate-y-4'
-    }`}>
+    <div className={`fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 px-4 transition-all duration-300 ${isVisible ? 'animate-slide-down opacity-100' : 'opacity-0 -translate-y-4'
+      }`}>
       <div className="bg-gradient-to-br from-zinc-900/98 via-zinc-900/98 to-zinc-800/98 border border-red-500/30 rounded-2xl p-4 backdrop-blur-xl shadow-2xl shadow-red-500/10">
         {/* Linha superior brilhante */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />

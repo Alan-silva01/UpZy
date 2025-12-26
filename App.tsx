@@ -68,13 +68,37 @@ const App: React.FC = () => {
 
   // Verificar sessão ao carregar
   useEffect(() => {
-    verificarSessaoAtual();
+    // Verificar se é a primeira visita nesta sessão
+    const isFirstVisit = !sessionStorage.getItem('upzy_loaded');
 
-    // Timeout de segurança: se após 3 segundos ainda estiver carregando, força o fim do loading
+    // Guardar o tempo de início para calcular tempo mínimo de loading
+    const startTime = Date.now();
+    const MIN_LOADING_TIME = isFirstVisit ? 2500 : 0; // 2.5s só na primeira visita
+
+    const finishLoading = () => {
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed);
+
+      // Esperar o tempo restante para a animação completar
+      setTimeout(() => {
+        // Remove o loader do HTML
+        if (typeof window !== 'undefined' && (window as any).removeAppLoader) {
+          (window as any).removeAppLoader();
+        }
+        setLoadingSessao(false);
+      }, remainingTime);
+    };
+
+    verificarSessaoAtual(finishLoading);
+
+    // Timeout de segurança: se após 5 segundos ainda estiver carregando, força o fim do loading
     const timeout = setTimeout(() => {
       console.log('⏰ Timeout de segurança atingido');
+      if (typeof window !== 'undefined' && (window as any).removeAppLoader) {
+        (window as any).removeAppLoader();
+      }
       setLoadingSessao(false);
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -114,7 +138,7 @@ const App: React.FC = () => {
     }
   }, [user, lojaId]);
 
-  const verificarSessaoAtual = async () => {
+  const verificarSessaoAtual = async (onComplete?: () => void) => {
     console.log('🔍 Verificando sessão...');
     try {
       const usuarioSessao = await verificarSessao();
@@ -183,7 +207,15 @@ const App: React.FC = () => {
       setAvatarLoja(null);
     } finally {
       console.log('✅ Verificação de sessão concluída');
-      setLoadingSessao(false);
+      // Chamar callback se fornecido, senão remover loader diretamente
+      if (onComplete) {
+        onComplete();
+      } else {
+        if (typeof window !== 'undefined' && (window as any).removeAppLoader) {
+          (window as any).removeAppLoader();
+        }
+        setLoadingSessao(false);
+      }
     }
   };
 
@@ -404,9 +436,9 @@ const App: React.FC = () => {
     }
   };
 
-  // Loading da sessão
+  // Loading da sessão - retorna null pois o loader do HTML está visível
   if (loadingSessao) {
-    return <LoadingScreen />;
+    return null;
   }
 
   if (!user) {

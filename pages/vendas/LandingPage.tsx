@@ -48,13 +48,10 @@ const LandingPage: React.FC = () => {
     // Check if there's a hash in the URL (e.g., #precos)
     const hash = window.location.hash;
     if (hash) {
-      // Wait for page to render, then scroll
-      setTimeout(() => {
-        const element = document.getElementById(hash.replace('#', ''));
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
+      const element = document.getElementById(hash.replace('#', ''));
+      if (element) {
+        element.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
     }
   }, []);
 
@@ -105,13 +102,13 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-brand-darker text-slate-100 font-sans selection:bg-brand-primary selection:text-white overflow-x-hidden">
-      
+
       {/* 1. Urgency Bar */}
       <div className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs sm:text-sm py-2 px-4 text-center font-medium sticky top-0 z-50 shadow-lg shadow-purple-900/20">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-center items-center gap-2">
           <span className="flex items-center gap-2">
             <span className="bg-purple-600 text-white px-2 py-1 rounded font-bold uppercase text-xs">Oferta</span>
-             Preço promocional encerra em:
+            Preço promocional encerra em:
           </span>
           <CountdownTimer />
         </div>
@@ -121,7 +118,7 @@ const LandingPage: React.FC = () => {
       <nav className="border-b border-white/5 bg-brand-darker/80 backdrop-blur-md sticky top-[36px] sm:top-[36px] z-40 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
               <UpzyLogo className="w-10 h-10 text-white" />
               <span className="font-bold text-xl tracking-tight text-white hidden sm:block">UpZy</span>
             </div>
@@ -170,22 +167,22 @@ const LandingPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            
+
             {/* Copy */}
             <div className="flex-1 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-6 animate-fade-in-up">
                 <span className="w-2 h-2 rounded-full bg-brand-success animate-pulse"></span>
                 <span className="text-xs font-medium text-gray-300">{viewers} pessoas vendo agora</span>
               </div>
-              
+
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
                 Sua loja <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500">batendo meta todo mês</span> direto do celular.
               </h1>
-              
+
               <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Chega de planilha que ninguém atualiza. Dê adeus à cegueira operacional e tenha controle total das suas vendas na palma da mão.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <button
                   onClick={() => scrollToSection('precos')}
@@ -216,33 +213,33 @@ const LandingPage: React.FC = () => {
 
             {/* Image/Mockup */}
             <div className="flex-1 relative w-full max-w-md lg:max-w-full mx-auto">
-               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-brand-primary/20 to-transparent blur-3xl -z-10"></div>
-               <PhoneMockup />
-               
-               {/* Floating elements */}
-               <div className="absolute top-10 -right-4 sm:right-0 bg-gray-800/80 backdrop-blur border border-white/10 p-3 rounded-xl shadow-xl animate-float" style={{animationDelay: '1s'}}>
-                 <div className="flex items-center gap-3">
-                   <div className="bg-green-500/20 p-2 rounded-lg">
-                     <Check size={20} className="text-brand-success" />
-                   </div>
-                   <div>
-                     <p className="text-xs text-gray-400">Meta Batida!</p>
-                     <p className="text-sm font-bold text-white">Loja Centro</p>
-                   </div>
-                 </div>
-               </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-brand-primary/20 to-transparent blur-3xl -z-10"></div>
+              <PhoneMockup />
 
-               <div className="absolute bottom-20 -left-4 sm:left-0 bg-gray-800/80 backdrop-blur border border-white/10 p-3 rounded-xl shadow-xl animate-float" style={{animationDelay: '2.5s'}}>
-                 <div className="flex items-center gap-3">
-                   <div className="bg-purple-500/20 p-2 rounded-lg">
-                     <Star size={20} className="text-brand-primary" />
-                   </div>
-                   <div>
-                     <p className="text-xs text-gray-400">Novo Recorde</p>
-                     <p className="text-sm font-bold text-white">Maria Lucia</p>
-                   </div>
-                 </div>
-               </div>
+              {/* Floating elements */}
+              <div className="absolute top-10 -right-4 sm:right-0 bg-gray-800/80 backdrop-blur border border-white/10 p-3 rounded-xl shadow-xl animate-float" style={{ animationDelay: '1s' }}>
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500/20 p-2 rounded-lg">
+                    <Check size={20} className="text-brand-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Meta Batida!</p>
+                    <p className="text-sm font-bold text-white">Loja Centro</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-20 -left-4 sm:left-0 bg-gray-800/80 backdrop-blur border border-white/10 p-3 rounded-xl shadow-xl animate-float" style={{ animationDelay: '2.5s' }}>
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-500/20 p-2 rounded-lg">
+                    <Star size={20} className="text-brand-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Novo Recorde</p>
+                    <p className="text-sm font-bold text-white">Maria Lucia</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -290,7 +287,7 @@ const LandingPage: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Gerenciar equipe de vendas não deveria ser um pesadelo</h2>
             <p className="text-gray-400 text-lg">Você se identifica com algum desses problemas na sua rotina?</p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {PAIN_POINTS.map((pain, idx) => (
               <div key={idx} className="bg-brand-surface/50 border border-white/5 p-8 rounded-3xl hover:border-red-500/30 transition-colors group">
@@ -308,7 +305,7 @@ const LandingPage: React.FC = () => {
       {/* 6. Features / Benefits */}
       <section id="beneficios" className="py-24 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-full h-[500px] bg-brand-primary/5 -skew-y-6 pointer-events-none"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-brand-secondary font-bold tracking-wider text-sm uppercase">Solução Completa</span>
@@ -363,7 +360,7 @@ const LandingPage: React.FC = () => {
       <section id="depoimentos" className="py-24 bg-brand-darker">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-16">Quem usa, bate meta 🚀</h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {TESTIMONIALS.map((t) => (
               <div key={t.id} className="bg-brand-surface/20 border border-white/5 p-6 rounded-3xl flex flex-col">
@@ -435,18 +432,17 @@ const LandingPage: React.FC = () => {
                   )}
                   <p className="text-xs text-gray-500 mt-1">
                     {plan.planType === 'monthly' ? 'Ideal para usuários individuais.' :
-                     plan.planType === 'semester' ? 'Ideal para pequenas equipes.' :
-                     'Melhor escolha para empresas, agências e estúdios.'}
+                      plan.planType === 'semester' ? 'Ideal para pequenas equipes.' :
+                        'Melhor escolha para empresas, agências e estúdios.'}
                   </p>
                 </div>
 
                 <button
                   onClick={() => handleSelectPlan(plan)}
-                  className={`w-full py-3.5 rounded-xl font-bold mb-8 transition-all duration-300 ${
-                    plan.recommended
-                    ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-500/40 hover:shadow-teal-500/60 hover:scale-105'
-                    : 'bg-gray-700 hover:bg-gray-600 text-white'
-                  }`}
+                  className={`w-full py-3.5 rounded-xl font-bold mb-8 transition-all duration-300 ${plan.recommended
+                      ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-500/40 hover:shadow-teal-500/60 hover:scale-105'
+                      : 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }`}
                 >
                   {plan.ctaText}
                 </button>
@@ -467,8 +463,8 @@ const LandingPage: React.FC = () => {
 
           <div className="mt-12 text-center">
             <div className="inline-flex items-center gap-2 bg-gray-900/50 border border-gray-700/50 rounded-full px-6 py-3">
-               <ShieldCheck size={20} className="text-teal-400" />
-               <span className="text-gray-300 text-sm">Garantia incondicional de 30 dias. Não gostou? Devolvemos seu dinheiro.</span>
+              <ShieldCheck size={20} className="text-teal-400" />
+              <span className="text-gray-300 text-sm">Garantia incondicional de 30 dias. Não gostou? Devolvemos seu dinheiro.</span>
             </div>
           </div>
         </div>
@@ -503,49 +499,49 @@ const LandingPage: React.FC = () => {
       <footer className="bg-brand-darker border-t border-white/5 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-             <div className="flex items-center gap-2 mb-6 md:mb-0">
-                <UpzyLogo className="w-12 h-12 text-white" />
-                <span className="font-bold text-2xl tracking-tight text-white">UPZY</span>
-             </div>
-             <div className="flex gap-6">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={24} /></a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={24} /></a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors"><Linkedin size={24} /></a>
-             </div>
+            <div className="flex items-center gap-2 mb-6 md:mb-0">
+              <UpzyLogo className="w-12 h-12 text-white" />
+              <span className="font-bold text-2xl tracking-tight text-white">UPZY</span>
+            </div>
+            <div className="flex gap-6">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={24} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={24} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Linkedin size={24} /></a>
+            </div>
           </div>
-          
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 border-b border-white/5 pb-12 mb-8">
-             <div>
-               <h4 className="font-bold text-white mb-4">Produto</h4>
-               <ul className="space-y-2 text-sm text-gray-400">
-                 <li><a href="#" className="hover:text-brand-primary">Funcionalidades</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Planos</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Para Lojistas</a></li>
-               </ul>
-             </div>
-             <div>
-               <h4 className="font-bold text-white mb-4">Empresa</h4>
-               <ul className="space-y-2 text-sm text-gray-400">
-                 <li><a href="#" className="hover:text-brand-primary">Sobre Nós</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Carreiras</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Blog</a></li>
-               </ul>
-             </div>
-             <div>
-               <h4 className="font-bold text-white mb-4">Suporte</h4>
-               <ul className="space-y-2 text-sm text-gray-400">
-                 <li><a href="#" className="hover:text-brand-primary">Central de Ajuda</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Fale Conosco</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Status</a></li>
-               </ul>
-             </div>
-             <div>
-               <h4 className="font-bold text-white mb-4">Legal</h4>
-               <ul className="space-y-2 text-sm text-gray-400">
-                 <li><a href="#" className="hover:text-brand-primary">Termos de Uso</a></li>
-                 <li><a href="#" className="hover:text-brand-primary">Privacidade</a></li>
-               </ul>
-             </div>
+            <div>
+              <h4 className="font-bold text-white mb-4">Produto</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-brand-primary">Funcionalidades</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Planos</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Para Lojistas</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-4">Empresa</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-brand-primary">Sobre Nós</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Carreiras</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Blog</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-4">Suporte</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-brand-primary">Central de Ajuda</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Fale Conosco</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Status</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-brand-primary">Termos de Uso</a></li>
+                <li><a href="#" className="hover:text-brand-primary">Privacidade</a></li>
+              </ul>
+            </div>
           </div>
 
           <div className="text-center text-gray-600 text-sm">
@@ -559,27 +555,27 @@ const LandingPage: React.FC = () => {
       {/* Video Modal Overlay */}
       {isVideoOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-           <div className="relative w-full max-w-[95vw] sm:max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 aspect-video">
-              <button 
-                onClick={() => setIsVideoOpen(false)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors backdrop-blur-md"
-              >
-                <X size={24} />
-              </button>
-              <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                {/* Simulated Video Embed */}
-                <iframe 
-                  width="100%" 
-                  height="100%" 
-                  src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1&controls=1" 
-                  title="Video Demo"
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                  className="w-full h-full"
-                ></iframe>
-              </div>
-           </div>
+          <div className="relative w-full max-w-[95vw] sm:max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 aspect-video">
+            <button
+              onClick={() => setIsVideoOpen(false)}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors backdrop-blur-md"
+            >
+              <X size={24} />
+            </button>
+            <div className="w-full h-full flex items-center justify-center bg-gray-900">
+              {/* Simulated Video Embed */}
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1&controls=1"
+                title="Video Demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
+            </div>
+          </div>
         </div>
       )}
 

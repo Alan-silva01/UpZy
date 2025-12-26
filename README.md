@@ -17,9 +17,8 @@ Sistema completo de gestão de vendas e comissões para equipes comerciais.
 npm install
 
 # Configurar variáveis de ambiente
-# Crie um arquivo .env na raiz com:
-VITE_SUPABASE_URL=sua_url_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_supabase
+cp .env.example .env
+# Edite o .env com suas credenciais do Supabase
 
 # Rodar em desenvolvimento
 npm run dev
@@ -28,36 +27,65 @@ npm run dev
 npm run build
 ```
 
+## 🔧 Variáveis de Ambiente
+
+| Variável | Descrição |
+|----------|-----------|
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Chave anônima do Supabase |
+
 ## 🏗️ Estrutura do Projeto
 
 ```
 UpZy/
-├── components/        # Componentes React
-├── pages/            # Páginas do sistema
-├── services/         # Serviços e APIs
-├── hooks/            # React Hooks customizados
-├── utils/            # Funções utilitárias
-├── lib/              # Configurações (Supabase)
-├── supabase/         # Migrações e functions
-└── types/            # Tipos TypeScript
+├── components/        # Componentes React (UI, Views, Modals)
+├── pages/             # Páginas do sistema (auth, vendas)
+├── services/          # Serviços e APIs (auth, api, etc)
+├── hooks/             # React Hooks customizados
+├── contexts/          # React Contexts (DataCache)
+├── utils/             # Funções utilitárias
+├── lib/               # Configurações (Supabase)
+├── types/             # Tipos do banco de dados
+├── supabase/          # Migrações e Edge Functions
+├── public/            # Assets estáticos e PWA
+└── types.ts           # Tipos globais da aplicação
 ```
 
 ## 🎯 Funcionalidades
 
-- Dashboard administrativo com métricas em tempo real
+### Admin
+- Dashboard com métricas em tempo real
 - Gestão de vendedores e comissões
-- Registro e histórico de vendas
 - Sistema de metas e rankings
-- PWA (Progressive Web App)
+- Histórico completo de vendas
+- Configurações da loja
+
+### Vendedor
+- Dashboard pessoal com metas
+- Registro rápido de vendas
+- Histórico de vendas próprias
+- Ranking da equipe
+
+### Geral
+- PWA instalável (iOS, Android, Desktop)
 - Realtime updates via Supabase
-- Sistema de autenticação
+- Autenticação segura
+- Modo demonstração para contas inativas
 
 ## 📱 PWA
 
-O aplicativo funciona como PWA e pode ser instalado em dispositivos móveis e desktop.
+O app funciona como PWA e pode ser instalado em:
+- **iOS**: Safari > Compartilhar > Adicionar à Tela Inicial
+- **Android**: Chrome > Menu > Instalar aplicativo
+- **Desktop**: Barra de endereço > Ícone de instalação
 
 ## 🔒 Segurança
 
 - Autenticação via Supabase Auth
-- Row Level Security (RLS) no banco de dados
+- Row Level Security (RLS) no banco
 - Variáveis de ambiente para dados sensíveis
+- Proteção contra contas inativas
+
+## 📄 Licença
+
+Projeto proprietário - Todos os direitos reservados.

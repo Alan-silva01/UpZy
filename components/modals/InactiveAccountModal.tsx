@@ -22,10 +22,10 @@ export const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
   if (!isOpen) return null;
 
   const handlePaymentClick = () => {
-    if (userEmail) {
-      navigate(`/vendas?email=${encodeURIComponent(userEmail)}#precos`);
-    }
     onClose();
+    if (userEmail) {
+      window.location.href = `/vendas?email=${encodeURIComponent(userEmail)}#precos`;
+    }
   };
 
   return (
